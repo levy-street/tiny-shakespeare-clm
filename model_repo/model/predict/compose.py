@@ -193,6 +193,25 @@ def predict(state: ModelState) -> list[float]:
                 if ch in VOCAB_INDEX:
                     logits[VOCAB_INDEX[ch]] -= 0.5
 
+        # Verse-line-start capital boost: after a *single* newline that
+        # terminated a VERSE-length line (typically 15-55 chars),
+        # Shakespeare almost always begins the next line with a capital
+        # letter even when no sentence-ending punctuation is present.
+        # Skip when already handled by is_sentence_start; skip when the
+        # previous line was very short (blank/label) or very long (prose).
+        if (
+            last_cls == NEWLINE
+            and state.consecutive_newlines == 1
+            and not is_sentence_start
+            and 15 <= state.prev_line_length <= 55
+        ):
+            for ch in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
+                if ch in VOCAB_INDEX:
+                    logits[VOCAB_INDEX[ch]] += 1.0
+            for ch in "abcdefghijklmnopqrstuvwxyz":
+                if ch in VOCAB_INDEX:
+                    logits[VOCAB_INDEX[ch]] -= 0.35
+
     # Layer 5: speaker-label-specific boosts.
     if state.speaker_label_state == 3:
         # After ":" closing a label: strongly expect \n.

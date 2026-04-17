@@ -139,3 +139,11 @@ class ModelState(BaseModel):
     # POS tag of the word before last_completed_word — lets downstream
     # layers look at a two-word POS context.
     prev_word_pos: int = 0
+    # Length (in chars) of the previous line. Updated exactly when we
+    # emit a \n. Used to distinguish verse lines (typically short,
+    # ~30-50 chars) from prose lines (typically 60+ chars). This lets
+    # the predict layer know whether the next line is likely to start
+    # with a capital (verse) or may continue in lowercase (prose wrap).
+    prev_line_length: int = 0
+    # Length of the line before the previous one — for smoothing.
+    prev_prev_line_length: int = 0

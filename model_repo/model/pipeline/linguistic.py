@@ -76,6 +76,15 @@ def update_linguistic(state: ModelState, token_id: int) -> ModelState:
     upper_run_len = state.upper_run_len + 1 if is_upper else 0
 
     consecutive_newlines = state.consecutive_newlines + 1 if is_newline else 0
+    # When we emit a newline, record the length of the line just ended.
+    # Blank newlines (consecutive \n) are mapped to 0 so we don't
+    # overwrite the real previous line length with a 0-length gap.
+    if is_newline and state.chars_since_newline > 0:
+        prev_line_length = state.chars_since_newline
+        prev_prev_line_length = state.prev_line_length
+    else:
+        prev_line_length = state.prev_line_length
+        prev_prev_line_length = state.prev_prev_line_length
     chars_since_newline = 0 if is_newline else state.chars_since_newline + 1
     chars_since_space = 0 if (is_space or is_newline) else state.chars_since_space + 1
     chars_since_sentence_end = (
@@ -205,5 +214,7 @@ def update_linguistic(state: ModelState, token_id: int) -> ModelState:
             "word_buffer": wb,
             "speaker_buffer": sb,
             "last_completed_word": last_completed_word,
+            "prev_line_length": prev_line_length,
+            "prev_prev_line_length": prev_prev_line_length,
         }
     )
