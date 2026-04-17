@@ -240,4 +240,9 @@ def predict(state: ModelState) -> list[float]:
             if ";" in VOCAB_INDEX:
                 logits[VOCAB_INDEX[";"]] += 2.5
 
+        # At word-end-on-trie, space is the most likely next char.
+        # Boost it to reflect natural word-break frequency.
+        if state.letter_run_len >= 2 and state.on_word_trie:
+            logits[VOCAB_INDEX[" "]] += 0.6
+
     return _log_softmax(logits)
