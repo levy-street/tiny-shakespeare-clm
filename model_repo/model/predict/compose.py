@@ -114,6 +114,7 @@ def predict(state: ModelState) -> list[float]:
     # Only apply when we're outside speaker-label territory.
     if state.speaker_label_state == 0:
         llb = state.line_length_bucket
+        sdb = state.sent_distance_bucket
         # At end-of-word position (letter_run >= 2 AND on_word_trie)
         # on progressively longer lines, newline becomes more likely as
         # the word's terminator. Training verse wraps ~30-50 chars;
@@ -125,5 +126,18 @@ def predict(state: ModelState) -> list[float]:
                 logits[VOCAB_INDEX["\n"]] += 3.5
             elif llb == 3:
                 logits[VOCAB_INDEX["\n"]] += 5.0
+        # Overdue sentence end: at word-end on-trie, boost sentence-end
+        # punctuation so the model actually closes sentences.
+        if state.letter_run_len >= 2 and state.on_word_trie and sdb >= 1:
+            bump = 3.8 if sdb == 1 else 6.0
+            logits[VOCAB_INDEX["."]] += bump
+            if "?" in VOCAB_INDEX:
+                logits[VOCAB_INDEX["?"]] += bump * 0.3
+            if "!" in VOCAB_INDEX:
+                logits[VOCAB_INDEX["!"]] += bump * 0.3
+            if "," in VOCAB_INDEX:
+                logits[VOCAB_INDEX[","]] += bump * 0.5
+            if ";" in VOCAB_INDEX:
+                logits[VOCAB_INDEX[";"]] += bump * 0.4
 
     return _log_softmax(logits)
