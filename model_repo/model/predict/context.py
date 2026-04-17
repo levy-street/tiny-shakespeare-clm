@@ -116,7 +116,7 @@ _set(
 _set(
     CTX_AFTER_SPACE,
     {
-        UPPER: -0.5,
+        UPPER: 0.5,
         LOWER_CONS: 1.5,
         LOWER_VOWEL: 1.3,
         NEWLINE: -5.0,

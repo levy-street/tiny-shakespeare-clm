@@ -605,6 +605,7 @@ def predict(state: ModelState) -> list[float]:
 
 
 
+
         # POS-aware terminal punctuation bias. At word-end on-trie,
         # the POS that JUST completed (captured at just_finished_word
         # time, but here we rely on the fact that state.word_buffer is
