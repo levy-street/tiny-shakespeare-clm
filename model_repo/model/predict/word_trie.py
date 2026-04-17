@@ -414,6 +414,39 @@ _WORDS: tuple[str, ...] = (
     "hello", "goodbye", "thanks",
     "well", "okay",
     "o'clock", "e'en",
+    # --- archaic Shakespearean specifics ---
+    "anon", "sirrah", "beshrew", "zounds",
+    "quoth", "betwixt", "spake", "saith",
+    "alas", "ado",
+    # Body/emotion words
+    "embrace", "embraces", "embraced",
+    "kiss", "kisses", "kissed",
+    "touch", "touches", "touched",
+    "tremble", "trembles", "trembled", "trembling",
+    "shake", "shakes", "shook", "shaken",
+    "whisper", "whispers", "whispered",
+    "mourn", "mourns", "mourned", "mourning",
+    "grieve", "grieves", "grieved", "grieving",
+    "rejoice", "rejoices", "rejoiced",
+    "conquer", "conquers", "conquered",
+    "surrender", "surrenders",
+    "yield", "yields", "yielded",
+    "escape", "escapes", "escaped",
+    # Setting/objects
+    "chamber", "chambers", "hall", "halls",
+    "tower", "towers", "gate", "gates", "wall", "walls",
+    "field", "fields", "forest", "forests",
+    "wood", "woods", "tree", "trees", "leaf", "leaves",
+    "hill", "hills", "mountain", "mountains",
+    "valley", "valleys",
+    "shore", "shores", "bank", "banks",
+    "ship", "ships", "sail", "sails",
+    "wave", "waves", "tide", "tides",
+    "cloud", "clouds",
+    # Numbers and quantities
+    "eleven", "twelve", "twenty", "thirty", "forty", "fifty",
+    # More connective words
+    "whence", "whither",
 )
 
 # Build a trie: prefix -> {next_char: count}
