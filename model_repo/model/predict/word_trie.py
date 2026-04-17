@@ -1480,6 +1480,99 @@ for _p in _PROPER:
     _add_word(_p.lower())
 
 
+# --- Algorithmic prefix-based word generation ---
+# Attaches common English prefixes to simple bases. The trie will then
+# pick up the full forms like "unkind", "undone", "untold", "remake",
+# "mistake", "outlive", "overthrow", etc.
+_UN_BASES: tuple[str, ...] = (
+    "able", "aware", "blest", "born", "bound", "changed", "clean",
+    "clouded", "common", "cover", "dressed", "done", "dying", "easy",
+    "even", "fair", "faithful", "fasten", "filial", "fit", "folded",
+    "fortunate", "friendly", "godly", "grateful", "happy", "hallowed",
+    "harmed", "heard", "heeded", "holy", "hopeful", "hurt", "just",
+    "kind", "known", "lawful", "learn", "less", "loaded", "lock",
+    "looked", "loved", "lucky", "made", "manned", "mask", "matched",
+    "meet", "minded", "move", "moved", "named", "natural", "noble",
+    "paid", "pleasant", "profitable", "proved", "ready", "reasonable",
+    "safe", "said", "satisfied", "seemly", "seen", "settled", "shaken",
+    "shod", "silent", "skilful", "sought", "spotted", "sullied", "sure",
+    "taught", "thought", "tied", "timely", "tired", "touch", "touched",
+    "trained", "trodden", "true", "truss", "used", "varied", "veiled",
+    "wary", "wearied", "welcome", "wept", "whipped", "wise", "worthy",
+    "yielding",
+)
+for _b in _UN_BASES:
+    _add_word("un" + _b)
+
+_RE_BASES: tuple[str, ...] = (
+    "act", "call", "cover", "new", "pay", "pair", "place", "turn",
+    "tire", "tired", "join", "move", "store", "built", "gain", "view",
+    "make", "mark", "fresh", "ceive", "ceived", "ceives", "member",
+    "peat", "peated", "ply", "plied", "plies", "port", "ported",
+    "quire", "quired", "quires", "quest", "quested", "solve", "solved",
+    "sort", "turn", "turns", "turned", "turning", "vive", "vived",
+    "ward", "warded", "venge", "vengeful",
+)
+for _b in _RE_BASES:
+    _add_word("re" + _b)
+
+_OVER_BASES: tuple[str, ...] = (
+    "come", "comes", "came", "coming", "done", "grown", "heard",
+    "hear", "look", "looked", "power", "powered", "rule", "ruled",
+    "run", "see", "seen", "take", "takes", "taken", "taking", "throw",
+    "threw", "thrown", "weening", "weight", "bold", "cast", "charged",
+    "flow", "flowed", "joyed", "loaded", "long", "lord", "match",
+    "matched", "night", "paid", "reach", "ripe", "sway", "swayed",
+    "turn", "turned", "view", "whelm", "whelmed",
+)
+for _b in _OVER_BASES:
+    _add_word("over" + _b)
+
+_UNDER_BASES: tuple[str, ...] = (
+    "go", "goes", "gone", "going", "stand", "stands", "stood",
+    "standing", "take", "takes", "took", "taking", "undertaken",
+    "take", "ground", "foot", "hand", "lay", "lie", "lies", "lying",
+    "mine", "mined", "neath", "prop", "stood", "taker", "value",
+    "world", "wood", "wrote", "write",
+)
+for _b in _UNDER_BASES:
+    _add_word("under" + _b)
+
+_MIS_BASES: tuple[str, ...] = (
+    "adventure", "become", "behave", "carry", "chief", "chance",
+    "count", "deed", "deem", "fire", "fit", "fortune", "give",
+    "govern", "guide", "haps", "hap", "lead", "lead", "like",
+    "name", "place", "rule", "shape", "step", "take", "taken",
+    "trust", "use", "used", "word",
+)
+for _b in _MIS_BASES:
+    _add_word("mis" + _b)
+
+_OUT_BASES: tuple[str, ...] = (
+    "bid", "brave", "cast", "do", "face", "facing", "fly", "flew",
+    "flown", "go", "grow", "grown", "last", "leap", "live", "look",
+    "paced", "pace", "ran", "right", "run", "rung", "sell", "shine",
+    "side", "sides", "spoken", "speak", "spoke", "stand", "stood",
+    "strip", "ward", "wards", "wear", "wept", "weigh", "went", "worn",
+    "worth",
+)
+for _b in _OUT_BASES:
+    _add_word("out" + _b)
+
+_DIS_BASES: tuple[str, ...] = (
+    "arm", "armed", "card", "charge", "charged", "close", "closed",
+    "come", "cover", "covered", "covers", "dain", "dained", "dain",
+    "eased", "ease", "enchant", "fit", "grace", "graced", "graces",
+    "graceful", "guise", "guised", "honour", "honoured", "join",
+    "joined", "like", "liked", "missed", "obey", "obeyed", "order",
+    "ordered", "own", "owned", "please", "pleased", "quiet",
+    "quieted", "robe", "robed", "solve", "solved", "taste", "tasted",
+    "trust", "trusted", "turb", "turbed", "union",
+)
+for _b in _DIS_BASES:
+    _add_word("dis" + _b)
+
+
 # Set of exact words (lowercased) — used by predict to apply an
 # additional terminator boost when the buffer matches a complete known
 # word, regardless of whether the word is also a prefix of other words.
