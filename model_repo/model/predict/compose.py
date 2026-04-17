@@ -94,11 +94,15 @@ def predict(state: ModelState) -> list[float]:
     # Layer 3b3: word-start bigram bias — at letter_run_len == 1, the
     # second letter is heavily conditioned on the first (word-start
     # distributions differ from mid-word). Applies only when speaker
-    # label is not constraining things.
+    # label is not constraining things, AND only when we're actually at
+    # the START of a word (buffer is exactly the one letter). Skips
+    # contractions like "I'l" where the buffer has an apostrophe and
+    # the letter is a mid-word continuation, not a word start.
     if (
         state.letter_run_len == 1
         and state.last_char
         and state.speaker_label_state not in (2,)
+        and len(state.word_buffer) == 1
     ):
         sb = startbigram_bias(state.last_char)
         if sb is not None:

@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import random
 import sys
 import time
 from pathlib import Path
@@ -35,6 +36,63 @@ _HERE = Path(__file__).resolve().parent
 _LOGS = _HERE / "logs"
 _LOGS.mkdir(exist_ok=True)
 _PROMPT_PATH = _HERE / "optimizer_prompt.md"
+
+# How often to inject a structural-reflection nudge into the session.
+_NUDGE_INTERVAL_SEC = 1800  # 30 minutes
+
+# Nudge messages rotated through to break the agent out of tuning grooves and
+# push it toward structural moves. Each is phrased as user guidance, not a
+# specific prescription — the agent chooses the concrete action.
+_NUDGES: list[str] = [
+    (
+        "Pause and zoom out. Look at your last ~10 commits — are they mostly "
+        "scale/constant tuning and dictionary expansion, or are they adding "
+        "new structural capability (new state fields, new pipeline stages, "
+        "new predict layers)? If the first, force yourself to a structural "
+        "move next. Run a fresh sample at length 400 with a realistic prefix, "
+        "read it critically, and pick the ONE biggest gap between it and real "
+        "Shakespeare. Build state + pipeline logic that targets that gap."
+    ),
+    (
+        "Reality-check break. Generate a sample with prefix \"HAMLET:\\nTo be "
+        "or not to be, \" length 400, read it aloud in your head, and list "
+        "three specific failures — not general impressions, concrete failures "
+        "like 'no multi-word phrase coherence beyond 2 words', 'verse rhythm "
+        "is char-counted not syllable-counted', 'no awareness of which "
+        "character is speaking'. Pick the failure with the highest leverage "
+        "and invent a state field + pipeline stage to close it."
+    ),
+    (
+        "Diversity check. Look at what axes your state currently captures "
+        "(local char context, word completion, line counters, speaker-label "
+        "FSM, basic POS, line-length buckets). Now list axes it DOESN'T "
+        "capture (multi-word memory, syntactic role, clause depth, scene "
+        "mood, verse prosody via syllables, addressee tracking, formulaic "
+        "phrase progress, rhyme position). Pick an unexplored axis and build "
+        "state for it. Don't reach for another scale tweak — the low-hanging "
+        "fruit there is picked."
+    ),
+    (
+        "The flow tier of state was supposed to capture mood, register, "
+        "cadence, imagery density — the *feel* of text, not just "
+        "bookkeeping. Most current flow fields are mechanical counters. "
+        "Add at least one field that captures actual text-texture "
+        "(scene register, emotional intensity, formulaic-phrase progress, "
+        "rhyme-position, archaic-density, tonal_weight, something like "
+        "that) and wire a predict layer that reads it."
+    ),
+    (
+        "Ambitious move time. Is there a structural capability the model "
+        "lacks that would require a new pipeline stage or a meaningful "
+        "rewrite of an existing one? Examples: syllable counting instead "
+        "of char counting for verse, a recent-words tuple instead of just "
+        "last_completed_word, clause-depth tracking, current-speaker "
+        "memory across lines. Pick one. Even if the first pass drops BPC "
+        "by less than your recent tweaks, a new capability unlocks future "
+        "wins that scale tuning can't."
+    ),
+]
+
 
 # Substrings that, if they appear anywhere in a tool's input, trigger a deny.
 # Covers the dev/val corpus (v1's clm/corpus/) in both relative and absolute
@@ -163,9 +221,38 @@ async def run_session(log_file) -> None:
             "progress to git (`git add -A && git commit`) as soon as an "
             "improvement lands. Run indefinitely. Begin."
         )
-        async for event in client.receive_response():
-            _log_event(log_file, event)
-            _print_event(event)
+
+        nudge_order = list(range(len(_NUDGES)))
+        random.shuffle(nudge_order)
+        nudge_cursor = 0
+
+        async def nudge_loop() -> None:
+            nonlocal nudge_cursor
+            while True:
+                await asyncio.sleep(_NUDGE_INTERVAL_SEC)
+                msg = _NUDGES[nudge_order[nudge_cursor % len(nudge_order)]]
+                nudge_cursor += 1
+                _log_event(log_file, {"type": "nudge_injected", "msg": msg})
+                print(f"[nudge] injecting: {msg[:140]}...")
+                sys.stdout.flush()
+                try:
+                    await client.query(msg)
+                except Exception as e:
+                    print(f"[nudge-error] {e}")
+                    sys.stdout.flush()
+                    return
+
+        nudge_task = asyncio.create_task(nudge_loop())
+        try:
+            async for event in client.receive_response():
+                _log_event(log_file, event)
+                _print_event(event)
+        finally:
+            nudge_task.cancel()
+            try:
+                await nudge_task
+            except (asyncio.CancelledError, Exception):
+                pass
 
 
 async def main() -> None:
