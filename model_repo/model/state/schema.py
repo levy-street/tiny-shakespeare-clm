@@ -246,3 +246,13 @@ class ModelState(BaseModel):
     # who just said "prithee" is far more likely to say "thou" next
     # than one who just said "you" and "your").
     archaic_density: float = 0.0
+
+    # A rolling [0, 1] float estimating *emotional intensity* — bumped
+    # by "!" / "?" marks, "O"/"Oh" vocatives, and emotional
+    # interjections (alas, fie, ah, alack, ay). Decays per completed
+    # word. Consumed by predict to favor "!" at sentence end, boost
+    # "\n" after strong exclamation, and favor emotional follow-on
+    # words. Emotional outbursts cluster in Shakespeare: once a
+    # speaker cries "O!" they tend to repeat — this field captures
+    # that texture.
+    emotional_intensity: float = 0.0

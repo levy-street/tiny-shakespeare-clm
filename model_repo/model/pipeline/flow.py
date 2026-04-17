@@ -78,6 +78,16 @@ _ARCHAIC_MILD: frozenset[str] = frozenset({
 _ARCHAIC_STRONG_BUMP = 0.28
 _ARCHAIC_MILD_BUMP = 0.10
 _ARCHAIC_DECAY = 0.985  # per completed word
+
+# Emotional-intensity markers.
+_EMO_WORDS_STRONG: frozenset[str] = frozenset({
+    "o", "oh", "alas", "alack", "fie", "ah", "ay", "woe",
+    "ha", "hey", "ho", "aha", "out",
+})
+_EMO_WORDS_MILD: frozenset[str] = frozenset({
+    "god", "heaven", "love", "death", "dear", "pray", "sweet",
+    "heart", "tears", "poor", "cruel", "fair", "hark",
+})
 # Modern-only markers that gently pull density down (explicitly
 # *not* archaic — we saw a modern form that suggests the register
 # is drifting toward modern). Small effect.
@@ -185,6 +195,25 @@ def update_flow(state: ModelState, token_id: int) -> ModelState:
         # Preserve a fraction so scene-wide register isn't fully lost.
         archaic_density *= 0.6
 
+    # Emotional intensity: bumped on "!", "?", and O-vocatives / emo
+    # interjections; decayed per completed word.
+    emo = state.emotional_intensity
+    lc = state.last_char
+    if lc == "!":
+        emo = min(1.0, emo + 0.45)
+    elif lc == "?":
+        emo = min(1.0, emo + 0.30)
+    if state.just_finished_word:
+        emo *= 0.95  # per-word decay
+        w = state.last_completed_word
+        if w in _EMO_WORDS_STRONG:
+            emo = min(1.0, emo + 0.35)
+        elif w in _EMO_WORDS_MILD:
+            emo = min(1.0, emo + 0.18)
+    # Fresh speaker: damp emotional carryover.
+    if state.consecutive_newlines >= 2 and lc == "\n":
+        emo *= 0.5
+
     return state.model_copy(
         update={
             "on_word_trie": on_trie,
@@ -198,5 +227,6 @@ def update_flow(state: ModelState, token_id: int) -> ModelState:
             "vowels_since_consonant": vowels_since_consonant,
             "verse_score": verse_score,
             "archaic_density": archaic_density,
+            "emotional_intensity": emo,
         }
     )
