@@ -378,6 +378,32 @@ def predict(state: ModelState) -> list[float]:
                     logits[VOCAB_INDEX[","]] += bump * 0.6
                 if ";" in VOCAB_INDEX:
                     logits[VOCAB_INDEX[";"]] += bump * 0.45
+        # Mirror off-trie (weaker, min-length 4) — archaic/proper words
+        # can also close an overdue sentence.
+        elif state.letter_run_len >= 4 and not state.on_word_trie:
+            csse = state.chars_since_sentence_end
+            if csse >= 100:
+                bump = 5.5
+            elif csse >= 80:
+                bump = 4.5
+            elif csse >= 60:
+                bump = 3.5
+            elif csse >= 45:
+                bump = 2.8
+            elif csse >= 30:
+                bump = 1.5
+            else:
+                bump = 0.0
+            if bump > 0.0:
+                logits[VOCAB_INDEX["."]] += bump
+                if "?" in VOCAB_INDEX:
+                    logits[VOCAB_INDEX["?"]] += bump * 0.3
+                if "!" in VOCAB_INDEX:
+                    logits[VOCAB_INDEX["!"]] += bump * 0.3
+                if "," in VOCAB_INDEX:
+                    logits[VOCAB_INDEX[","]] += bump * 0.5
+                if ";" in VOCAB_INDEX:
+                    logits[VOCAB_INDEX[";"]] += bump * 0.4
         # Shakespeare is comma-heavy. Mid-sentence (before reaching the
         # "sentence is overdue" state handled above), bias toward commas
         # and semicolons at word-end-on-trie positions.
@@ -390,6 +416,17 @@ def predict(state: ModelState) -> list[float]:
                 logits[VOCAB_INDEX[","]] += 5.5
             if ";" in VOCAB_INDEX:
                 logits[VOCAB_INDEX[";"]] += 2.5
+        # Also off-trie with a longer min-length: archaic/proper words
+        # can certainly be followed by ",".
+        elif (
+            state.letter_run_len >= 4
+            and not state.on_word_trie
+            and state.chars_since_sentence_end < 40
+        ):
+            if "," in VOCAB_INDEX:
+                logits[VOCAB_INDEX[","]] += 4.5
+            if ";" in VOCAB_INDEX:
+                logits[VOCAB_INDEX[";"]] += 2.0
 
         # At word-end-on-trie, space is the most likely next char.
         # Boost it to reflect natural word-break frequency.
