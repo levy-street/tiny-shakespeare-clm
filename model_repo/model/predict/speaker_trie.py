@@ -138,7 +138,7 @@ def _bias_for(prefix: str) -> list[float] | None:
     if not nexts:
         return None
     n = len(prefix)
-    scale = min(0.6 + 0.6 * n, 3.5)
+    scale = min(0.3 + 0.6 * n, 3.5)
     total = sum(nexts.values())
     vec = [0.0] * VOCAB_SIZE
     # Slight negative on any upper-case letter not in our next-set.
