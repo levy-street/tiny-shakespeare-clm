@@ -255,7 +255,7 @@ def _build_bias_vectors() -> dict[str, list[float]]:
 STARTTRIGRAM_BIAS: dict[str, list[float]] = _build_bias_vectors()
 
 
-_GLOBAL_SCALE = 0.4
+_GLOBAL_SCALE = 0.7
 
 
 def starttrigram_bias(first_two: str) -> list[float] | None:
