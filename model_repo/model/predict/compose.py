@@ -213,7 +213,7 @@ def predict(state: ModelState) -> list[float]:
             elif llb == 2:
                 logits[VOCAB_INDEX["\n"]] += 4.5
             elif llb == 3:
-                logits[VOCAB_INDEX["\n"]] += 6.0
+                logits[VOCAB_INDEX["\n"]] += 7.5
         # Overdue sentence end: at word-end on-trie, boost sentence-end
         # punctuation so the model actually closes sentences.
         if state.letter_run_len >= 2 and state.on_word_trie and sdb >= 1:
