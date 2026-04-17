@@ -71,11 +71,11 @@ _set(
 _set(
     CTX_AFTER_DOUBLE_NL,
     {
-        UPPER: 5.0,
-        LOWER_CONS: -2.5,
-        LOWER_VOWEL: -2.5,
-        NEWLINE: -1.0,
-        SPACE: -3.0,
+        UPPER: 6.5,
+        LOWER_CONS: -3.5,
+        LOWER_VOWEL: -3.5,
+        NEWLINE: -1.5,
+        SPACE: -3.5,
         PUNCT_END: -6.0,
         PUNCT_MID: -6.0,
         APOSTROPHE: -4.0,
