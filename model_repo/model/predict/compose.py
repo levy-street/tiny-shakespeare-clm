@@ -294,6 +294,15 @@ def predict(state: ModelState) -> list[float]:
         elif csn >= 3 and state.prev_line_length < 25:
             logits[VOCAB_INDEX["\n"]] += 1.0
 
+    # After ".\n" (sentence-end + single newline), the next character is
+    # very often another newline (blank line before next speaker).
+    if (
+        last_cls == NEWLINE
+        and state.consecutive_newlines == 1
+        and state.prev_char_class == 6  # PUNCT_END before the \n
+    ):
+        logits[VOCAB_INDEX["\n"]] += 6.0
+
     # After mid-clause punctuation (, ; :) at a long-line position,
     # newline is also somewhat more likely (enjambment after comma).
     if (
