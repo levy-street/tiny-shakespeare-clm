@@ -475,6 +475,12 @@ for _w in _WORDS:
     _add_word(_w)
 
 
+# Set of exact words (lowercased) — used by predict to apply an
+# additional terminator boost when the buffer matches a complete known
+# word, regardless of whether the word is also a prefix of other words.
+COMPLETE_WORDS: frozenset[str] = frozenset(w.lower() for w in _WORDS)
+
+
 def _bias_for(prefix: str) -> list[float] | None:
     """Return a VOCAB_SIZE-length bias vector (or None if no matching
     prefix) that boosts next chars consistent with completing a known

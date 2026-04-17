@@ -46,7 +46,7 @@ from .starttrigram import starttrigram_bias
 from .startword import START_BIAS
 from .trigram import trigram_bias
 from .unigram import UNIGRAM_LOGPROBS
-from .word_trie import FORCE_END_BIAS, is_on_trie, word_trie_bias
+from .word_trie import COMPLETE_WORDS, FORCE_END_BIAS, is_on_trie, word_trie_bias
 
 
 def _log_softmax(logits: list[float]) -> list[float]:
@@ -208,10 +208,10 @@ def predict(state: ModelState) -> list[float]:
         if on_verse_line_start:
             for ch in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
                 if ch in VOCAB_INDEX:
-                    logits[VOCAB_INDEX[ch]] += 1.0
+                    logits[VOCAB_INDEX[ch]] += 3.0
             for ch in "abcdefghijklmnopqrstuvwxyz":
                 if ch in VOCAB_INDEX:
-                    logits[VOCAB_INDEX[ch]] -= 0.35
+                    logits[VOCAB_INDEX[ch]] -= 1.2
         # Additionally, at BOTH sentence-start and verse-line-start,
         # bias specific common starting capitals: T, A, W, I, O, B, H,
         # S, M, N, F, C, L, P, G, D, R, Y. Skip speaker-label context.
@@ -300,6 +300,8 @@ def predict(state: ModelState) -> list[float]:
         # Boost it to reflect natural word-break frequency.
         if state.letter_run_len >= 2 and state.on_word_trie:
             logits[VOCAB_INDEX[" "]] += 0.6
+
+
 
 
         # POS-aware terminal punctuation bias. At word-end on-trie,
