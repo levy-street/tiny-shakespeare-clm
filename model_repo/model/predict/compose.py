@@ -38,6 +38,7 @@ from .context import CTX_BIAS_VECTORS, context_key
 from .letter3 import letter3_bias
 from .letter4 import letter4_bias
 from .next_word import next_word_bias
+from .phrase_bigram import phrase_bigram_bias
 from .pos_next import pos_next_bias
 from .speaker_trie import speaker_trie_bias
 from .start4gram import start4gram_bias
@@ -185,6 +186,16 @@ def predict(state: ModelState) -> list[float]:
                 if pn is not None:
                     for i in range(VOCAB_SIZE):
                         logits[i] += pn[i]
+
+        # Layer 4b2: phrase bigram — given the previous TWO completed
+        # words, bias next word's first letter for known 3-word formulas.
+        if state.prev_completed_word and state.last_completed_word:
+            pb = phrase_bigram_bias(
+                state.prev_completed_word, state.last_completed_word
+            )
+            if pb is not None:
+                for i in range(VOCAB_SIZE):
+                    logits[i] += pb[i]
 
         # Layer 4c: at a sentence start (post ". ", post "? ", post "! "
         # or post a double-newline blank line), strongly boost capital
@@ -461,6 +472,8 @@ def predict(state: ModelState) -> list[float]:
     if state.speaker_label_state == 0:
         llb = state.line_length_bucket
         sdb = state.sent_distance_bucket
+
+
         # At end-of-word position (letter_run >= 2 AND on_word_trie)
         # on progressively longer lines, newline becomes more likely as
         # the word's terminator. Training verse wraps ~30-50 chars;

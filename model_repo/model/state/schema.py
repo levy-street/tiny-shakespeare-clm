@@ -119,6 +119,11 @@ class ModelState(BaseModel):
     # The last fully completed word (lowercased, including trailing
     # apostrophe-suffixes like 'tis). Used for next-word bias.
     last_completed_word: str = ""
+    # The word before last_completed_word. Enables two-word memory for
+    # 3-gram-style word-level formulas ("I pray thee", "O my lord",
+    # "by my troth", "good my lord", "I have been", etc.). Set at word
+    # completion, holds steady between completions.
+    prev_completed_word: str = ""
 
     # --- Tier 3: flow ---
     # Is the current word_buffer still a prefix of some known word? False
@@ -191,3 +196,23 @@ class ModelState(BaseModel):
     # commonly run 70-90. Downstream: verse_mode strengthens line-end
     # biases at ~30-45 chars and slightly penalizes overflow.
     verse_score: float = 0.0
+
+    # --- Tier 3: prosody / syllable tracking ---
+    # Rough syllable count in the current line, measured as
+    # consonant->vowel transitions (vowel clusters). Reset on newline.
+    # Shakespeare's iambic pentameter usually hits 10 syllables per line
+    # (11 for feminine endings). Line-end prediction should spike at
+    # syllables_in_line >= 9 in verse mode.
+    syllables_in_line: int = 0
+    # Syllable count in the current word only. Reset on word boundary.
+    # Most English words are 1-3 syllables; 4+ is plausible but rare.
+    # Used to distinguish "word ending soon" vs "word still growing".
+    syllables_in_word: int = 0
+    # True iff the last character is part of a vowel cluster (a/e/i/o/u,
+    # lower or upper). Used by the prosody stage to detect consonant->
+    # vowel transitions (the start of a new syllable).
+    in_vowel_group: bool = False
+    # Length of the previous line in syllables (set when a newline ends
+    # a non-blank line). Helps calibrate whether the next line is also
+    # expected to be verse-length.
+    prev_line_syllables: int = 0

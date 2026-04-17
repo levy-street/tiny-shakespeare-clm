@@ -165,11 +165,15 @@ def update_linguistic(state: ModelState, token_id: int) -> ModelState:
         wb = ""
 
     # last_completed_word: when word_buffer resets (non-letter/non-apos),
-    # remember the buffer we had as the last completed word.
+    # remember the buffer we had as the last completed word. At the same
+    # moment, shift the old last_completed_word into prev_completed_word
+    # so downstream two-word-context layers can see the prior word.
     if wb == "" and state.word_buffer:
         last_completed_word = state.word_buffer
+        prev_completed_word = state.last_completed_word
     else:
         last_completed_word = state.last_completed_word
+        prev_completed_word = state.prev_completed_word
 
     # speaker_buffer: active inside a speaker label (state 1/2), reset
     # when the label ends or we leave speaker-label territory. The buffer
@@ -219,6 +223,7 @@ def update_linguistic(state: ModelState, token_id: int) -> ModelState:
             "word_buffer": wb,
             "speaker_buffer": sb,
             "last_completed_word": last_completed_word,
+            "prev_completed_word": prev_completed_word,
             "prev_line_length": prev_line_length,
             "prev_prev_line_length": prev_prev_line_length,
         }
