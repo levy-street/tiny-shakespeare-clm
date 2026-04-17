@@ -27,9 +27,11 @@ from ..vocab import VOCAB, VOCAB_INDEX, VOCAB_SIZE
 from .bigram import bigram_bias
 from .context import CTX_BIAS_VECTORS, context_key
 from .letter3 import letter3_bias
+from .letter4 import letter4_bias
 from .next_word import next_word_bias
 from .speaker_trie import speaker_trie_bias
 from .startbigram import startbigram_bias
+from .starttrigram import starttrigram_bias
 from .startword import START_BIAS
 from .trigram import trigram_bias
 from .unigram import UNIGRAM_LOGPROBS
@@ -90,6 +92,20 @@ def predict(state: ModelState) -> list[float]:
         if sb is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += sb[i]
+
+    # Layer 3b4: word-start trigram bias — at letter_run_len == 2, the
+    # third letter is conditioned on the first two letters of the fresh
+    # word. Word-start 3-letter distributions differ substantially from
+    # mid-word. Applies only outside speaker-label territory.
+    if (
+        state.letter_run_len == 2
+        and len(state.word_buffer) == 2
+        and state.speaker_label_state not in (2,)
+    ):
+        stt = starttrigram_bias(state.word_buffer)
+        if stt is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += stt[i]
 
     # Layer 3c: word-trie completion bias.
     if state.word_buffer:
