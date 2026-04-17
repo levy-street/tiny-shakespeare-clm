@@ -227,17 +227,17 @@ def predict(state: ModelState) -> list[float]:
                 logits[VOCAB_INDEX[","]] += bump * 0.6
             if ";" in VOCAB_INDEX:
                 logits[VOCAB_INDEX[";"]] += bump * 0.45
-        # Even in short sentences, a comma becomes plausible after a
-        # few completed words — Shakespeare is comma-heavy.
+        # Shakespeare is comma-heavy. Mid-sentence (before reaching the
+        # "sentence is overdue" state handled above), bias toward commas
+        # and semicolons at word-end-on-trie positions.
         if (
             state.letter_run_len >= 2
             and state.on_word_trie
-            and state.chars_since_sentence_end >= 10
             and state.chars_since_sentence_end < 40
         ):
             if "," in VOCAB_INDEX:
-                logits[VOCAB_INDEX[","]] += 4.8
+                logits[VOCAB_INDEX[","]] += 5.5
             if ";" in VOCAB_INDEX:
-                logits[VOCAB_INDEX[";"]] += 2.0
+                logits[VOCAB_INDEX[";"]] += 2.5
 
     return _log_softmax(logits)
