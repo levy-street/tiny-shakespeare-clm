@@ -464,6 +464,13 @@ def predict(state: ModelState) -> list[float]:
         # Boost it to reflect natural word-break frequency.
         if state.letter_run_len >= 2 and state.on_word_trie:
             logits[VOCAB_INDEX[" "]] += 0.6
+        # For single-letter complete words (a/I/O), space is even more
+        # certain — they almost always end right there.
+        elif (
+            state.letter_run_len == 1
+            and state.word_buffer in COMPLETE_WORDS
+        ):
+            logits[VOCAB_INDEX[" "]] += 3.6
 
 
 
