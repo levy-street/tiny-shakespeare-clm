@@ -1405,6 +1405,81 @@ for _b in _ABLE_BASES:
     _add_word(_able(_b))
 
 
+# --- Algorithmic -er / -or agent-noun generation from verb bases ---
+_ER_BASES: tuple[str, ...] = (
+    "beg", "beat", "buy", "catch", "chase", "climb", "command",
+    "conquer", "dance", "dream", "drink", "drive", "eat", "employ",
+    "fight", "find", "follow", "give", "help", "hunt", "judge",
+    "keep", "kill", "know", "lead", "learn", "look", "love", "maker",
+    "murder", "observe", "own", "paint", "plant", "play", "pray",
+    "protect", "prove", "read", "ride", "rob", "ruler", "sell",
+    "sing", "sleep", "speak", "steal", "strong", "swim", "take",
+    "talk", "teach", "tell", "think", "wait", "wake", "watch",
+    "weep", "win", "work", "write",
+)
+
+
+def _er(base: str) -> str:
+    if base.endswith("e"):
+        return base + "r"
+    if base.endswith("y") and len(base) > 1 and base[-2] not in "aeiou":
+        return base[:-1] + "ier"
+    return base + "er"
+
+
+for _b in _ER_BASES:
+    _add_word(_er(_b))
+
+
+# --- Proper-noun expansion ---
+# Common Shakespearean names and places that may recur in training.
+_PROPER: tuple[str, ...] = (
+    # Additional named characters across plays
+    "Agamemnon", "Aguecheek", "Achilles", "Adriana", "Alcibiades",
+    "Amiens", "Andronicus", "Angelo", "Antigonus", "Archbishop",
+    "Arthur", "Audrey", "Autolycus", "Balthasar", "Barnardine",
+    "Bedford", "Belch", "Berowne", "Bertram", "Bianca", "Biondello",
+    "Boult", "Boyet", "Brabantio", "Bullcalf", "Canidius", "Cassandra",
+    "Celia", "Chiron", "Cicero", "Claudio", "Clifford", "Cloten",
+    "Conrade", "Constable", "Cominius", "Corin", "Cornwall", "Costard",
+    "Cranmer", "Cressida", "Curan", "Curtis", "Cymbeline",
+    "Dauphin", "Diana", "Diomedes", "Dogberry", "Dorcas", "Dromio",
+    "Dull", "Elbow", "Eleanor", "Emilia", "Enobarbus", "Escalus",
+    "Exeter", "Fabian", "Fang", "Ferdinand", "Feste", "Flavius",
+    "Florizel", "Fluellen", "Francisco", "Frederick", "Froth",
+    "Gaunt", "Glendower", "Gonzalo", "Gower", "Gratiano", "Gremio",
+    "Grumio", "Hecate", "Helicanus", "Hortensio", "Hume", "Iden",
+    "Isabella", "Jamy", "Jessica", "Juliet", "Julia", "Katharine",
+    "Lafeu", "Lavache", "Leonato", "Lepidus", "Ligarius", "Lodovico",
+    "Longaville", "Lorenzo", "Lucentio", "Lucetta", "Luciana", "Lucio",
+    "Lychorida", "Lysimachus", "Macduff", "Maria", "Marina", "Mariana",
+    "Mercade", "Mortimer", "Mowbray", "Nathaniel", "Nerissa", "Norfolk",
+    "Oberon", "Octavia", "Octavius", "Olivia", "Orleans", "Osric",
+    "Oswald", "Overdone", "Pandarus", "Pandulph", "Paris", "Patroclus",
+    "Paulina", "Peaseblossom", "Pedro", "Percy", "Peto", "Philario",
+    "Philemon", "Philostrate", "Phoebe", "Pinch", "Pindarus", "Pisanio",
+    "Polixenes", "Pompey", "Porter", "Proteus", "Publius", "Quickly",
+    "Quince", "Rambures", "Ratcliffe", "Reynaldo", "Rivers", "Roderigo",
+    "Rosalind", "Rosaline", "Rosencrantz", "Rousillon", "Salanio",
+    "Salarino", "Salisbury", "Saturninus", "Scarus", "Sebastian",
+    "Sempronius", "Servilius", "Shadow", "Sicinius", "Silvia", "Silvius",
+    "Simpcox", "Slender", "Snout", "Snug", "Solinus", "Somerset",
+    "Speed", "Stafford", "Stanley", "Starveling", "Stephano", "Stephen",
+    "Suffolk", "Talbot", "Tamora", "Thaisa", "Thersites", "Theseus",
+    "Thidias", "Thurio", "Timon", "Touchstone", "Tranio", "Tressel",
+    "Trinculo", "Troilus", "Tybalt", "Tyrrel", "Ursula", "Valentine",
+    "Varro", "Vaughan", "Ventidius", "Vernon", "Vincentio", "Viola",
+    "Volumnia", "Wart", "Westmoreland", "Williams", "Woodvile",
+    # Places
+    "Corinth", "Ephesus", "Illyria", "Navarre", "Padua", "Tyre",
+    "Antioch", "Carthage", "Messina", "Sicilia", "Bohemia", "Mytilene",
+    "Hallowmas", "Babylon", "Gadshill", "Shrewsbury", "Tewkesbury",
+    "Bosworth", "Agincourt", "Harfleur", "Calais", "Angiers", "Arde",
+)
+for _p in _PROPER:
+    _add_word(_p.lower())
+
+
 # Set of exact words (lowercased) — used by predict to apply an
 # additional terminator boost when the buffer matches a complete known
 # word, regardless of whether the word is also a prefix of other words.
