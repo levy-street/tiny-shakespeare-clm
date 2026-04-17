@@ -33,6 +33,7 @@ from ..pipeline.pos import (
 )
 from ..state import ModelState
 from ..vocab import VOCAB, VOCAB_INDEX, VOCAB_SIZE
+from .archaic import archaic_midword_bias, archaic_start_bias
 from .bigram import bigram_bias
 from .context import CTX_BIAS_VECTORS, context_key
 from .letter3 import letter3_bias
@@ -157,6 +158,15 @@ def predict(state: ModelState) -> list[float]:
         if wt is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += wt[i]
+
+    # Layer 3c2: archaic mid-word disambiguation — when buffer matches
+    # a prefix shared by archaic and modern words, lean toward the
+    # archaic completion in proportion to archaic_density.
+    if state.word_buffer and state.archaic_density > 0.0:
+        am = archaic_midword_bias(state.word_buffer, state.archaic_density)
+        if am is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += am[i]
 
 
 

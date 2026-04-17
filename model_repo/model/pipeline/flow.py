@@ -57,6 +57,35 @@ def _sent_distance_bucket(chars_since_sentence_end: int) -> int:
 _VOWELS_SET = frozenset("aeiouAEIOU")
 
 
+# Words whose appearance marks an archaic / early-modern register.
+# Not a frequency list — a hand-picked set of lexical markers that
+# unambiguously signal "this scene is in archaic mode". Each bumps
+# archaic_density by _ARCHAIC_BUMP (or _STRONG_BUMP for strong markers).
+_ARCHAIC_STRONG: frozenset[str] = frozenset({
+    "thou", "thee", "thy", "thine", "hath", "doth", "hast", "dost",
+    "wilt", "shalt", "art", "wert", "canst", "didst", "wouldst",
+    "couldst", "shouldst", "mayst", "mightst",
+    "prithee", "methinks", "forsooth", "wherefore", "whence",
+    "hither", "thither", "whither", "anon", "alack", "ere",
+    "marry", "sirrah", "zounds", "quoth", "mayhap",
+    "'tis", "'twas", "'twere", "'gainst",
+})
+_ARCHAIC_MILD: frozenset[str] = frozenset({
+    "nay", "yea", "ay", "fie", "oft", "mine",
+    "o'er", "ne'er", "e'er", "e'en",
+    "unto", "upon",
+})
+_ARCHAIC_STRONG_BUMP = 0.28
+_ARCHAIC_MILD_BUMP = 0.10
+_ARCHAIC_DECAY = 0.985  # per completed word
+# Modern-only markers that gently pull density down (explicitly
+# *not* archaic — we saw a modern form that suggests the register
+# is drifting toward modern). Small effect.
+_MODERN_MARKERS: frozenset[str] = frozenset({
+    "okay", "really",  # won't appear in Shakespeare; kept empty-ish
+})
+
+
 def update_flow(state: ModelState, token_id: int) -> ModelState:
     # Linguistic updates have already run; use the post-update state.
     wb = state.word_buffer
@@ -136,6 +165,26 @@ def update_flow(state: ModelState, token_id: int) -> ModelState:
             # blank or very short: mild decay toward 0
             verse_score *= 0.9
 
+    # Archaic register density: a rolling [0, 1] float.
+    # On each completed word, decay + bump based on the word.
+    archaic_density = state.archaic_density
+    if state.just_finished_word:
+        archaic_density *= _ARCHAIC_DECAY
+        w = state.last_completed_word
+        if w:
+            if w in _ARCHAIC_STRONG:
+                archaic_density = min(1.0, archaic_density + _ARCHAIC_STRONG_BUMP)
+            elif w in _ARCHAIC_MILD:
+                archaic_density = min(1.0, archaic_density + _ARCHAIC_MILD_BUMP)
+    # Reset to 0 at start of a new speaker's dialogue (post-label
+    # newline + double-newline would give us a fresh scene context).
+    # Concretely, reset when we just emitted a blank line after a
+    # label (consecutive_newlines == 2). This lets each speaker's
+    # register develop fresh but preserves continuity within a speech.
+    if state.consecutive_newlines >= 2 and state.last_char == "\n":
+        # Preserve a fraction so scene-wide register isn't fully lost.
+        archaic_density *= 0.6
+
     return state.model_copy(
         update={
             "on_word_trie": on_trie,
@@ -148,5 +197,6 @@ def update_flow(state: ModelState, token_id: int) -> ModelState:
             "vowels_in_word": vowels_in_word,
             "vowels_since_consonant": vowels_since_consonant,
             "verse_score": verse_score,
+            "archaic_density": archaic_density,
         }
     )

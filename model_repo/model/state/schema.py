@@ -233,3 +233,16 @@ class ModelState(BaseModel):
     # Used for verb-agreement-aware mid-word bias (e.g., after "thou"
     # the form "hast" is expected, not "have"). Reset on sentence end.
     subject_pronoun: str = ""
+
+    # --- Tier 3: register / texture ---
+    # A rolling [0, 1] float estimating how *archaic* the recent register
+    # has been. Bumped by archaic words like "thou", "hath", "doth",
+    # "ere", "anon", "prithee", "whence", "forsooth", "'tis", "'twas",
+    # and by archaic-contraction apostrophes; decays slowly per
+    # completed word. Captures the scene's archaic-texture feel — not
+    # counters. Consumed at word-start to bias archaic vs. modern
+    # word-initial letters. This is a genuine flow/register signal:
+    # lexical archaicness is self-reinforcing in Shakespeare (a speaker
+    # who just said "prithee" is far more likely to say "thou" next
+    # than one who just said "you" and "your").
+    archaic_density: float = 0.0
