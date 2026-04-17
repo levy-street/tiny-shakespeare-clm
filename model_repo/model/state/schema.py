@@ -133,3 +133,9 @@ class ModelState(BaseModel):
     # True when we're inside what looks like a prose paragraph (a newline
     # follows something other than a speaker-label/blank separator).
     in_prose_line: bool = False
+    # Coarse POS tag of `last_completed_word`. See pipeline/pos.py for
+    # the enumeration. 0 = UNKNOWN.
+    last_word_pos: int = 0
+    # POS tag of the word before last_completed_word — lets downstream
+    # layers look at a two-word POS context.
+    prev_word_pos: int = 0

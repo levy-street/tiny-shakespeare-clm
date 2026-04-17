@@ -22,6 +22,15 @@ from ..pipeline.linguistic import (
     SPACE,
     UPPER,
 )
+from ..pipeline.pos import (
+    _ARTICLES,
+    _AUX_VERBS,
+    _CONJUNCTIONS,
+    _MODALS,
+    _NEGATIONS,
+    _POSSESSIVES,
+    _PREPOSITIONS,
+)
 from ..state import ModelState
 from ..vocab import VOCAB, VOCAB_INDEX, VOCAB_SIZE
 from .bigram import bigram_bias
@@ -244,5 +253,49 @@ def predict(state: ModelState) -> list[float]:
         # Boost it to reflect natural word-break frequency.
         if state.letter_run_len >= 2 and state.on_word_trie:
             logits[VOCAB_INDEX[" "]] += 0.6
+
+        # POS-aware terminal punctuation bias. At word-end on-trie,
+        # the POS that JUST completed (captured at just_finished_word
+        # time, but here we rely on the fact that state.word_buffer is
+        # itself an active word still — so use a lookahead classifier
+        # on the buffer to predict what kind of word will have just
+        # completed). We approximate by using last_word_pos at the
+        # moment the space arrives, which happens in the next advance.
+        # For *this* boundary, use the buffer's suffix as a cue.
+        if (
+            state.letter_run_len >= 2
+            and state.on_word_trie
+            and state.word_buffer
+        ):
+            buf = state.word_buffer
+            # Function-word-ish buffer: after it, sentence end is very
+            # unlikely (penalize period/? /!). Check for short buffers
+            # matching known closed-class words.
+            is_closed = (
+                buf in _ARTICLES
+                or buf in _POSSESSIVES
+                or buf in _PREPOSITIONS
+                or buf in _CONJUNCTIONS
+                or buf in _AUX_VERBS
+                or buf in _MODALS
+            )
+            if is_closed:
+                # After function words, period/?/! are very unlikely;
+                # space is the clear winner.
+                logits[VOCAB_INDEX["."]] -= 2.5
+                if "?" in VOCAB_INDEX:
+                    logits[VOCAB_INDEX["?"]] -= 2.0
+                if "!" in VOCAB_INDEX:
+                    logits[VOCAB_INDEX["!"]] -= 2.0
+                if "," in VOCAB_INDEX:
+                    logits[VOCAB_INDEX[","]] -= 1.5
+                if ";" in VOCAB_INDEX:
+                    logits[VOCAB_INDEX[";"]] -= 1.0
+                if ":" in VOCAB_INDEX:
+                    logits[VOCAB_INDEX[":"]] -= 1.0
+                # Next char is almost always a space (preceding next word).
+                logits[VOCAB_INDEX[" "]] += 0.8
+                # Newline almost never happens after a function word.
+                logits[VOCAB_INDEX["\n"]] -= 1.8
 
     return _log_softmax(logits)
