@@ -212,6 +212,25 @@ def predict(state: ModelState) -> list[float]:
             for ch in "abcdefghijklmnopqrstuvwxyz":
                 if ch in VOCAB_INDEX:
                     logits[VOCAB_INDEX[ch]] -= 1.2
+
+        # Post-speaker-label newline: prev_line_length is small (the
+        # speaker label itself) and the line ended with ":". Dialogue
+        # starts here, almost always with a capital letter.
+        on_post_label_start = (
+            last_cls == NEWLINE
+            and state.consecutive_newlines == 1
+            and not is_sentence_start
+            and not on_verse_line_start
+            and 1 < state.prev_line_length < 15
+            and state.prev_char_class == 7  # PUNCT_MID (the ":" of the label)
+        )
+        if on_post_label_start:
+            for ch in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
+                if ch in VOCAB_INDEX:
+                    logits[VOCAB_INDEX[ch]] += 3.0
+            for ch in "abcdefghijklmnopqrstuvwxyz":
+                if ch in VOCAB_INDEX:
+                    logits[VOCAB_INDEX[ch]] -= 1.2
         # Additionally, at BOTH sentence-start and verse-line-start,
         # bias specific common starting capitals: T, A, W, I, O, B, H,
         # S, M, N, F, C, L, P, G, D, R, Y. Skip speaker-label context.
