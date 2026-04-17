@@ -302,6 +302,7 @@ def predict(state: ModelState) -> list[float]:
         elif csn >= 20:
             logits[VOCAB_INDEX["\n"]] += 1.8
 
+
     # After apostrophe, specifically boost common contraction letters.
     if last_cls == APOSTROPHE:
         for ch, boost in (("s", 2.0), ("d", 1.5), ("t", 1.5), ("l", 1.0),
@@ -318,12 +319,19 @@ def predict(state: ModelState) -> list[float]:
         # the word's terminator. Training verse wraps ~30-50 chars;
         # prose ~60-80.
         if state.letter_run_len >= 2 and state.on_word_trie:
-            if llb == 1:
-                logits[VOCAB_INDEX["\n"]] += 2.5
-            elif llb == 2:
-                logits[VOCAB_INDEX["\n"]] += 4.5
-            elif llb == 3:
+            csn = state.chars_since_newline
+            if csn >= 60:
+                logits[VOCAB_INDEX["\n"]] += 9.0
+            elif csn >= 50:
                 logits[VOCAB_INDEX["\n"]] += 7.5
+            elif csn >= 40:
+                logits[VOCAB_INDEX["\n"]] += 6.0
+            elif csn >= 35:
+                logits[VOCAB_INDEX["\n"]] += 4.5
+            elif csn >= 25:
+                logits[VOCAB_INDEX["\n"]] += 3.0
+            elif csn >= 20:
+                logits[VOCAB_INDEX["\n"]] += 2.0
         # Overdue sentence end: at word-end on-trie, boost sentence-end
         # punctuation so the model actually closes sentences.
         if state.letter_run_len >= 2 and state.on_word_trie and sdb >= 1:
