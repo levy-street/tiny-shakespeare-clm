@@ -380,8 +380,15 @@ _GLOBAL_SCALE = 0.4
 
 def _build_bias_vectors() -> dict[str, list[float]]:
     out: dict[str, list[float]] = {}
+    lowers = "abcdefghijklmnopqrstuvwxyz"
     for prefix, entries in _L3.items():
         vec = [0.0] * VOCAB_SIZE
+        # Default negative for letters not listed — unusual continuations
+        # after a common 3-letter prefix should be mildly penalized.
+        neg = -3.0 * _GLOBAL_SCALE
+        for target in lowers:
+            if target not in entries:
+                vec[VOCAB_INDEX[target]] = neg
         for nxt, bias in entries.items():
             if nxt in VOCAB_INDEX:
                 scaled = bias * _GLOBAL_SCALE
