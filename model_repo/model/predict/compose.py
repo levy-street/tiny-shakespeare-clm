@@ -286,6 +286,22 @@ def predict(state: ModelState) -> list[float]:
         elif csn >= 10:
             logits[VOCAB_INDEX["\n"]] += 1.2
 
+    # After mid-clause punctuation (, ; :) at a long-line position,
+    # newline is also somewhat more likely (enjambment after comma).
+    if (
+        last_cls == 7  # PUNCT_MID
+        and state.speaker_label_state == 0
+    ):
+        csn = state.chars_since_newline
+        if csn >= 50:
+            logits[VOCAB_INDEX["\n"]] += 7.0
+        elif csn >= 40:
+            logits[VOCAB_INDEX["\n"]] += 5.5
+        elif csn >= 30:
+            logits[VOCAB_INDEX["\n"]] += 3.5
+        elif csn >= 20:
+            logits[VOCAB_INDEX["\n"]] += 1.8
+
     # After apostrophe, specifically boost common contraction letters.
     if last_cls == APOSTROPHE:
         for ch, boost in (("s", 2.0), ("d", 1.5), ("t", 1.5), ("l", 1.0),
