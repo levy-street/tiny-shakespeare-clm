@@ -1600,7 +1600,7 @@ def _bias_for(prefix: str) -> list[float] | None:
     # Also apply a negative bump to *all* letters so that unlisted
     # continuations are gently penalized. The training corpus contains
     # countless words not in our list, so the bump must be gentle.
-    negative_bump = -1.0 * min(scale, 2.0)
+    negative_bump = -0.65 * min(scale, 2.0)
     for ch in "abcdefghijklmnopqrstuvwxyz":
         if ch in VOCAB_INDEX:
             vec[VOCAB_INDEX[ch]] = negative_bump
