@@ -1190,6 +1190,134 @@ for _base in _ARCHAIC_VERB_BASES:
         _add_word(_form)
 
 
+# --- Algorithmic -ly adverb generation ---
+#
+# Shakespeare routinely uses -ly adverbs. Many are in the _WORDS list,
+# but we systematically add -ly forms from a set of base adjectives,
+# using the usual English spelling rules.
+_ADV_BASES: tuple[str, ...] = (
+    "bold", "brave", "bright", "clear", "close", "cold", "cruel",
+    "dark", "dear", "deep", "dire", "eager", "empty", "equal",
+    "even", "fair", "false", "fierce", "fine", "firm", "free",
+    "full", "gentle", "glad", "grave", "green", "grim", "heavy",
+    "high", "humble", "just", "keen", "kind", "late", "light",
+    "loud", "low", "mad", "mild", "nimble", "noble", "pale",
+    "plain", "poor", "proud", "pure", "quick", "quiet", "rare",
+    "rich", "rough", "rude", "sad", "safe", "scarce", "secret",
+    "sharp", "short", "silent", "single", "slow", "smooth", "soft",
+    "sore", "stern", "still", "strong", "sudden", "sure", "sweet",
+    "tame", "tender", "tight", "tired", "true", "vain", "vile",
+    "warm", "weak", "wild", "wise", "worth",
+)
+
+
+def _ly_form(base: str) -> str:
+    if base.endswith("le"):
+        return base[:-1] + "y"  # gentle -> gently
+    if base.endswith("y"):
+        return base[:-1] + "ily"  # lazy -> lazily (rare but valid)
+    if base.endswith("ic"):
+        return base + "ally"  # tragic -> tragically
+    if base.endswith("e"):
+        return base + "ly"  # close -> closely
+    return base + "ly"
+
+
+for _b in _ADV_BASES:
+    _add_word(_ly_form(_b))
+
+
+# --- Algorithmic -s plural / 3sg generation ---
+#
+# For a restricted set of regular noun/verb bases we don't already cover,
+# add the standard -s / -es / -ies inflection. We only generate for
+# bases that clearly admit the inflection (e.g., ending in a consonant
+# or silent e); irregulars and already-plural forms are skipped.
+_REGULAR_BASES: tuple[str, ...] = (
+    "accord", "alarm", "allow", "alter", "amaze", "anger", "appeal",
+    "appear", "argue", "arm", "arrive", "ascend", "ask", "attempt",
+    "award", "bake", "banish", "bear", "beg", "beget", "behold",
+    "behave", "belong", "bestow", "betray", "beware", "blame",
+    "boast", "borrow", "branch", "breed", "bribe", "build", "burn",
+    "bury", "caress", "carve", "change", "charge", "charm", "cheer",
+    "chide", "choose", "climb", "cling", "cloak", "close", "clutch",
+    "coin", "combine", "compel", "condemn", "confirm", "confuse",
+    "consult", "crack", "crave", "crown", "crush", "curse", "damn",
+    "defend", "defy", "deliver", "depose", "despise", "destroy",
+    "detest", "devour", "disperse", "disturb", "divert", "divine",
+    "doubt", "dress", "drown", "earn", "elect", "embrace", "enchant",
+    "endure", "engage", "enjoin", "enlarge", "ensure", "envy",
+    "exalt", "excel", "exile", "expel", "extol", "fail", "fashion",
+    "favour", "fetch", "flatter", "frame", "gain", "glance", "grace",
+    "greet", "grieve", "guard", "guide", "hail", "haste", "heal",
+    "hire", "hunt", "hurl", "impart", "implore", "incline", "injure",
+    "inspire", "jest", "join", "judge", "lack", "lament", "land",
+    "laugh", "lean", "leap", "lend", "lift", "light", "linger",
+    "list", "listen", "long", "lurk", "maintain", "march", "measure",
+    "melt", "mend", "mend", "mend", "mourn", "muse", "neglect",
+    "oblige", "observe", "offend", "oppose", "paint", "pardon",
+    "perceive", "persuade", "pierce", "plead", "please", "plot",
+    "plunge", "possess", "pour", "praise", "pray", "preach",
+    "predict", "prefer", "prepare", "present", "preserve", "pretend",
+    "proclaim", "profess", "prolong", "promise", "pronounce",
+    "protect", "protest", "prove", "provoke", "pursue", "quit",
+    "reach", "recall", "receive", "reckon", "record", "reduce",
+    "refuse", "regard", "reign", "rejoice", "release", "relent",
+    "relieve", "rely", "remain", "remember", "remove", "rend",
+    "renounce", "repair", "repay", "repeat", "repent", "reply",
+    "report", "reprove", "request", "require", "reserve", "resist",
+    "resolve", "respect", "respond", "restore", "retire", "retreat",
+    "return", "reveal", "revenge", "revere", "revive", "roar",
+    "roll", "rouse", "ruin", "sail", "salute", "scold", "scorch",
+    "scorn", "scratch", "seal", "search", "seize", "sell", "send",
+    "sever", "shake", "shame", "shine", "shout", "shun", "shut",
+    "sigh", "sing", "slay", "smile", "snatch", "sound", "sparkle",
+    "speak", "speed", "spend", "spill", "spring", "squire", "stain",
+    "stand", "start", "stir", "stoop", "strain", "strike", "strive",
+    "stumble", "submit", "succeed", "suffer", "suggest", "suit",
+    "supply", "support", "suppress", "surpass", "surround",
+    "survive", "swear", "sweat", "sweep", "swell", "swoon",
+    "swoop", "taste", "teach", "tempt", "thank", "thirst", "threat",
+    "threaten", "thrive", "thrust", "tire", "toil", "torment",
+    "tread", "triumph", "trust", "twist", "uphold", "urge", "utter",
+    "vanish", "vaunt", "venture", "vex", "vow", "wail", "wander",
+    "watch", "weary", "weigh", "whisper", "wield", "wink", "withdraw",
+    "worship", "wrestle", "yearn", "yield",
+)
+
+
+def _regular_s(base: str) -> str:
+    if base.endswith(("s", "sh", "ch", "x", "z")):
+        return base + "es"
+    if base.endswith("y") and len(base) > 1 and base[-2] not in "aeiou":
+        return base[:-1] + "ies"
+    return base + "s"
+
+
+def _regular_ed(base: str) -> str:
+    if base.endswith("e"):
+        return base + "d"
+    if base.endswith("y") and len(base) > 1 and base[-2] not in "aeiou":
+        return base[:-1] + "ied"
+    # Doubled consonant for short-vowel CVC verbs is tricky; skip.
+    return base + "ed"
+
+
+def _regular_ing(base: str) -> str:
+    if base.endswith("ie"):
+        return base[:-2] + "ying"  # die -> dying
+    if base.endswith("e") and not base.endswith("ee"):
+        return base[:-1] + "ing"
+    return base + "ing"
+
+
+for _b in _REGULAR_BASES:
+    _add_word(_b)
+    _add_word(_regular_s(_b))
+    _add_word(_regular_ed(_b))
+    _add_word(_regular_ing(_b))
+
+
 # Set of exact words (lowercased) — used by predict to apply an
 # additional terminator boost when the buffer matches a complete known
 # word, regardless of whether the word is also a prefix of other words.
