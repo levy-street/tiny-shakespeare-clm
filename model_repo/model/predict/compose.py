@@ -334,17 +334,30 @@ def predict(state: ModelState) -> list[float]:
                 logits[VOCAB_INDEX["\n"]] += 2.0
         # Overdue sentence end: at word-end on-trie, boost sentence-end
         # punctuation so the model actually closes sentences.
-        if state.letter_run_len >= 2 and state.on_word_trie and sdb >= 1:
-            bump = 4.5 if sdb == 1 else 7.0
-            logits[VOCAB_INDEX["."]] += bump
-            if "?" in VOCAB_INDEX:
-                logits[VOCAB_INDEX["?"]] += bump * 0.3
-            if "!" in VOCAB_INDEX:
-                logits[VOCAB_INDEX["!"]] += bump * 0.3
-            if "," in VOCAB_INDEX:
-                logits[VOCAB_INDEX[","]] += bump * 0.6
-            if ";" in VOCAB_INDEX:
-                logits[VOCAB_INDEX[";"]] += bump * 0.45
+        if state.letter_run_len >= 2 and state.on_word_trie:
+            csse = state.chars_since_sentence_end
+            if csse >= 100:
+                bump = 7.5
+            elif csse >= 80:
+                bump = 6.5
+            elif csse >= 60:
+                bump = 5.5
+            elif csse >= 45:
+                bump = 4.5
+            elif csse >= 30:
+                bump = 2.5
+            else:
+                bump = 0.0
+            if bump > 0.0:
+                logits[VOCAB_INDEX["."]] += bump
+                if "?" in VOCAB_INDEX:
+                    logits[VOCAB_INDEX["?"]] += bump * 0.3
+                if "!" in VOCAB_INDEX:
+                    logits[VOCAB_INDEX["!"]] += bump * 0.3
+                if "," in VOCAB_INDEX:
+                    logits[VOCAB_INDEX[","]] += bump * 0.6
+                if ";" in VOCAB_INDEX:
+                    logits[VOCAB_INDEX[";"]] += bump * 0.45
         # Shakespeare is comma-heavy. Mid-sentence (before reaching the
         # "sentence is overdue" state handled above), bias toward commas
         # and semicolons at word-end-on-trie positions.
