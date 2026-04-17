@@ -203,7 +203,7 @@ def predict(state: ModelState) -> list[float]:
             last_cls == NEWLINE
             and state.consecutive_newlines == 1
             and not is_sentence_start
-            and 15 <= state.prev_line_length <= 55
+            and 1 <= state.prev_line_length <= 80
         )
         if on_verse_line_start:
             for ch in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
