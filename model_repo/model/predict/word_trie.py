@@ -1611,7 +1611,7 @@ def _bias_for(prefix: str) -> list[float] | None:
         frac = w / total
         # log-ratio against a baseline of 0.05 — treats frac 0.05 as
         # neutral, larger fracs as boosts.
-        bias = scale * math.log((frac + 0.02) / 0.05)
+        bias = scale * math.log((frac + 0.02) / 0.03)
         vec[VOCAB_INDEX[ch]] = bias
         if ch.isalpha():
             up = ch.upper()
