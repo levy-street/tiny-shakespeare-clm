@@ -326,7 +326,11 @@ def predict(state: ModelState) -> list[float]:
         # on progressively longer lines, newline becomes more likely as
         # the word's terminator. Training verse wraps ~30-50 chars;
         # prose ~60-80.
-        if state.letter_run_len >= 2 and state.on_word_trie:
+        if (
+            (state.letter_run_len >= 2 and state.on_word_trie)
+            or (state.letter_run_len == 1
+                and state.word_buffer in COMPLETE_WORDS)
+        ):
             csn = state.chars_since_newline
             if csn >= 60:
                 logits[VOCAB_INDEX["\n"]] += 9.0
@@ -356,7 +360,11 @@ def predict(state: ModelState) -> list[float]:
                 logits[VOCAB_INDEX["\n"]] += 1.2
         # Overdue sentence end: at word-end on-trie, boost sentence-end
         # punctuation so the model actually closes sentences.
-        if state.letter_run_len >= 2 and state.on_word_trie:
+        if (
+            (state.letter_run_len >= 2 and state.on_word_trie)
+            or (state.letter_run_len == 1
+                and state.word_buffer in COMPLETE_WORDS)
+        ):
             csse = state.chars_since_sentence_end
             if csse >= 100:
                 bump = 7.5
@@ -409,9 +417,15 @@ def predict(state: ModelState) -> list[float]:
         # Shakespeare is comma-heavy. Mid-sentence (before reaching the
         # "sentence is overdue" state handled above), bias toward commas
         # and semicolons at word-end-on-trie positions.
-        if (
-            state.letter_run_len >= 2
+        is_complete_word = (
+            state.word_buffer in COMPLETE_WORDS
             and state.on_word_trie
+        )
+        if (
+            (
+                (state.letter_run_len >= 2 and state.on_word_trie)
+                or (state.letter_run_len == 1 and is_complete_word)
+            )
             and state.chars_since_sentence_end < 40
         ):
             if "," in VOCAB_INDEX:
