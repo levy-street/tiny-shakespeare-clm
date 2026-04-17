@@ -333,6 +333,24 @@ def predict(state: ModelState) -> list[float]:
                           ("r", 0.8), ("v", 0.8)):
             logits[VOCAB_INDEX[ch]] += boost
 
+    # After a contraction letter (apostrophe two characters back, with a
+    # letter in between — e.g. "I'l", "he's", "I'v"), the next char is
+    # very often either another contraction letter (for "'ll"/"'ve") or
+    # a word terminator (space/comma/period).
+    if (
+        state.prev_char_class == APOSTROPHE
+        and state.last_char_class in (LOWER_CONS, LOWER_VOWEL)
+    ):
+        # Boost space/terminator to close out the contraction.
+        logits[VOCAB_INDEX[" "]] += 5.5
+        # Specific letter doublings: 'll / 've.
+        if state.last_char == "l":
+            logits[VOCAB_INDEX["l"]] += 3.5
+        if state.last_char == "v":
+            logits[VOCAB_INDEX["e"]] += 4.0
+        if state.last_char == "r":
+            logits[VOCAB_INDEX["e"]] += 3.0  # 're (you're)
+
     # Layer 6: line-position / flow-aware modulations.
     # Only apply when we're outside speaker-label territory.
     if state.speaker_label_state == 0:
