@@ -61,9 +61,46 @@ class ModelState(BaseModel):
     # --- Tier 1: base ---
     tokens_seen: int = 0
     last_token_id: int = -1  # -1 sentinel: no token observed yet
+    last_char: str = ""  # "" before any token; otherwise single char
 
     # --- Tier 2: linguistic ---
-    # (add fields here)
+    # Character-class bucket of the last emitted character. See
+    # pipeline.linguistic for the enumeration.
+    last_char_class: int = 0
+    # Bucket before last (for bigram-of-bigrams context).
+    prev_char_class: int = 0
+    # Length of the run of consecutive letters ending at last char
+    # (0 if last char is not a letter). This is "word position + 1".
+    letter_run_len: int = 0
+    # Length of run of consecutive uppercase letters ending at last char.
+    upper_run_len: int = 0
+    # Consecutive newlines immediately preceding the cursor. 0 if last
+    # char was not \n.
+    consecutive_newlines: int = 0
+    # Chars since the last newline (how deep into current line).
+    chars_since_newline: int = 0
+    # Chars since the last space or newline (rough word-start distance).
+    chars_since_space: int = 0
+    # Chars since the last sentence-ending punctuation (. ? !).
+    chars_since_sentence_end: int = 0
+    # Did we just finish a completed word? (letter run ended with non-letter)
+    just_finished_word: bool = False
+    # Length of the word that just finished (or the current word so far).
+    current_word_len: int = 0
+    # The last completed word's final letter (lowercase) — hint for
+    # predicting the character that follows a space.
+    last_completed_word_tail: str = ""
+    # Speaker-label FSM state:
+    #   0 — not in / just after speaker label
+    #   1 — right after "\n\n", expecting capital letter
+    #   2 — inside upper-case speaker label (UPPERS [space UPPERS]*)
+    #   3 — just past ":" at end of speaker label; newline expected
+    speaker_label_state: int = 0
+    # Whether last char was start-of-line context that we treat as
+    # "beginning of a sentence" (post double-newline or post ". ").
+    sentence_start_pending: bool = False
+    # Is last char a vowel (aeiouAEIOU)?
+    last_is_vowel: bool = False
 
     # --- Tier 3: flow ---
     # (add fields here)
