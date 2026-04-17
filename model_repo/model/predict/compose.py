@@ -156,8 +156,20 @@ def predict(state: ModelState) -> list[float]:
             if "!" in VOCAB_INDEX:
                 logits[VOCAB_INDEX["!"]] += bump * 0.3
             if "," in VOCAB_INDEX:
-                logits[VOCAB_INDEX[","]] += bump * 0.5
+                logits[VOCAB_INDEX[","]] += bump * 0.6
             if ";" in VOCAB_INDEX:
-                logits[VOCAB_INDEX[";"]] += bump * 0.4
+                logits[VOCAB_INDEX[";"]] += bump * 0.45
+        # Even in short sentences, a comma becomes plausible after a
+        # few completed words — Shakespeare is comma-heavy.
+        if (
+            state.letter_run_len >= 2
+            and state.on_word_trie
+            and state.chars_since_sentence_end >= 10
+            and state.chars_since_sentence_end < 40
+        ):
+            if "," in VOCAB_INDEX:
+                logits[VOCAB_INDEX[","]] += 4.8
+            if ";" in VOCAB_INDEX:
+                logits[VOCAB_INDEX[";"]] += 2.0
 
     return _log_softmax(logits)
