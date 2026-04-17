@@ -26,6 +26,7 @@ from ..state import ModelState
 from ..vocab import VOCAB, VOCAB_INDEX, VOCAB_SIZE
 from .bigram import bigram_bias
 from .context import CTX_BIAS_VECTORS, context_key
+from .letter3 import letter3_bias
 from .next_word import next_word_bias
 from .speaker_trie import speaker_trie_bias
 from .startword import START_BIAS
@@ -67,6 +68,13 @@ def predict(state: ModelState) -> list[float]:
         if tg is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += tg[i]
+
+    # Layer 3b2: letter-trigram bias (last 3 letters → next).
+    if state.word_buffer:
+        l3 = letter3_bias(state.word_buffer)
+        if l3 is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += l3[i]
 
     # Layer 3c: word-trie completion bias.
     if state.word_buffer:
