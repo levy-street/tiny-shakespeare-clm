@@ -96,7 +96,7 @@ STARTBIGRAM_BIAS: dict[str, list[float]] = _build_vectors()
 
 
 # Global scale (lowered at integration tune time)
-_GLOBAL_SCALE = 0.3
+_GLOBAL_SCALE = 0.7
 
 
 def startbigram_bias(first_letter: str) -> list[float] | None:
