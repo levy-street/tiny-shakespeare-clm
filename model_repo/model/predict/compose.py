@@ -460,6 +460,17 @@ def predict(state: ModelState) -> list[float]:
                 logits[VOCAB_INDEX["\n"]] += 2.5
             elif csn >= 22:
                 logits[VOCAB_INDEX["\n"]] += 1.2
+        # Sentence-type-dependent end-punct ratios. Summed ratios stay
+        # near the original (1.0 + 0.3 + 0.3 = 1.6) so total end-punct
+        # mass stays calibrated; we reshuffle within the budget.
+        st_type = state.sentence_type
+        if st_type == 2:  # INTERROGATIVE
+            ratio_period, ratio_q, ratio_excl = 0.35, 1.15, 0.15
+        elif st_type == 3:  # EXCLAMATIVE
+            ratio_period, ratio_q, ratio_excl = 0.55, 0.20, 0.90
+        else:  # DECL or UNKNOWN: original shape
+            ratio_period, ratio_q, ratio_excl = 1.0, 0.3, 0.3
+
         # Overdue sentence end: at word-end on-trie, boost sentence-end
         # punctuation so the model actually closes sentences.
         if (
@@ -481,11 +492,11 @@ def predict(state: ModelState) -> list[float]:
             else:
                 bump = 0.0
             if bump > 0.0:
-                logits[VOCAB_INDEX["."]] += bump
+                logits[VOCAB_INDEX["."]] += bump * ratio_period
                 if "?" in VOCAB_INDEX:
-                    logits[VOCAB_INDEX["?"]] += bump * 0.3
+                    logits[VOCAB_INDEX["?"]] += bump * ratio_q
                 if "!" in VOCAB_INDEX:
-                    logits[VOCAB_INDEX["!"]] += bump * 0.3
+                    logits[VOCAB_INDEX["!"]] += bump * ratio_excl
                 if "," in VOCAB_INDEX:
                     logits[VOCAB_INDEX[","]] += bump * 0.6
                 if ";" in VOCAB_INDEX:
@@ -507,11 +518,11 @@ def predict(state: ModelState) -> list[float]:
             else:
                 bump = 0.0
             if bump > 0.0:
-                logits[VOCAB_INDEX["."]] += bump
+                logits[VOCAB_INDEX["."]] += bump * ratio_period
                 if "?" in VOCAB_INDEX:
-                    logits[VOCAB_INDEX["?"]] += bump * 0.3
+                    logits[VOCAB_INDEX["?"]] += bump * ratio_q
                 if "!" in VOCAB_INDEX:
-                    logits[VOCAB_INDEX["!"]] += bump * 0.3
+                    logits[VOCAB_INDEX["!"]] += bump * ratio_excl
                 if "," in VOCAB_INDEX:
                     logits[VOCAB_INDEX[","]] += bump * 0.5
                 if ";" in VOCAB_INDEX:

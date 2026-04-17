@@ -19,6 +19,7 @@ from .counters import update_basic_counters
 from .flow import update_flow
 from .linguistic import update_linguistic
 from .pos import update_pos
+from .sentence import update_sentence
 
 Stage = Callable[[ModelState, int], ModelState]
 
@@ -26,6 +27,7 @@ PIPELINE: list[Stage] = [
     update_basic_counters,  # Tier 1: base bookkeeping
     update_linguistic,      # Tier 2: linguistic structure
     update_pos,             # Tier 2: POS tag of last completed word
+    update_sentence,        # Tier 2/3: sentence-type FSM
     update_flow,            # Tier 3: flow / mood / cadence
 ]
 

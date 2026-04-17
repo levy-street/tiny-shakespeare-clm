@@ -167,3 +167,17 @@ class ModelState(BaseModel):
     # Number of consecutive vowels since the last consonant in the
     # current word. Resets on consonant or word break.
     vowels_since_consonant: int = 0
+
+    # --- Tier 2/3: sentence-type FSM ---
+    # Classification of the current sentence in progress:
+    #   0 = UNKNOWN (not yet classified; before first word of sentence)
+    #   1 = DECLARATIVE (default; ends in .)
+    #   2 = INTERROGATIVE (WH-question or aux-inversion; ends in ?)
+    #   3 = EXCLAMATIVE (begins with O, Alas, How, etc.; often ends in !)
+    # Updated by pipeline/sentence.py after a word completes at sentence
+    # position 0. Reset to UNKNOWN on sentence-ending punctuation.
+    sentence_type: int = 0
+    # Number of completed words since the last sentence-end punctuation
+    # (or since the start of the text). Used to detect "first word of
+    # sentence" for type classification.
+    words_in_sentence: int = 0
