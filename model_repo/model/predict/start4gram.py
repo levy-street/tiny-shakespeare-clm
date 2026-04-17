@@ -246,7 +246,7 @@ def _build_bias_vectors() -> dict[str, list[float]]:
         vec = [0.0] * VOCAB_SIZE
         # Mild negative for unlisted letters: penalize rare 4th-letter
         # continuations given a known 3-letter word start.
-        neg = -1.2
+        neg = -6.0
         for target in lowers:
             if target not in entries:
                 vec[VOCAB_INDEX[target]] = neg

@@ -366,7 +366,7 @@ def _build_bias_vectors() -> dict[str, list[float]]:
     lowers = "abcdefghijklmnopqrstuvwxyz"
     for prefix, entries in _S5.items():
         vec = [0.0] * VOCAB_SIZE
-        neg = -4.0
+        neg = -6.0
         for target in lowers:
             if target not in entries:
                 vec[VOCAB_INDEX[target]] = neg
