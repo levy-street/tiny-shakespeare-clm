@@ -199,18 +199,46 @@ def predict(state: ModelState) -> list[float]:
         # letter even when no sentence-ending punctuation is present.
         # Skip when already handled by is_sentence_start; skip when the
         # previous line was very short (blank/label) or very long (prose).
-        if (
+        on_verse_line_start = (
             last_cls == NEWLINE
             and state.consecutive_newlines == 1
             and not is_sentence_start
             and 15 <= state.prev_line_length <= 55
-        ):
+        )
+        if on_verse_line_start:
             for ch in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
                 if ch in VOCAB_INDEX:
                     logits[VOCAB_INDEX[ch]] += 1.0
             for ch in "abcdefghijklmnopqrstuvwxyz":
                 if ch in VOCAB_INDEX:
                     logits[VOCAB_INDEX[ch]] -= 0.35
+        # Additionally, at BOTH sentence-start and verse-line-start,
+        # bias specific common starting capitals: T, A, W, I, O, B, H,
+        # S, M, N, F, C, L, P, G, D, R, Y. Skip speaker-label context.
+        if (is_sentence_start or on_verse_line_start) and state.speaker_label_state == 0:
+            line_start_caps = {
+                "T": 1.2,  # The, That, This, To, Thou, Then, There, Though, Tell
+                "A": 1.0,  # And, A, As, At, All, Art, After, Above
+                "W": 1.0,  # When, Who, What, With, We, Were, Will, Which
+                "I": 0.8,  # I, In, Is, It, If
+                "O": 0.7,  # O, Oh, Or, Of, On, Our
+                "B": 0.8,  # But, By, Be, Before, Behold
+                "H": 0.8,  # He, His, Her, Have, Hath, How, Here
+                "S": 0.7,  # So, She, Shall, Should, Still
+                "M": 0.7,  # My, Me, Must, Most, Must
+                "N": 0.6,  # Now, No, Not, Never, Nay
+                "F": 0.6,  # For, From, Father
+                "C": 0.5,  # Come, Could
+                "L": 0.4,  # Let, Look, Like, Love
+                "P": 0.4,  # Pray, Peace, Poor
+                "G": 0.4,  # Good, God, Go
+                "D": 0.3,  # Do, Doth, Did, Dear
+                "R": 0.3,  # Rome, Rich
+                "Y": 0.5,  # You, Your, Yet, Ye, Yes
+            }
+            for ch, b in line_start_caps.items():
+                if ch in VOCAB_INDEX:
+                    logits[VOCAB_INDEX[ch]] += b
 
     # Layer 5: speaker-label-specific boosts.
     if state.speaker_label_state == 3:
@@ -272,6 +300,7 @@ def predict(state: ModelState) -> list[float]:
         # Boost it to reflect natural word-break frequency.
         if state.letter_run_len >= 2 and state.on_word_trie:
             logits[VOCAB_INDEX[" "]] += 0.6
+
 
         # POS-aware terminal punctuation bias. At word-end on-trie,
         # the POS that JUST completed (captured at just_finished_word

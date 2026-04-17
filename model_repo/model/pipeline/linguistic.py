@@ -90,6 +90,10 @@ def update_linguistic(state: ModelState, token_id: int) -> ModelState:
     chars_since_sentence_end = (
         0 if cls == PUNCT_END else state.chars_since_sentence_end + 1
     )
+    # Reset comma-distance on any PUNCT_END or PUNCT_MID (. ? ! , ; :) — these
+    # are all clausal boundaries that Shakespeare uses in alternation.
+    is_clause_break = cls in (PUNCT_END, PUNCT_MID)
+    chars_since_comma = 0 if is_clause_break else state.chars_since_comma + 1
 
     # Word completion.
     just_finished_word = (state.letter_run_len > 0) and not is_letter
@@ -205,6 +209,7 @@ def update_linguistic(state: ModelState, token_id: int) -> ModelState:
             "speaker_label_saw_lower": speaker_label_saw_lower,
             "chars_since_space": chars_since_space,
             "chars_since_sentence_end": chars_since_sentence_end,
+            "chars_since_comma": chars_since_comma,
             "just_finished_word": just_finished_word,
             "current_word_len": current_word_len,
             "last_completed_word_tail": last_completed_word_tail,

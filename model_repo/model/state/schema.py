@@ -84,6 +84,10 @@ class ModelState(BaseModel):
     chars_since_space: int = 0
     # Chars since the last sentence-ending punctuation (. ? !).
     chars_since_sentence_end: int = 0
+    # Chars since the last comma, semicolon, or colon. Shakespeare
+    # tends to use a comma every 12-25 chars; this helps the predict
+    # layer time the next clausal pause.
+    chars_since_comma: int = 0
     # Did we just finish a completed word? (letter run ended with non-letter)
     just_finished_word: bool = False
     # Length of the word that just finished (or the current word so far).
