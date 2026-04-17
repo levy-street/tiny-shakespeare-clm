@@ -267,13 +267,13 @@ def _bias_for(prefix: str) -> list[float] | None:
     # Scale: how strongly we believe the prefix implies a known word.
     # Too strong on short prefixes would overfit to our word list; so we
     # ramp up aggressively with length.
-    scale = min(0.4 + 0.8 * n, 3.5)
+    scale = min(0.4 + 0.5 * n, 2.5)
     total = sum(nexts.values())
     vec = [0.0] * VOCAB_SIZE
     # Also apply a negative bump to *all* letters so that unlisted
-    # continuations are gently penalized. This makes the trie act as a
-    # soft prior toward our vocabulary.
-    negative_bump = -0.5 * min(scale, 2.0)
+    # continuations are gently penalized. The training corpus contains
+    # countless words not in our list, so the bump must be gentle.
+    negative_bump = -0.15 * min(scale, 2.0)
     for ch in "abcdefghijklmnopqrstuvwxyz":
         if ch in VOCAB_INDEX:
             vec[VOCAB_INDEX[ch]] = negative_bump

@@ -113,4 +113,19 @@ class ModelState(BaseModel):
     last_completed_word: str = ""
 
     # --- Tier 3: flow ---
-    # (add fields here)
+    # Is the current word_buffer still a prefix of some known word? False
+    # when we have no buffer or when the buffer has drifted off-trie.
+    on_word_trie: bool = True
+    # Rough line-length floor threshold bucket — encodes "is the line
+    # already long enough to plausibly end?". Derived from chars_since_newline.
+    # 0: short (<20), 1: medium (20-34), 2: long (35-49), 3: overlong (>=50)
+    line_length_bucket: int = 0
+    # Distance (in chars) since the last sentence-end punctuation, bucketed.
+    # 0: very recent (<40), 1: due (40-79), 2: overdue (>=80)
+    sent_distance_bucket: int = 0
+    # True when the last completed word is a short closed-class word
+    # (pronoun, auxiliary, preposition) — next word is likely content.
+    after_function_word: bool = False
+    # True when we're inside what looks like a prose paragraph (a newline
+    # follows something other than a speaker-label/blank separator).
+    in_prose_line: bool = False

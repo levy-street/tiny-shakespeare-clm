@@ -151,6 +151,7 @@ async def run_session(log_file) -> None:
         permission_mode="bypassPermissions",
         max_turns=None,  # unlimited
         effort="max",
+        betas=["context-1m-2025-08-07"],  # 1M context, fewer session restarts
         hooks={
             "PreToolUse": [HookMatcher(matcher=None, hooks=[guard_hook])],
         },
