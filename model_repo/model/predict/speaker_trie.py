@@ -157,6 +157,78 @@ _SPEAKERS: tuple[str, ...] = (
     "FERDINAND", "KING OF NAVARRE",
     "MOTH", "ARMADO", "COSTARD", "HOLOFERNES", "NATHANIEL",
     "DULL", "JAQUENETTA",
+    # More Antony & Cleopatra / Julius Caesar
+    "AGRIPPA", "PROCULEIUS", "DOLABELLA", "THIDIAS",
+    "MENECRATES", "CANIDIUS", "PHILO", "DERCETAS",
+    "METELLUS", "CINNA", "TREBONIUS", "DECIUS",
+    "ARTEMIDORUS", "FLAVIUS", "MARULLUS", "VOLUMNIUS",
+    "VARRO", "CLITUS", "DARDANIUS", "STRATO", "TITINIUS",
+    "PINDARUS", "LEPIDUS", "YOUNG CATO",
+    # Measure for Measure
+    "ISABELLA", "ANGELO", "ESCALUS", "CLAUDIO", "MARIANA",
+    "LUCIO", "POMPEY", "ELBOW", "FROTH", "ABHORSON",
+    "BARNARDINE", "OVERDONE", "MISTRESS OVERDONE",
+    "PROVOST", "JULIET",
+    # All's Well That Ends Well
+    "HELENA", "BERTRAM", "PAROLLES", "LAFEU", "COUNTESS",
+    "LAVACH", "LAVATCH",
+    # Much Ado About Nothing extras
+    "LEONATO", "ANTONIO", "BORACHIO", "CONRADE",
+    "SEACOAL", "VERGES", "DON JOHN", "DON PEDRO",
+    "URSULA", "MARGARET",
+    # Merry Wives of Windsor
+    "FORD", "MISTRESS FORD", "PAGE", "MISTRESS PAGE",
+    "SHALLOW", "SLENDER", "EVANS", "DOCTOR CAIUS",
+    "CAIUS", "FENTON", "ANNE PAGE", "ROBIN",
+    "WILLIAM", "PISTOL", "SIMPLE", "RUGBY",
+    # Winter's Tale / Cymbeline more
+    "ANTIGONUS", "EMILIA", "AUTOLYCUS", "CLOWN",
+    "OLD SHEPHERD", "SHEPHERD", "YOUNG SHEPHERD",
+    "MARINER", "TIME", "FIRST SHEPHERD",
+    # Henry VIII
+    "WOLSEY", "CARDINAL WOLSEY", "CRANMER", "CROMWELL",
+    "SURVEYOR", "CHAMBERLAIN", "LORD CHAMBERLAIN",
+    "GARDINER", "LOVELL", "BRANDON", "CAMPEIUS",
+    "CAPUCHIUS", "GRIFFITH", "PATIENCE",
+    # Two Gentlemen / extras
+    "LAUNCE", "SPEED", "PANTHINO", "EGLAMOUR",
+    # Comedy of Errors
+    "ANTIPHOLUS", "DROMIO", "SOLINUS", "ANGELO",
+    "LUCIANA", "ADRIANA", "AEMILIA",
+    # Pericles extras
+    "GOWER", "DIONYZA", "CLEON", "PHILEMON",
+    # Henry IV / V extras
+    "FANG", "SNARE", "DAVY", "FEEBLE", "WART",
+    "MOULDY", "BULLCALF", "SHADOW", "PETO",
+    "CHIEF JUSTICE", "LORD CHIEF JUSTICE",
+    "DAUPHIN", "CONSTABLE", "MOUNTJOY", "ERPINGHAM",
+    "RAMBURES", "GRANDPRE", "GOVERNOR",
+    # Henry VI parts 1-3
+    "VERNON", "BASSET", "MARGARET", "QUEEN MARGARET",
+    "LEWIS", "KING LEWIS", "KING LEWIS XI",
+    "REIGNIER", "ALENCON", "CHARLES", "BASTARD",
+    "BEVIS", "GEORGE", "HOLLAND", "MICHAEL",
+    "YOUNG CLIFFORD", "SAY", "LORD SAY",
+    # Richard III extras
+    "DUCHESS", "DUCHESS OF YORK", "QUEEN ELIZABETH",
+    "KING EDWARD IV", "BRAKENBURY", "LORD MAYOR",
+    "BLUNT", "BREAKENBURY", "DIGHTON", "FORREST",
+    # King Lear extras
+    "CURAN", "OLD MAN",
+    # Tempest extras
+    "BOATSWAIN", "MASTER", "MARINERS", "IRIS",
+    "CERES", "JUNO", "NYMPHS", "REAPERS",
+    # Othello extras
+    "GRATIANO",
+    # Much Ado / LLL extras
+    "BENEDICK", "BEATRICE", "HERO", "BALTHASAR",
+    # Hamlet extras
+    "GHOST", "PLAYER KING", "PLAYER QUEEN",
+    "FIRST PLAYER", "SECOND PLAYER",
+    "FIRST CLOWN", "SECOND CLOWN",
+    "FIRST GRAVEDIGGER",
+    "FIRST AMBASSADOR",
+    "VOLTIMAND", "CORNELIUS",
 )
 
 
