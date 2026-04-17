@@ -293,46 +293,84 @@ def predict(state: ModelState) -> list[float]:
     wb = state.word_buffer
     if subj and wb and state.letter_run_len >= 1:
         if subj == "thou":
-            # "ha" → prefer "s" (hast) over "v" (have)
+            # Archaic 2nd-person singular: -st endings strongly preferred.
             if wb == "ha":
-                logits[VOCAB_INDEX["s"]] += 1.5
-                logits[VOCAB_INDEX["v"]] -= 0.8
-                logits[VOCAB_INDEX["d"]] += 0.2  # had is rare after thou
-            # "d" → prefer "o" (dost/doth) over "i/o..." sequences
-            # actually "d" is ambiguous. Skip.
-            # "wil" → prefer "t" (wilt) over "l" (will)
+                logits[VOCAB_INDEX["s"]] += 1.5  # hast
+                logits[VOCAB_INDEX["v"]] -= 0.8  # have (modern)
+                logits[VOCAB_INDEX["d"]] += 0.2
+            elif wb == "has":
+                logits[VOCAB_INDEX["t"]] += 1.8  # hast (complete -st)
             elif wb == "wil":
-                logits[VOCAB_INDEX["t"]] += 1.5
-                logits[VOCAB_INDEX["l"]] -= 0.3
-            # "sha" → prefer "l" (shalt) both have shall. Actually shalt
-            # "shal" → prefer "t" (shalt) over "l" (shall)
+                logits[VOCAB_INDEX["t"]] += 1.5  # wilt
+                logits[VOCAB_INDEX["l"]] -= 0.3  # will (modern)
             elif wb == "shal":
-                logits[VOCAB_INDEX["t"]] += 1.5
+                logits[VOCAB_INDEX["t"]] += 1.5  # shalt
                 logits[VOCAB_INDEX["l"]] -= 0.3
-            # "ar" → prefer "t" (art) over "e" (are)
             elif wb == "ar":
-                logits[VOCAB_INDEX["t"]] += 1.2
-                logits[VOCAB_INDEX["e"]] -= 0.4
-            # "do" → prefer "s" (dost) or "t" (doth) over "e" (does)
+                logits[VOCAB_INDEX["t"]] += 1.2  # art
+                logits[VOCAB_INDEX["e"]] -= 0.4  # are
             elif wb == "do":
-                logits[VOCAB_INDEX["s"]] += 1.0
-                logits[VOCAB_INDEX["t"]] += 1.0
-                logits[VOCAB_INDEX["e"]] -= 0.6
-            # "ha" → hast (see above); "has" → prefer "t" (hast) over
-            # nothing — hast ends there. So after "has" the next might
-            # be " ".
+                logits[VOCAB_INDEX["s"]] += 1.0  # dost
+                logits[VOCAB_INDEX["t"]] += 1.0  # doth
+                logits[VOCAB_INDEX["e"]] -= 0.6  # does
+            elif wb == "dos":
+                logits[VOCAB_INDEX["t"]] += 1.8  # dost
+            elif wb == "can":
+                logits[VOCAB_INDEX["s"]] += 1.2  # canst
+                logits[VOCAB_INDEX["t"]] -= 0.3  # can't less likely after thou
+            elif wb == "cans":
+                logits[VOCAB_INDEX["t"]] += 1.8  # canst
+            elif wb == "di":
+                logits[VOCAB_INDEX["d"]] += 0.4  # didst
+            elif wb == "did":
+                logits[VOCAB_INDEX["s"]] += 1.3  # didst
+            elif wb == "dids":
+                logits[VOCAB_INDEX["t"]] += 1.8  # didst
+            elif wb == "ma":
+                logits[VOCAB_INDEX["y"]] += 0.2
+            elif wb == "may":
+                logits[VOCAB_INDEX["s"]] += 1.1  # mayst
+            elif wb == "mays":
+                logits[VOCAB_INDEX["t"]] += 1.8  # mayst
+            elif wb == "mig":
+                logits[VOCAB_INDEX["h"]] += 0.2
+            elif wb == "might":
+                logits[VOCAB_INDEX["s"]] += 0.9  # mightst (rare)
+            elif wb == "woul":
+                logits[VOCAB_INDEX["d"]] += 0.5
+            elif wb == "would":
+                logits[VOCAB_INDEX["s"]] += 1.3  # wouldst
+            elif wb == "woulds":
+                logits[VOCAB_INDEX["t"]] += 1.8
+            elif wb == "coul":
+                logits[VOCAB_INDEX["d"]] += 0.5
+            elif wb == "could":
+                logits[VOCAB_INDEX["s"]] += 1.3  # couldst
+            elif wb == "coulds":
+                logits[VOCAB_INDEX["t"]] += 1.8
+            elif wb == "shoul":
+                logits[VOCAB_INDEX["d"]] += 0.5
+            elif wb == "should":
+                logits[VOCAB_INDEX["s"]] += 1.3  # shouldst
+            elif wb == "shoulds":
+                logits[VOCAB_INDEX["t"]] += 1.8
+            elif wb == "wer":
+                logits[VOCAB_INDEX["t"]] += 1.1  # wert (archaic)
+                logits[VOCAB_INDEX["e"]] -= 0.3
         elif subj in ("he", "she", "it"):
             # 3rd singular: "hath/doth" archaic > "has/does" modern.
             if wb == "ha":
                 logits[VOCAB_INDEX["t"]] += 0.9  # hath
-                logits[VOCAB_INDEX["s"]] -= 0.2  # has modern, less common
-                logits[VOCAB_INDEX["v"]] -= 0.4  # have agreement error
+                logits[VOCAB_INDEX["s"]] -= 0.2  # has
+                logits[VOCAB_INDEX["v"]] -= 0.4  # have (agreement error)
                 logits[VOCAB_INDEX["d"]] += 0.2
             elif wb == "hat":
                 logits[VOCAB_INDEX["h"]] += 1.0  # hath
             elif wb == "do":
                 logits[VOCAB_INDEX["t"]] += 0.8  # doth
                 logits[VOCAB_INDEX["e"]] -= 0.4  # does
+            elif wb == "dot":
+                logits[VOCAB_INDEX["h"]] += 1.4  # doth
 
     # Layer 5: speaker-label-specific boosts.
     if state.speaker_label_state == 3:
