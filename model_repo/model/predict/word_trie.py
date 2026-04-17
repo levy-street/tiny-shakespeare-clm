@@ -1318,6 +1318,93 @@ for _b in _REGULAR_BASES:
     _add_word(_regular_ing(_b))
 
 
+# --- Algorithmic -ful / -less / -ness / -ment / -able noun/adjective forms ---
+#
+# Hand-specified bases that legitimately admit each suffix in English /
+# Early Modern English. Membership chosen conservatively.
+_FUL_BASES: tuple[str, ...] = (
+    "awe", "bane", "beauty", "bliss", "boast", "care", "cheer", "deceit",
+    "delight", "dole", "doubt", "dread", "dream", "event", "fair", "faith",
+    "fear", "forget", "frown", "grace", "grief", "harm", "hate", "help",
+    "hope", "hurt", "joy", "lust", "mirth", "pain", "peace", "pity",
+    "play", "plenty", "power", "pride", "rest", "shame", "sin", "skill",
+    "sorrow", "soul", "spite", "sport", "tear", "thank", "truth", "use",
+    "waste", "watch", "wish", "woe", "wonder", "wrath", "youth",
+)
+_NESS_BASES: tuple[str, ...] = (
+    "bitter", "blind", "bold", "bright", "busy", "calm", "clean",
+    "dark", "deaf", "dim", "dry", "dull", "empty", "fair", "false",
+    "fond", "foul", "fresh", "full", "gentle", "glad", "good", "great",
+    "happy", "hard", "high", "kind", "lame", "light", "loose", "loud",
+    "mad", "meek", "merry", "mild", "plain", "poor", "proud", "quick",
+    "quiet", "rash", "rough", "rude", "sad", "sharp", "sick", "silent",
+    "slow", "soft", "sore", "strict", "sweet", "tame", "thick",
+    "tired", "true", "vain", "weak", "weary", "white", "wild", "wise",
+    "worthy", "wretched",
+)
+_MENT_BASES: tuple[str, ...] = (
+    "abase", "achieve", "acknowledge", "advance", "agree", "amaze",
+    "amuse", "announce", "appoint", "argue", "arrange", "astonish",
+    "banish", "bereave", "betray", "breve", "commend", "command",
+    "commit", "confine", "confront", "content", "disappoint",
+    "discourage", "displace", "disrobe", "enjoy", "enlighten",
+    "entertain", "establish", "excite", "exile", "govern", "harass",
+    "improve", "inform", "judge", "lodge", "manage", "measure",
+    "move", "nourish", "pay", "place", "punish", "refresh", "require",
+    "resent", "retire", "satisfy", "settle", "state", "treat", "worry",
+)
+_ABLE_BASES: tuple[str, ...] = (
+    "accept", "adapt", "admire", "advise", "agree", "allow", "answer",
+    "avail", "avoid", "believe", "blame", "change", "comfort",
+    "commend", "compare", "conquer", "cure", "deny", "desire",
+    "distinguish", "enjoy", "excuse", "favour", "forget", "honour",
+    "imagine", "know", "love", "marry", "observe", "pardon",
+    "pay", "perceive", "practise", "praise", "prevent", "profit",
+    "prove", "read", "reason", "receive", "regret", "remark",
+    "remember", "remove", "reproach", "respect", "see", "suit",
+    "think", "trust", "understand", "use", "value",
+)
+
+
+def _ful(base: str) -> str:
+    if base.endswith("y") and len(base) > 1 and base[-2] not in "aeiou":
+        return base[:-1] + "iful"
+    return base + "ful"
+
+
+def _less(base: str) -> str:
+    if base.endswith("y") and len(base) > 1 and base[-2] not in "aeiou":
+        return base[:-1] + "iless"
+    return base + "less"
+
+
+def _ness(base: str) -> str:
+    if base.endswith("y") and len(base) > 1 and base[-2] not in "aeiou":
+        return base[:-1] + "iness"
+    return base + "ness"
+
+
+def _ment(base: str) -> str:
+    return base + "ment"  # abasement, argument (drop e)? keep simple
+
+
+def _able(base: str) -> str:
+    if base.endswith("e") and not base.endswith(("ie", "ee")):
+        return base[:-1] + "able"
+    return base + "able"
+
+
+for _b in _FUL_BASES:
+    _add_word(_ful(_b))
+    _add_word(_less(_b))
+for _b in _NESS_BASES:
+    _add_word(_ness(_b))
+for _b in _MENT_BASES:
+    _add_word(_ment(_b))
+for _b in _ABLE_BASES:
+    _add_word(_able(_b))
+
+
 # Set of exact words (lowercased) — used by predict to apply an
 # additional terminator boost when the buffer matches a complete known
 # word, regardless of whether the word is also a prefix of other words.
