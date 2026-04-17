@@ -340,6 +340,18 @@ def predict(state: ModelState) -> list[float]:
         # SPACE == 2, NEWLINE == 3 — can't import constants here without
         # existing import; use direct numeric comparison with class enum.
         opened_quote = prev_cls in (SPACE, NEWLINE) or state.tokens_seen == 1
+        # Closing-quote contexts: after . ? ! , ; — the apostrophe
+        # terminates a quoted phrase; expect space/newline next.
+        closed_quote = prev_cls in (6, 7)  # PUNCT_END, PUNCT_MID
+        if closed_quote:
+            logits[VOCAB_INDEX[" "]] += 7.0
+            logits[VOCAB_INDEX["\n"]] += 5.0
+            for ch in "abcdefghijklmnopqrstuvwxyz":
+                if ch in VOCAB_INDEX:
+                    logits[VOCAB_INDEX[ch]] -= 4.0
+            for ch in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
+                if ch in VOCAB_INDEX:
+                    logits[VOCAB_INDEX[ch]] -= 4.0
         if opened_quote:
             # Quote-opening context — bias capitals and 't / 'g
             # (archaic contraction leaders like 'tis, 'twas, 'gainst).
