@@ -285,6 +285,12 @@ def predict(state: ModelState) -> list[float]:
             logits[VOCAB_INDEX["\n"]] += 3.0
         elif csn >= 10:
             logits[VOCAB_INDEX["\n"]] += 1.2
+        # Very short lines ending with PUNCT_END — typical in post-
+        # speaker-label interjections like "Ay." or "O!". Boost \n when
+        # this line appears to be a standalone utterance (previous line
+        # was a speaker label or blank).
+        elif csn >= 3 and state.prev_line_length < 25:
+            logits[VOCAB_INDEX["\n"]] += 1.0
 
     # After mid-clause punctuation (, ; :) at a long-line position,
     # newline is also somewhat more likely (enjambment after comma).
