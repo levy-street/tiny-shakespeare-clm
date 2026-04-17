@@ -338,6 +338,20 @@ def predict(state: ModelState) -> list[float]:
                 logits[VOCAB_INDEX["\n"]] += 3.0
             elif csn >= 20:
                 logits[VOCAB_INDEX["\n"]] += 2.0
+        # Off-trie end-of-word: still some newline boost but weaker
+        # (proper nouns, archaic forms that escape our trie).
+        elif state.letter_run_len >= 3 and not state.on_word_trie:
+            csn = state.chars_since_newline
+            if csn >= 60:
+                logits[VOCAB_INDEX["\n"]] += 6.5
+            elif csn >= 50:
+                logits[VOCAB_INDEX["\n"]] += 5.2
+            elif csn >= 40:
+                logits[VOCAB_INDEX["\n"]] += 4.0
+            elif csn >= 30:
+                logits[VOCAB_INDEX["\n"]] += 2.5
+            elif csn >= 22:
+                logits[VOCAB_INDEX["\n"]] += 1.2
         # Overdue sentence end: at word-end on-trie, boost sentence-end
         # punctuation so the model actually closes sentences.
         if state.letter_run_len >= 2 and state.on_word_trie:
