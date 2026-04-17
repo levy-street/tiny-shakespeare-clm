@@ -1,0 +1,170 @@
+"""Next-word bias layer.
+
+Given the last completed word, bias the first letter of the *next* word
+toward letters that commonly begin words that plausibly follow. This is
+effectively a word-level bigram prior, applied only at word starts.
+
+Active when the previous char is a space (and an optional prior-to-space
+letter run just ended in a recognizable word). The bias adds a boost to
+the first letters of typical successor words.
+"""
+
+from __future__ import annotations
+
+import math
+
+from ..vocab import VOCAB_INDEX, VOCAB_SIZE
+
+# Word -> common first letters of the next word, with relative weights.
+#
+# Encoding rule: for each (prev_word, next_first_letter), how strongly
+# the next letter is boosted. Higher = stronger. Values were chosen from
+# prior knowledge of the most common word-level bigrams.
+_NEXT_LETTER_WEIGHTS: dict[str, dict[str, int]] = {
+    # After determiners: nouns (mostly consonant-initial).
+    "the": {"m": 5, "k": 5, "l": 4, "s": 5, "w": 4, "h": 4, "f": 4,
+            "c": 4, "n": 4, "b": 4, "d": 4, "p": 4, "t": 3, "r": 3,
+            "g": 3, "e": 3, "o": 3, "i": 2, "a": 2, "y": 2, "v": 2,
+            "u": 1, "q": 1},
+    "a": {"m": 4, "l": 4, "k": 4, "f": 4, "w": 3, "g": 3, "s": 4,
+          "n": 3, "b": 4, "c": 3, "d": 3, "p": 3, "t": 3, "h": 3,
+          "r": 3, "y": 2, "v": 2, "q": 1},
+    "an": {"e": 5, "o": 4, "a": 3, "i": 4, "u": 3, "h": 5, "y": 2},
+    "my": {"l": 5, "h": 5, "f": 4, "d": 4, "s": 4, "b": 3, "g": 3,
+           "m": 3, "p": 3, "t": 3, "c": 3, "n": 2, "w": 2, "y": 1,
+           "e": 3, "o": 3, "a": 3},
+    "your": {"l": 4, "h": 4, "g": 3, "s": 3, "f": 3, "m": 3, "w": 3,
+             "b": 2, "d": 2, "p": 2, "t": 2, "c": 2, "n": 2, "e": 2,
+             "o": 2, "a": 2},
+    "his": {"h": 4, "l": 3, "s": 4, "e": 3, "f": 3, "m": 3, "d": 3,
+            "o": 3, "w": 2, "t": 2, "a": 2},
+    "her": {"h": 4, "l": 3, "s": 3, "e": 3, "o": 3, "f": 3, "m": 3,
+            "d": 3, "t": 2, "a": 2},
+    "our": {"l": 4, "h": 4, "s": 3, "f": 3, "g": 3, "e": 3, "o": 3,
+            "m": 3, "d": 2, "t": 2, "a": 2, "c": 2},
+    "their": {"l": 3, "h": 3, "s": 3, "o": 3, "f": 3, "m": 3, "e": 3,
+              "a": 2, "t": 2, "g": 2, "d": 2, "c": 2, "n": 2, "b": 2,
+              "p": 2, "w": 2, "r": 2},
+    # After prepositions: objects (noun phrases starting with the/a/my etc.)
+    "of": {"t": 6, "m": 5, "h": 4, "a": 3, "o": 3, "s": 3, "w": 3,
+           "i": 2, "y": 2, "g": 2, "f": 2, "b": 2, "c": 2, "n": 2,
+           "d": 2, "p": 2, "l": 2, "e": 2},
+    "to": {"t": 5, "b": 4, "s": 4, "h": 4, "m": 4, "d": 4, "g": 4,
+           "l": 3, "c": 3, "f": 3, "p": 3, "r": 3, "k": 3, "w": 3,
+           "n": 3, "a": 2, "e": 2, "i": 2, "o": 2, "y": 2, "v": 2},
+    "in": {"t": 5, "h": 4, "m": 4, "s": 4, "a": 4, "o": 3, "w": 3,
+           "g": 2, "f": 2, "d": 2, "c": 2, "p": 2, "l": 2, "n": 2,
+           "b": 2, "e": 2, "y": 2},
+    "on": {"t": 5, "h": 4, "m": 4, "s": 3, "a": 3, "o": 3, "w": 3,
+           "e": 2, "y": 2, "c": 2, "d": 2, "f": 2, "l": 2, "n": 2,
+           "b": 2, "p": 2, "i": 2},
+    "with": {"t": 5, "h": 4, "m": 4, "a": 3, "s": 3, "o": 3, "w": 3,
+             "e": 2, "y": 2, "g": 2, "f": 2, "b": 2, "d": 2, "i": 2,
+             "p": 2, "l": 2, "n": 2, "c": 2, "r": 2},
+    "for": {"t": 5, "m": 4, "h": 4, "a": 3, "s": 3, "o": 3, "w": 3,
+            "e": 2, "y": 2, "i": 2, "b": 2, "c": 2, "d": 2, "g": 2,
+            "f": 2, "l": 2, "n": 2, "p": 2, "r": 2, "v": 2},
+    "by": {"t": 5, "m": 4, "h": 4, "s": 3, "a": 3, "o": 3, "w": 2,
+           "y": 2, "i": 2},
+    "at": {"t": 5, "m": 3, "h": 3, "s": 2, "o": 2, "l": 2, "n": 2,
+           "e": 2, "a": 2, "w": 2, "y": 2, "b": 2, "d": 2},
+    "as": {"t": 4, "h": 3, "m": 3, "s": 3, "i": 3, "a": 3, "w": 3,
+           "o": 2, "y": 2, "f": 2, "l": 2, "n": 2, "d": 2},
+    "but": {"t": 4, "h": 4, "m": 4, "s": 3, "a": 3, "w": 3, "i": 3,
+            "o": 2, "y": 2, "n": 2, "f": 2, "g": 2, "l": 2, "d": 2,
+            "c": 2, "r": 2, "p": 2, "e": 2},
+    "and": {"t": 4, "h": 4, "m": 4, "s": 3, "i": 3, "a": 3, "w": 3,
+            "o": 3, "y": 3, "b": 3, "c": 2, "d": 2, "f": 2, "g": 2,
+            "l": 2, "n": 2, "p": 2, "r": 2, "e": 2},
+    "or": {"t": 4, "h": 3, "m": 3, "s": 3, "a": 3, "o": 2, "w": 3,
+           "i": 3, "e": 2, "y": 2},
+    "is": {"t": 4, "n": 4, "a": 3, "i": 3, "s": 3, "m": 3, "h": 3,
+           "w": 3, "o": 2, "y": 2, "b": 2, "g": 2, "d": 2, "f": 2,
+           "l": 2, "c": 2, "r": 2, "p": 2},
+    "was": {"t": 4, "n": 3, "a": 3, "s": 3, "m": 3, "h": 3, "w": 3,
+            "o": 2, "i": 2, "y": 2, "e": 2, "g": 2, "d": 2, "f": 2},
+    "be": {"t": 3, "a": 3, "m": 3, "s": 3, "h": 3, "n": 3, "w": 2,
+           "o": 2, "i": 2, "y": 2, "f": 2, "g": 2, "d": 2, "c": 2,
+           "r": 2, "p": 2, "l": 2, "b": 2, "e": 2},
+    # Pronouns → verbs (mostly short verbs)
+    "i": {"a": 4, "h": 4, "w": 4, "s": 4, "d": 4, "c": 3, "m": 4,
+          "k": 3, "l": 3, "t": 3, "b": 2, "g": 2, "n": 2, "p": 2,
+          "f": 2, "r": 2, "e": 2, "o": 2, "y": 2, "u": 2, "v": 2},
+    "you": {"a": 4, "h": 4, "w": 4, "s": 4, "d": 4, "c": 3, "m": 3,
+            "k": 3, "t": 3, "b": 2, "g": 2, "n": 2, "p": 2, "f": 2,
+            "r": 2, "l": 2, "o": 2, "y": 2, "e": 2, "i": 2, "u": 2,
+            "v": 2},
+    "he": {"i": 4, "w": 4, "h": 3, "s": 4, "d": 3, "c": 3, "m": 3,
+           "l": 3, "t": 3, "k": 2, "n": 2, "g": 2, "b": 2, "a": 2,
+           "r": 2, "f": 2, "p": 2, "o": 2, "y": 2, "e": 2, "u": 2},
+    "she": {"i": 4, "w": 4, "h": 3, "s": 4, "d": 3, "c": 3, "m": 3,
+            "l": 3, "t": 3, "k": 2, "n": 2, "g": 2, "b": 2, "a": 2,
+            "r": 2, "f": 2, "p": 2, "o": 2, "y": 2, "e": 2, "u": 2},
+    "we": {"s": 4, "a": 4, "h": 4, "w": 4, "d": 3, "m": 3, "k": 3,
+           "l": 3, "t": 3, "c": 2, "b": 2, "g": 2, "n": 2, "p": 2,
+           "f": 2, "r": 2, "e": 2, "o": 2, "y": 2, "u": 2},
+    "they": {"s": 4, "a": 4, "h": 4, "w": 4, "d": 3, "m": 3, "k": 3,
+             "l": 3, "t": 3, "c": 2, "b": 2, "g": 2, "n": 2, "p": 2,
+             "f": 2, "r": 2, "e": 2, "o": 2, "y": 2, "u": 2},
+    "thou": {"a": 4, "s": 4, "h": 4, "w": 4, "d": 3, "c": 3, "k": 3,
+             "m": 3, "l": 3, "t": 3, "b": 2, "g": 2, "n": 2, "p": 2,
+             "f": 2, "r": 2, "e": 2, "o": 2, "y": 2, "u": 2, "v": 2},
+    # Negation / modals
+    "not": {"t": 4, "a": 4, "s": 4, "h": 3, "m": 3, "w": 3, "i": 3,
+            "o": 2, "y": 2, "b": 2, "d": 2, "f": 2, "g": 2, "l": 2,
+            "n": 2, "c": 2, "r": 2, "p": 2, "e": 2, "u": 2},
+    "will": {"b": 4, "n": 4, "t": 3, "s": 3, "h": 3, "m": 3, "c": 3,
+             "d": 3, "g": 2, "f": 2, "p": 2, "l": 2, "r": 2, "y": 2,
+             "a": 2, "e": 2, "i": 2, "o": 2, "u": 2, "w": 2},
+    "shall": {"b": 4, "n": 4, "t": 3, "s": 3, "h": 3, "m": 3, "c": 3,
+              "d": 3, "g": 2, "f": 2, "p": 2, "l": 2, "r": 2, "a": 2,
+              "e": 2, "i": 2, "o": 2, "u": 2, "w": 2, "y": 2},
+    # Shakespearean: thy, thee, thine
+    "thy": {"l": 5, "h": 4, "f": 4, "s": 4, "m": 3, "b": 3, "w": 3,
+            "d": 3, "g": 2, "c": 2, "p": 2, "t": 2, "n": 2, "e": 3,
+            "o": 3, "a": 2, "r": 2, "y": 2},
+    "thee": {"t": 3, "a": 3, "i": 3, "w": 3, "o": 3, "f": 3, "n": 2,
+             "h": 2, "s": 2, "m": 2, "b": 2, "d": 2, "g": 2, "l": 2,
+             "y": 2},
+    "thine": {"o": 5, "e": 3, "a": 3, "h": 3},
+    "hath": {"n": 3, "b": 3, "d": 3, "s": 3, "a": 3, "m": 3, "t": 3,
+             "c": 2, "f": 2, "g": 2, "h": 2, "l": 2, "p": 2, "r": 2,
+             "w": 2, "e": 2, "i": 2, "o": 2, "u": 2, "y": 2},
+    "doth": {"n": 3, "b": 3, "d": 3, "s": 3, "a": 3, "m": 3, "t": 3,
+             "h": 3, "c": 2, "f": 2, "g": 2, "l": 2, "p": 2, "r": 2,
+             "w": 2, "e": 2, "i": 2, "o": 2, "u": 2, "y": 2},
+    # Common adverbs
+    "now": {"t": 4, "i": 4, "l": 3, "h": 3, "s": 3, "a": 3, "w": 3,
+            "m": 2, "y": 2, "g": 2, "b": 2, "d": 2, "c": 2, "f": 2,
+            "n": 2, "p": 2, "r": 2, "e": 2, "o": 2, "u": 2},
+    "then": {"t": 4, "i": 4, "l": 3, "h": 3, "s": 3, "m": 3, "y": 3,
+             "w": 2, "a": 2, "b": 2, "c": 2, "d": 2, "e": 2, "f": 2,
+             "g": 2, "n": 2, "o": 2, "p": 2, "r": 2, "u": 2},
+}
+
+
+def _build_vectors() -> dict[str, list[float]]:
+    out: dict[str, list[float]] = {}
+    for word, nexts in _NEXT_LETTER_WEIGHTS.items():
+        vec = [0.0] * VOCAB_SIZE
+        total = sum(nexts.values())
+        for ch, w in nexts.items():
+            if ch not in VOCAB_INDEX:
+                continue
+            frac = w / total
+            bias = 1.2 * math.log((frac + 0.02) / 0.05)
+            vec[VOCAB_INDEX[ch]] = bias
+            up = ch.upper()
+            if up in VOCAB_INDEX:
+                vec[VOCAB_INDEX[up]] = bias * 0.5
+        out[word] = vec
+    return out
+
+
+_NEXT_WORD_BIAS: dict[str, list[float]] = _build_vectors()
+
+
+def next_word_bias(last_completed_word: str) -> list[float] | None:
+    if not last_completed_word:
+        return None
+    return _NEXT_WORD_BIAS.get(last_completed_word)

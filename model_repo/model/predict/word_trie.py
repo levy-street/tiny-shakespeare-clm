@@ -311,9 +311,42 @@ def word_trie_bias(buffer: str) -> list[float] | None:
     """Return a bias vector for the current partial-word buffer, or None."""
     if not buffer:
         return None
-    # Try exact prefix; fall back to trimming a leading apostrophe if the
-    # buffer starts with one (for contractions).
     if buffer in PREFIX_BIAS:
         return PREFIX_BIAS[buffer]
-    # Try with leading apostrophe preserved
     return None
+
+
+def is_on_trie(buffer: str) -> bool:
+    return bool(buffer) and buffer in PREFIX_BIAS
+
+
+# A "force-end" bias vector: when the current word buffer has drifted
+# off the trie of known words, this strongly boosts word-terminating
+# characters (space, newline, punctuation) to end the gibberish ASAP.
+def _build_force_end() -> list[float]:
+    vec = [0.0] * VOCAB_SIZE
+    for ch, bias in (
+        (" ", 2.2),
+        ("\n", 1.2),
+        (",", 1.3),
+        (".", 1.0),
+        (";", 0.7),
+        (":", 0.5),
+        ("!", 0.6),
+        ("?", 0.6),
+        ("'", 0.4),
+    ):
+        if ch in VOCAB_INDEX:
+            vec[VOCAB_INDEX[ch]] = bias
+    # Small negative on letters (encourage ending).
+    for ch in "abcdefghijklmnopqrstuvwxyz":
+        if ch in VOCAB_INDEX:
+            vec[VOCAB_INDEX[ch]] = -0.3
+    for ch in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
+        if ch in VOCAB_INDEX:
+            vec[VOCAB_INDEX[ch]] = -0.4
+    return vec
+
+
+FORCE_END_BIAS: list[float] = _build_force_end()
+

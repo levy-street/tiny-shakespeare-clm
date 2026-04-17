@@ -147,6 +147,13 @@ def update_linguistic(state: ModelState, token_id: int) -> ModelState:
     else:
         wb = ""
 
+    # last_completed_word: when word_buffer resets (non-letter/non-apos),
+    # remember the buffer we had as the last completed word.
+    if wb == "" and state.word_buffer:
+        last_completed_word = state.word_buffer
+    else:
+        last_completed_word = state.last_completed_word
+
     # speaker_buffer: active inside a speaker label (state 1/2), reset
     # when the label ends or we leave speaker-label territory.
     SPEAKER_BUF_CAP = 24
@@ -180,5 +187,6 @@ def update_linguistic(state: ModelState, token_id: int) -> ModelState:
             "last_is_vowel": last_is_vowel,
             "word_buffer": wb,
             "speaker_buffer": sb,
+            "last_completed_word": last_completed_word,
         }
     )

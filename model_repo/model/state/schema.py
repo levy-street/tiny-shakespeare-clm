@@ -108,6 +108,9 @@ class ModelState(BaseModel):
     # Buffer of upper-case characters (and internal spaces) accumulated
     # while inside a speaker label. Used to bias toward known names.
     speaker_buffer: str = ""
+    # The last fully completed word (lowercased, including trailing
+    # apostrophe-suffixes like 'tis). Used for next-word bias.
+    last_completed_word: str = ""
 
     # --- Tier 3: flow ---
     # (add fields here)

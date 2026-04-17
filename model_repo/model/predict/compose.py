@@ -26,11 +26,12 @@ from ..state import ModelState
 from ..vocab import VOCAB, VOCAB_INDEX, VOCAB_SIZE
 from .bigram import bigram_bias
 from .context import CTX_BIAS_VECTORS, context_key
+from .next_word import next_word_bias
 from .speaker_trie import speaker_trie_bias
 from .startword import START_BIAS
 from .trigram import trigram_bias
 from .unigram import UNIGRAM_LOGPROBS
-from .word_trie import word_trie_bias
+from .word_trie import FORCE_END_BIAS, is_on_trie, word_trie_bias
 
 
 def _log_softmax(logits: list[float]) -> list[float]:
@@ -87,6 +88,13 @@ def predict(state: ModelState) -> list[float]:
     ):
         for i in range(VOCAB_SIZE):
             logits[i] += START_BIAS[i]
+
+        # Layer 4b: next-word (word-bigram) first-letter bias.
+        if state.last_completed_word:
+            nw = next_word_bias(state.last_completed_word)
+            if nw is not None:
+                for i in range(VOCAB_SIZE):
+                    logits[i] += nw[i]
 
     # Layer 5: speaker-label-specific boosts.
     if state.speaker_label_state == 3:
