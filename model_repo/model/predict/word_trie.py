@@ -1616,7 +1616,7 @@ def _bias_for(prefix: str) -> list[float] | None:
         if ch.isalpha():
             up = ch.upper()
             if up in VOCAB_INDEX:
-                vec[VOCAB_INDEX[up]] = bias * 0.3
+                vec[VOCAB_INDEX[up]] = bias * 0.6
     return vec
 
 
