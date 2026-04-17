@@ -27,6 +27,7 @@ from ..vocab import VOCAB, VOCAB_INDEX, VOCAB_SIZE
 from .bigram import bigram_bias
 from .context import CTX_BIAS_VECTORS, context_key
 from .startword import START_BIAS
+from .trigram import trigram_bias
 from .unigram import UNIGRAM_LOGPROBS
 
 
@@ -56,6 +57,13 @@ def predict(state: ModelState) -> list[float]:
         if bi is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += bi[i]
+
+    # Layer 3b: trigram digraph biases (last two letters).
+    if state.last_char and state.prev_char:
+        tg = trigram_bias(state.prev_char, state.last_char)
+        if tg is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += tg[i]
 
     # Layer 4: start-of-word bias (after space or single newline).
     if last_cls == SPACE or (

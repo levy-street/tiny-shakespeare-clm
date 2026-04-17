@@ -1,0 +1,249 @@
+"""Letter-level trigram bias layer.
+
+Given the last two letters (lowercased), boost specific next-letter
+continuations that are extremely common in English / Shakespearean
+orthography. Hand-coded from prior knowledge — no corpus statistics.
+
+Covered digraph continuations:
+  th -> e a i o r y
+  wh -> a e i o
+  qu -> e i a o
+  ch -> e a o i u r h
+  sh -> e a o i u
+  gh -> t (night, ought), space (sigh), s
+  ph -> e a o i y
+  ck -> space, s, e
+  ng -> space, s, t, l (strongest: space)
+  nd -> space, e, s (and, end, find)
+  ea -> r t s n d c l v (ear, eat, read)
+  ee -> n p d l r t k
+  oo -> d k l m n r t
+  ou -> r t n g s l d
+  au -> g l t s n (aught)
+  ai -> n r l d t
+  ei -> r n g t
+  ie -> s d n r t v (lies, tried)
+  io -> n u (ion, iour)
+  ua -> l r s t
+  ui -> t l s n r d c
+  er -> space, e, i, s, y, n, t, l
+  ed -> space, newline, comma, period
+  ly -> space, comma, period
+  st -> space, e, a, i, o, r, u, l
+  es -> space, t, s, e, p (estate, espy)
+  in -> g, space, t, s, e, d, c
+  an -> d, t, space, s, g, y, c
+  at -> e, space, t, i, o, s, h (hath)
+  or -> space, e, t, d, n, m
+  on -> space, e, s, d, g, c, t (onward)
+  is -> space, t, h (this), e
+  as -> space, t, h (hath), e, k (ask), s (asset)
+  it -> space, h (ith), s, y, e
+  re -> e, space, s, t, d, n, a, l, c, p (re- prefix)
+  he -> space, r, s, a, n, y, m (her, hath, heart, heavy)
+  hi -> s, space, m, n, c, g, t (his, him, hin, hic, hig, hit)
+  ho -> space, u, w, n, m, r, l, o, p, t (how, home, hour, hope, hold)
+  ha -> t, s, v, d, l, r, n, p (hath, has, have, had)
+  me -> space, n, r, s, a, e, m, d, t, l (men, mere, mes, meat, meek, meme, med, met, mel)
+  my -> space, comma, period
+  se -> space, l, r, e, n, c, a, t, d (see, set, sea, sed, sen)
+  ma -> n, r, t, d, y, s, k, l (many, mart, mate, made, may, mas, make, mall)
+  wa -> s, r, n, t, l, y (was, war, wand, want, wall, way)
+  we -> space, r, l, n, e, t (we, were, well, went, weed, wet)
+  ne -> v, w, e, r, space, s, x (never, new, need, ner, nes, next)
+  ve -> r, n, s, d, space, l (ver, vent, very, ves, ved, vel)
+  nt -> space, e, h, i, l, r, newline (ant, ent, nth, enti, entl, entr)
+  ro -> m, w, u, n, s, o, t, d (from, grow, ground, ron, ros, roo, rot, rod)
+  se -> e r n s t a l d
+  to -> space, newline, w, o, n, u, m, r, l, d (to, tow, too, tone, tour, tom, tor, tol, told)
+  un -> t, d, l, c, s, space (unto, under, uncle, uns, un)
+  of -> space, f, t (of, off, oft)
+  ar -> e, space, d, t, m, n, r, k (are, art, arm, ard, arn, arr, ark)
+  ro -> m, o, u, n, s, t (from, roo, rou, ron, ros, rot)
+  le -> t, space, n, a, s, d, e, g (let, len, lea, les, led, lee, leg)
+  la -> s, d, r, t, y, c, n, w (last, land, lard, late, lay, lack, lance, law)
+"""
+
+from __future__ import annotations
+
+from ..vocab import VOCAB_INDEX, VOCAB_SIZE
+
+# Digraph → {next letter: bias}. Negative biases are also included
+# (e.g. after "qu" only "u"... no wait, "qu" is followed by vowel).
+_T: dict[str, dict[str, float]] = {
+    "th": {"e": 2.5, "a": 1.8, "i": 1.6, "o": 1.5, "r": 1.0, "y": 0.8,
+           " ": 0.4, "u": 0.6, "s": 0.2, "w": -1.0},
+    "wh": {"a": 1.8, "e": 2.0, "i": 1.6, "o": 1.7, "y": -0.5, "u": -0.5},
+    "qu": {"e": 2.0, "i": 1.8, "a": 1.5, "o": 0.8, "r": -0.5, "s": -0.5,
+           "t": -0.5, "n": -0.5},
+    "ch": {"e": 2.0, "a": 1.7, "o": 1.6, "i": 1.4, "u": 1.0, "r": 0.6,
+           "h": -1.0, "t": 0.3, " ": 0.4},
+    "sh": {"e": 2.0, "a": 1.7, "o": 1.6, "i": 1.4, "u": 1.0, " ": 0.6,
+           "r": -0.5, "s": -1.0},
+    "gh": {"t": 2.5, " ": 1.8, "s": 1.0, "e": 0.5},
+    "ph": {"e": 1.5, "a": 1.2, "o": 1.2, "i": 1.0, "y": 0.8},
+    "ck": {" ": 1.8, "s": 1.2, "e": 1.0, "l": 0.5, "n": 0.4},
+    "ng": {" ": 2.5, "s": 1.2, "t": 0.6, "l": 0.8, "e": 0.4, "'": 0.2,
+           ",": 0.6, ".": 0.5, "\n": 0.5},
+    "nd": {" ": 2.6, "e": 0.8, "s": 0.9, ",": 0.9, ".": 0.6, "\n": 0.6},
+    "ea": {"r": 1.5, "t": 1.3, "s": 1.2, "n": 1.1, "d": 1.1, "c": 0.9,
+           "l": 0.9, "v": 0.9, "k": 0.6, "p": 0.5, " ": 0.3},
+    "ee": {"n": 1.6, "p": 1.3, "d": 1.3, "l": 1.1, "r": 1.0, "t": 1.0,
+           "k": 1.0, " ": 0.8, ",": 0.4, ".": 0.3, "s": 0.5},
+    "oo": {"d": 1.5, "k": 1.4, "l": 1.1, "m": 1.2, "n": 1.2, "r": 1.1,
+           "t": 1.3, " ": 0.5, "s": 0.6},
+    "ou": {"r": 1.6, "t": 1.4, "n": 1.3, "g": 1.2, "s": 1.2, "l": 1.1,
+           "d": 1.1, "p": 0.6, " ": 0.3},
+    "au": {"g": 1.2, "l": 1.1, "t": 1.3, "s": 1.0, "n": 1.0, "c": 0.8},
+    "ai": {"n": 1.8, "r": 1.6, "l": 1.4, "d": 1.2, "t": 1.1, "s": 1.0,
+           "m": 0.8, " ": 0.3},
+    "ei": {"r": 1.5, "n": 1.3, "g": 1.1, "t": 0.9, "s": 0.6},
+    "ie": {"s": 1.5, "d": 1.4, "n": 1.2, "r": 1.1, "t": 0.8, "v": 1.0,
+           "w": 0.7, " ": 0.6, ",": 0.5, ".": 0.4},
+    "io": {"n": 2.5, "u": 1.5, "r": 0.8, "s": 0.4, "l": 0.5},
+    "ua": {"l": 1.2, "r": 1.1, "s": 0.8, "t": 0.6, "n": 0.5},
+    "ui": {"t": 1.2, "l": 1.0, "s": 0.9, "n": 0.8, "r": 0.6, "d": 0.6,
+           "c": 0.5},
+    "er": {" ": 2.2, "e": 1.3, "i": 1.0, "s": 1.1, "y": 0.7, "n": 1.0,
+           "t": 0.9, "l": 0.7, ",": 0.8, ".": 0.6, "\n": 0.5},
+    "ed": {" ": 3.0, ",": 1.4, ".": 1.2, "\n": 1.3, "!": 0.5, "?": 0.5,
+           ";": 0.8, "e": -0.5, "r": -0.3, "i": -0.3, "s": 0.3},
+    "ly": {" ": 2.5, ",": 1.2, ".": 1.0, "\n": 1.0, "!": 0.4, "?": 0.4,
+           ";": 0.6},
+    "st": {" ": 1.5, "e": 1.3, "a": 1.2, "i": 1.2, "o": 1.1, "r": 1.0,
+           "u": 0.9, "l": 0.8, "y": 0.7, ",": 0.5, ".": 0.4, "\n": 0.4,
+           "'": 0.5},
+    "es": {" ": 2.2, "t": 1.3, "s": 1.1, "e": 0.6, "p": 0.5, ",": 0.8,
+           ".": 0.6, "\n": 0.5},
+    "in": {"g": 2.5, " ": 1.5, "t": 1.1, "s": 1.0, "e": 1.0, "d": 1.0,
+           "c": 0.8, "k": 0.6, "a": 0.5, ",": 0.4, ".": 0.3, "\n": 0.3},
+    "an": {"d": 2.5, "t": 1.3, " ": 1.5, "s": 1.0, "g": 0.9, "y": 0.9,
+           "c": 0.8, "e": 0.5, ",": 0.4, ".": 0.3, "\n": 0.3},
+    "at": {"e": 1.8, " ": 2.0, "t": 1.2, "i": 1.2, "o": 1.1, "s": 0.8,
+           "h": 1.4, ",": 0.5, ".": 0.4, "\n": 0.4},
+    "or": {" ": 2.2, "e": 1.3, "t": 1.2, "d": 1.1, "n": 0.9, "m": 0.9,
+           "s": 0.9, "k": 0.7, "y": 0.7, ",": 0.6, ".": 0.4, "\n": 0.4},
+    "on": {" ": 2.2, "e": 1.5, "s": 1.2, "d": 1.0, "g": 0.8, "c": 0.7,
+           "t": 0.6, "l": 0.6, ",": 0.7, ".": 0.6, "\n": 0.5},
+    "is": {" ": 2.3, "t": 1.0, "h": 1.5, "e": 0.9, ",": 0.6, ".": 0.4,
+           "\n": 0.3},
+    "as": {" ": 2.3, "t": 1.1, "h": 1.0, "e": 0.8, "k": 0.6, ",": 0.5,
+           ".": 0.4, "\n": 0.3, "s": 0.5},
+    "it": {"h": 2.0, " ": 2.2, "s": 1.0, "y": 1.0, "e": 1.0, ",": 0.4,
+           ".": 0.4, "\n": 0.4, "c": 0.5},
+    "re": {"e": 1.4, " ": 1.8, "s": 1.3, "t": 1.2, "d": 1.1, "n": 1.0,
+           "a": 1.1, "l": 0.8, "c": 1.0, "p": 1.0, "m": 0.8, ",": 0.4,
+           ".": 0.3},
+    "he": {" ": 2.2, "r": 1.6, "s": 1.1, "a": 1.1, "n": 1.1, "y": 0.8,
+           "m": 1.0, "e": 0.8, "l": 0.6, "d": 0.8, ",": 0.6, ".": 0.5,
+           "\n": 0.4, "'": 0.4},
+    "hi": {"s": 2.2, " ": 1.3, "m": 1.5, "n": 1.3, "c": 0.8, "g": 0.6,
+           "t": 0.8, "l": 0.6, "e": 0.7},
+    "ho": {" ": 1.5, "u": 1.5, "w": 1.3, "n": 1.0, "m": 1.0, "r": 1.0,
+           "l": 1.2, "o": 0.8, "p": 1.1, "t": 0.8, "s": 0.8, "e": 0.5},
+    "ha": {"t": 2.5, "v": 2.0, "s": 1.5, "d": 1.3, "l": 1.1, "r": 1.1,
+           "n": 1.0, "p": 0.9, " ": 0.5, "m": 0.8, "i": 0.6, "c": 0.5,
+           "b": 0.6},
+    "me": {" ": 1.8, "n": 1.5, "r": 1.2, "s": 1.1, "a": 1.1, "e": 0.8,
+           "m": 0.9, "d": 0.8, "t": 0.8, "l": 0.7, ",": 0.6, ".": 0.5,
+           "\n": 0.4},
+    "my": {" ": 3.0, ",": 1.4, "\n": 1.2, ".": 1.0, ";": 0.5, "s": 0.3,
+           "!": 0.3, "?": 0.3},
+    "se": {" ": 1.5, "e": 1.1, "l": 1.3, "r": 1.1, "n": 1.0, "s": 1.0,
+           "c": 0.9, "a": 1.0, "t": 1.0, "d": 0.8},
+    "ma": {"n": 1.6, "r": 1.2, "t": 1.1, "d": 1.2, "y": 1.5, "s": 1.0,
+           "k": 1.3, "l": 0.7, "g": 0.7, "c": 0.7, ",": 0.5, ".": 0.4,
+           "\n": 0.4},
+    "wa": {"s": 2.2, "r": 1.5, "n": 1.3, "t": 1.2, "l": 1.2, "y": 1.0,
+           "i": 0.7, "k": 0.6, " ": 0.4},
+    "we": {" ": 2.0, "r": 1.5, "l": 1.3, "n": 1.1, "e": 1.0, "t": 0.8,
+           "a": 0.6, "d": 0.7, "s": 0.6, ",": 0.6, ".": 0.4, "\n": 0.4,
+           "'": 0.8},
+    "ne": {"v": 1.3, "w": 1.0, "e": 1.0, "r": 1.2, " ": 1.2, "s": 1.0,
+           "x": 0.8, "c": 0.7, "t": 0.7, ",": 0.5, ".": 0.4, "\n": 0.4},
+    "ve": {"r": 2.0, "n": 1.3, "s": 1.0, "d": 1.0, "l": 0.8, " ": 1.0,
+           "t": 0.6, ",": 0.4, ".": 0.3},
+    "nt": {" ": 2.5, "e": 1.3, "h": 1.0, "i": 1.1, "l": 0.9, "r": 0.9,
+           "s": 0.6, "\n": 0.5, ",": 0.6, ".": 0.5},
+    "ro": {"m": 1.5, "w": 1.3, "u": 1.5, "n": 1.2, "s": 1.1, "o": 1.0,
+           "t": 1.0, "d": 1.0, "p": 0.8, "l": 0.6, "b": 0.8, " ": 0.3},
+    "to": {" ": 2.8, "\n": 1.5, "w": 1.0, "o": 1.0, "n": 0.8, "u": 1.0,
+           "m": 0.8, "r": 0.8, "l": 0.8, "d": 0.8, "p": 0.6, ",": 0.5,
+           ".": 0.4},
+    "un": {"t": 1.5, "d": 1.3, "l": 1.1, "c": 1.0, "s": 0.8, " ": 0.8,
+           "i": 0.7, "k": 0.6, "e": 0.6, "g": 0.6, "b": 0.6, "h": 0.5},
+    "of": {" ": 3.0, "f": 1.3, "t": 0.8, "\n": 0.6, ",": 0.5, ".": 0.4},
+    "ar": {"e": 1.8, " ": 1.8, "d": 1.3, "t": 1.3, "m": 1.2, "n": 1.1,
+           "r": 1.0, "k": 1.0, "s": 0.8, "y": 0.7, ",": 0.5, ".": 0.4,
+           "\n": 0.4},
+    "le": {"t": 1.5, " ": 1.8, "n": 1.2, "a": 1.3, "s": 1.0, "d": 1.0,
+           "e": 1.0, "g": 0.8, "v": 0.8, "f": 0.6, "p": 0.6, "x": 0.4,
+           ",": 0.6, ".": 0.4, "\n": 0.4},
+    "la": {"s": 1.3, "d": 1.2, "r": 1.0, "t": 1.2, "y": 1.3, "c": 1.1,
+           "n": 1.1, "w": 1.0, "i": 0.7, "m": 0.8, "b": 0.7, ",": 0.4,
+           ".": 0.3},
+    "do": {" ": 1.6, "n": 1.2, "w": 1.3, "e": 1.0, "u": 0.9, "t": 0.8,
+           "o": 0.9, "m": 0.8, "l": 0.6, ",": 0.4, ".": 0.3, "\n": 0.4},
+    "no": {"t": 2.5, " ": 1.3, "w": 1.5, "r": 1.0, "n": 0.8, "b": 0.6,
+           ",": 0.5, ".": 0.4, "\n": 0.4},
+    "so": {" ": 2.0, "m": 1.3, "n": 1.3, "u": 1.2, "r": 1.0, "l": 1.0,
+           "o": 0.8, "w": 0.7, "f": 0.6, ",": 0.6, ".": 0.4, "\n": 0.4},
+    "be": {" ": 1.8, "e": 1.2, "n": 1.3, "a": 1.3, "l": 1.0, "t": 1.0,
+           "s": 0.9, "d": 0.8, "r": 0.8, "c": 0.6, ",": 0.5, ".": 0.4,
+           "\n": 0.4, "g": 0.5},
+    "bu": {"t": 2.5, "s": 0.8, "r": 0.8, "i": 0.6, "l": 0.5, "c": 0.4},
+    "go": {"o": 1.5, " ": 1.3, "d": 1.3, "t": 0.9, "n": 0.8, ",": 0.4,
+           ".": 0.3, "\n": 0.3},
+    "gr": {"e": 1.6, "o": 1.3, "a": 1.4, "i": 1.0, "u": 0.8, "y": 0.5},
+    "pr": {"e": 1.6, "o": 1.5, "a": 1.3, "i": 1.2, "u": 0.8, "y": 0.5},
+    "tr": {"e": 1.5, "o": 1.3, "a": 1.4, "i": 1.2, "u": 1.0, "y": 0.8},
+    "br": {"e": 1.4, "o": 1.4, "a": 1.3, "i": 1.1, "u": 0.7},
+    "fr": {"o": 1.5, "e": 1.3, "a": 1.2, "i": 1.0, "u": 0.5},
+    "dr": {"e": 1.3, "a": 1.3, "o": 1.1, "i": 1.0, "u": 0.6, "y": 0.6},
+    "cr": {"e": 1.3, "o": 1.3, "a": 1.3, "i": 1.1, "u": 0.7, "y": 0.4},
+    "sl": {"e": 1.2, "o": 1.2, "a": 1.1, "i": 1.0, "u": 0.7},
+    "sp": {"e": 1.3, "o": 1.2, "a": 1.2, "i": 1.1, "r": 1.0, "l": 0.8,
+           "y": 0.4, "u": 0.7},
+    "sc": {"e": 1.2, "o": 1.2, "a": 1.2, "r": 1.0, "h": 1.2, "u": 0.6,
+           "i": 0.8},
+    "sn": {"a": 1.0, "o": 1.0, "i": 0.8},
+    "sw": {"e": 1.2, "i": 1.0, "a": 1.1, "o": 1.0},
+    "dw": {"e": 1.2, "a": 0.8, "i": 0.6},
+    "tw": {"i": 1.3, "e": 1.0, "o": 1.2, "a": 0.6},
+    "pl": {"e": 1.3, "a": 1.3, "o": 1.1, "i": 1.0, "y": 0.7, "u": 0.6},
+    "bl": {"e": 1.3, "o": 1.2, "a": 1.2, "i": 1.0, "u": 0.7, "y": 0.5},
+    "cl": {"e": 1.3, "o": 1.3, "a": 1.3, "i": 1.1, "u": 0.8, "y": 0.4},
+    "fl": {"e": 1.2, "o": 1.3, "a": 1.2, "i": 1.1, "u": 0.5, "y": 0.4},
+    "gl": {"e": 1.3, "o": 1.2, "a": 1.2, "i": 1.0, "u": 0.3, "y": 0.3},
+    "sm": {"e": 1.0, "i": 1.0, "a": 1.0, "o": 0.8, "u": 0.6},
+    "sk": {"i": 1.0, "e": 1.0, "y": 0.8, "a": 0.6, "u": 0.4},
+    "kn": {"o": 1.5, "e": 1.3, "i": 1.2, "a": 0.8, "u": 0.4},
+    # Word-end markers (letter+punct): not trigram but useful after "y," etc.
+}
+
+
+def _build_bias_vectors() -> dict[str, list[float]]:
+    out: dict[str, list[float]] = {}
+    for digraph, entries in _T.items():
+        vec = [0.0] * VOCAB_SIZE
+        for nxt, bias in entries.items():
+            if nxt in VOCAB_INDEX:
+                vec[VOCAB_INDEX[nxt]] = bias
+                if nxt.isalpha() and nxt.lower() == nxt:
+                    up = nxt.upper()
+                    if up in VOCAB_INDEX:
+                        vec[VOCAB_INDEX[up]] = bias * 0.4
+        out[digraph] = vec
+    return out
+
+
+TRIGRAM_BIAS_VECTORS: dict[str, list[float]] = _build_bias_vectors()
+
+
+def trigram_bias(prev_char: str, last_char: str) -> list[float] | None:
+    if not prev_char or not last_char:
+        return None
+    if not prev_char.isalpha() or not last_char.isalpha():
+        return None
+    key = (prev_char + last_char).lower()
+    return TRIGRAM_BIAS_VECTORS.get(key)

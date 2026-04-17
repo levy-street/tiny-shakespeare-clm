@@ -139,6 +139,7 @@ def update_linguistic(state: ModelState, token_id: int) -> ModelState:
 
     return state.model_copy(
         update={
+            "prev_char": state.last_char,
             "last_char": ch,
             "last_char_class": cls,
             "prev_char_class": state.last_char_class,

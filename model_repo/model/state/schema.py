@@ -62,6 +62,7 @@ class ModelState(BaseModel):
     tokens_seen: int = 0
     last_token_id: int = -1  # -1 sentinel: no token observed yet
     last_char: str = ""  # "" before any token; otherwise single char
+    prev_char: str = ""  # char before last_char (for trigram context)
 
     # --- Tier 2: linguistic ---
     # Character-class bucket of the last emitted character. See
