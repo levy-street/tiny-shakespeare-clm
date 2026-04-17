@@ -151,3 +151,19 @@ class ModelState(BaseModel):
     prev_line_length: int = 0
     # Length of the line before the previous one — for smoothing.
     prev_prev_line_length: int = 0
+    # Number of letters written in the current word since the buffer first
+    # went off the known-word trie. 0 when still on-trie (or no word).
+    # Grows fast when we've drifted into nonsense territory.
+    letters_off_trie: int = 0
+    # Number of consecutive consonant letters since the last vowel in
+    # the current word. Real English words rarely allow 4+ consecutive
+    # consonants (even "strength" tops out at "str"). Resets on vowel,
+    # word break, or 'y' (treated as vowel-ish for phonotactic purposes).
+    consonants_since_vowel: int = 0
+    # Number of vowels observed in the current word. Words with 6+
+    # letters and 0 vowels are implausible; we use this to force a
+    # vowel when the word has gone too long without one.
+    vowels_in_word: int = 0
+    # Number of consecutive vowels since the last consonant in the
+    # current word. Resets on consonant or word break.
+    vowels_since_consonant: int = 0

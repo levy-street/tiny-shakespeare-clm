@@ -351,6 +351,74 @@ def predict(state: ModelState) -> list[float]:
         if state.last_char == "r":
             logits[VOCAB_INDEX["e"]] += 3.0  # 're (you're)
 
+    # Layer 5c: phonotactic vowel enforcement. English very rarely
+    # admits 4+ consecutive consonants without a vowel (the longest
+    # real cluster is ~3-4: "str", "scr", "schr"). When the count
+    # reaches 4+, bias toward vowels/word-enders. Gentle at 4,
+    # sharper at 5+. This catches gibberish like "nlrntd".
+    if (
+        state.consonants_since_vowel >= 4
+        and state.word_buffer
+        and state.speaker_label_state == 0
+    ):
+        c = state.consonants_since_vowel
+        if c == 4:
+            vbump = 0.6
+            cpen = 0.25
+            tbump = 0.4  # terminator bump (space/comma/period/nl)
+        elif c == 5:
+            vbump = 1.5
+            cpen = 0.8
+            tbump = 0.9
+        else:
+            vbump = 2.6
+            cpen = 1.5
+            tbump = 1.4
+        for ch in "aeiou":
+            if ch in VOCAB_INDEX:
+                logits[VOCAB_INDEX[ch]] += vbump
+        if "y" in VOCAB_INDEX:
+            logits[VOCAB_INDEX["y"]] += vbump * 0.4
+        for ch in "bcdfghjklmnpqrstvwxz":
+            if ch in VOCAB_INDEX:
+                logits[VOCAB_INDEX[ch]] -= cpen
+        for ch in " ,.;\n":
+            if ch in VOCAB_INDEX:
+                logits[VOCAB_INDEX[ch]] += tbump
+
+    # Layer 5d: vowel repetition penalty. 3+ consecutive vowels is
+    # almost always nonsense ("aeere", "oeeeore", "uou"). English
+    # allows rare 3-vowel sequences (beautiful, queue, iou) but
+    # 4+ is practically never. Kicks in at 3+ to gently steer away,
+    # stronger at 4+.
+    if (
+        state.vowels_since_consonant >= 3
+        and state.word_buffer
+        and state.speaker_label_state == 0
+    ):
+        v = state.vowels_since_consonant
+        if v == 3:
+            vpen = 1.0
+            cbump = 0.4
+            tbump = 0.4
+        elif v == 4:
+            vpen = 2.2
+            cbump = 1.0
+            tbump = 1.2
+        else:
+            vpen = 3.2
+            cbump = 1.8
+            tbump = 1.8
+        for ch in "aeiou":
+            if ch in VOCAB_INDEX:
+                logits[VOCAB_INDEX[ch]] -= vpen
+        for ch in "bcdfghjklmnpqrstvwxyz":
+            if ch in VOCAB_INDEX:
+                logits[VOCAB_INDEX[ch]] += cbump
+        for ch in " ,.;\n":
+            if ch in VOCAB_INDEX:
+                logits[VOCAB_INDEX[ch]] += tbump
+
     # Layer 6: line-position / flow-aware modulations.
     # Only apply when we're outside speaker-label territory.
     if state.speaker_label_state == 0:

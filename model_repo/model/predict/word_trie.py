@@ -1137,6 +1137,59 @@ for _w in _WORDS:
     _add_word(_w)
 
 
+# --- Algorithmic expansion of archaic Shakespearean inflections ---
+#
+# Shakespeare very frequently uses archaic -eth, -est (second-person),
+# and 'd contracted past-tense forms of common verbs. Rather than hand-
+# listing every inflection, we generate them from a small set of base
+# verbs. The generation uses only English orthography rules — no corpus
+# statistics. The added surface forms help BPC (many of these appear
+# in the training text and previously went off-trie) and help sampling
+# stay in archaic idiom.
+_ARCHAIC_VERB_BASES: tuple[str, ...] = (
+    "speak", "think", "know", "see", "say", "make", "take", "give",
+    "hold", "find", "tell", "hear", "keep", "leave", "bring", "stand",
+    "let", "set", "run", "come", "go", "love", "hate", "live", "die",
+    "lie", "rise", "fall", "seem", "feel", "wait", "wish", "need",
+    "want", "look", "pray", "show", "bear", "turn", "work", "call",
+    "play", "swear", "follow", "serve", "enter", "answer", "suffer",
+    "depart", "remain", "return", "believe", "become", "grow", "appear",
+    "remember", "forget", "attend", "command", "consider", "perceive",
+    "request", "obey", "intend", "mark", "deserve", "permit",
+    "approach", "receive", "behold",
+)
+
+
+def _apply_archaic_inflection(base: str) -> list[str]:
+    """Return plausible -eth, -est, -'st, and -'d forms for a base verb.
+
+    Spelling rules are approximations consistent with Early Modern
+    English orthography:
+      - base ending in 'e':  love → loveth, lovest, lov'st, lov'd
+      - base ending in consonant after short vowel: run → runneth? (no,
+        use runs instead). We handle only regular cases — irregulars
+        are better covered by the _WORDS list already.
+      - base ending in 'y' after consonant: cry → crieth, criest?
+        (Skip -y bases: they're irregular.)
+      - others: speak → speaketh, speakest, speak'st, speak'd
+    """
+    forms: list[str] = []
+    if base.endswith("e"):
+        stem = base[:-1]
+        forms.extend([base + "th", base + "st", stem + "'st", stem + "'d"])
+    elif base.endswith("y"):
+        # Skip -y stems; too much spelling variance.
+        pass
+    else:
+        forms.extend([base + "eth", base + "est", base + "'st", base + "'d"])
+    return forms
+
+
+for _base in _ARCHAIC_VERB_BASES:
+    for _form in _apply_archaic_inflection(_base):
+        _add_word(_form)
+
+
 # Set of exact words (lowercased) — used by predict to apply an
 # additional terminator boost when the buffer matches a complete known
 # word, regardless of whether the word is also a prefix of other words.

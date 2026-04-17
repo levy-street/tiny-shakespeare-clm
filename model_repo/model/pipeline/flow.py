@@ -54,6 +54,9 @@ def _sent_distance_bucket(chars_since_sentence_end: int) -> int:
     return 2
 
 
+_VOWELS_SET = frozenset("aeiouAEIOU")
+
+
 def update_flow(state: ModelState, token_id: int) -> ModelState:
     # Linguistic updates have already run; use the post-update state.
     wb = state.word_buffer
@@ -78,6 +81,42 @@ def update_flow(state: ModelState, token_id: int) -> ModelState:
     # prose (most verse lines are shorter). This is soft.
     in_prose_line = state.chars_since_newline > 55
 
+    # --- Phonotactic tracking inside the current word ---
+    # letters_off_trie: letters written since the buffer first went
+    # off-trie. 0 while on-trie or when no word is in progress.
+    # consonants_since_vowel: consecutive consonants since the last
+    # vowel in the current word (resets at word end, at vowel).
+    # vowels_in_word: number of vowels seen in the current word.
+    if not wb:
+        letters_off_trie = 0
+        consonants_since_vowel = 0
+        vowels_in_word = 0
+        vowels_since_consonant = 0
+    else:
+        last_ch = state.last_char
+        is_letter = len(last_ch) == 1 and (
+            ("a" <= last_ch <= "z") or ("A" <= last_ch <= "Z")
+        )
+        if on_trie:
+            letters_off_trie = 0
+        elif is_letter:
+            letters_off_trie = state.letters_off_trie + 1
+        else:
+            letters_off_trie = state.letters_off_trie
+        if is_letter:
+            if last_ch in _VOWELS_SET:
+                consonants_since_vowel = 0
+                vowels_in_word = state.vowels_in_word + 1
+                vowels_since_consonant = state.vowels_since_consonant + 1
+            else:
+                consonants_since_vowel = state.consonants_since_vowel + 1
+                vowels_in_word = state.vowels_in_word
+                vowels_since_consonant = 0
+        else:
+            consonants_since_vowel = state.consonants_since_vowel
+            vowels_in_word = state.vowels_in_word
+            vowels_since_consonant = state.vowels_since_consonant
+
     return state.model_copy(
         update={
             "on_word_trie": on_trie,
@@ -85,5 +124,9 @@ def update_flow(state: ModelState, token_id: int) -> ModelState:
             "sent_distance_bucket": sent_distance_bucket,
             "after_function_word": after_function_word,
             "in_prose_line": in_prose_line,
+            "letters_off_trie": letters_off_trie,
+            "consonants_since_vowel": consonants_since_vowel,
+            "vowels_in_word": vowels_in_word,
+            "vowels_since_consonant": vowels_since_consonant,
         }
     )
