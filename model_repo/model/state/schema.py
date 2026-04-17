@@ -105,6 +105,9 @@ class ModelState(BaseModel):
     # The current partially-written word (lowercased, up to a cap) since
     # the last non-letter character. Used to bias word completions.
     word_buffer: str = ""
+    # Buffer of upper-case characters (and internal spaces) accumulated
+    # while inside a speaker label. Used to bias toward known names.
+    speaker_buffer: str = ""
 
     # --- Tier 3: flow ---
     # (add fields here)

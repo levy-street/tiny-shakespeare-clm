@@ -147,6 +147,19 @@ def update_linguistic(state: ModelState, token_id: int) -> ModelState:
     else:
         wb = ""
 
+    # speaker_buffer: active inside a speaker label (state 1/2), reset
+    # when the label ends or we leave speaker-label territory.
+    SPEAKER_BUF_CAP = 24
+    if sp_next in (1, 2):
+        if is_upper:
+            sb = (state.speaker_buffer + ch)[-SPEAKER_BUF_CAP:]
+        elif is_space and sp_next == 2:
+            sb = (state.speaker_buffer + " ")[-SPEAKER_BUF_CAP:]
+        else:
+            sb = state.speaker_buffer
+    else:
+        sb = ""
+
     return state.model_copy(
         update={
             "prev_char": state.last_char,
@@ -166,5 +179,6 @@ def update_linguistic(state: ModelState, token_id: int) -> ModelState:
             "sentence_start_pending": sentence_start_pending,
             "last_is_vowel": last_is_vowel,
             "word_buffer": wb,
+            "speaker_buffer": sb,
         }
     )

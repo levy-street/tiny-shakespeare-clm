@@ -26,6 +26,7 @@ from ..state import ModelState
 from ..vocab import VOCAB, VOCAB_INDEX, VOCAB_SIZE
 from .bigram import bigram_bias
 from .context import CTX_BIAS_VECTORS, context_key
+from .speaker_trie import speaker_trie_bias
 from .startword import START_BIAS
 from .trigram import trigram_bias
 from .unigram import UNIGRAM_LOGPROBS
@@ -72,6 +73,13 @@ def predict(state: ModelState) -> list[float]:
         if wt is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += wt[i]
+
+    # Layer 3d: speaker-label trie bias.
+    if state.speaker_buffer:
+        st = speaker_trie_bias(state.speaker_buffer)
+        if st is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += st[i]
 
     # Layer 4: start-of-word bias (after space or single newline).
     if last_cls == SPACE or (
