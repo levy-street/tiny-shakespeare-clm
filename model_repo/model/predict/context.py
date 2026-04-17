@@ -39,9 +39,11 @@ CTX_IN_WORD_SHORT = 11
 CTX_IN_WORD_MID = 12
 CTX_IN_WORD_LONG = 13
 CTX_AFTER_UPPER_START = 14
-CTX_OTHER = 15
+CTX_IN_MIXED_LABEL_WORD = 15  # inside a mixed-case speaker label word
+CTX_SPEAKER_LABEL_AMBIGUOUS = 16  # first letter after label start (could be any)
+CTX_OTHER = 17
 
-N_CTX = 16
+N_CTX = 18
 
 _BIAS: list[list[float]] = [[0.0] * 10 for _ in range(N_CTX)]
 
@@ -276,6 +278,42 @@ _set(
         OTHER: -5.0,
     },
 )
+_set(
+    # Inside a Mixed-Case speaker label word (e.g., "First Citizen"):
+    # after the initial capital, the rest of the word is lowercase;
+    # between words is a single space; the label ends with ":".
+    CTX_IN_MIXED_LABEL_WORD,
+    {
+        LOWER_CONS: 2.0,
+        LOWER_VOWEL: 2.0,
+        UPPER: -1.5,
+        SPACE: 1.0,
+        PUNCT_MID: 2.0,  # ":" terminator
+        NEWLINE: -4.0,
+        PUNCT_END: -5.0,
+        APOSTROPHE: -4.0,
+        DASH: -4.0,
+        OTHER: -5.0,
+    },
+)
+_set(
+    # Ambiguous position right after the first capital of a speaker
+    # label: could be another capital (KING) or a lowercase (First).
+    # Balanced bias.
+    CTX_SPEAKER_LABEL_AMBIGUOUS,
+    {
+        UPPER: 1.5,
+        LOWER_CONS: 1.5,
+        LOWER_VOWEL: 1.5,
+        SPACE: 0.3,
+        PUNCT_MID: 0.8,
+        NEWLINE: -4.0,
+        PUNCT_END: -5.0,
+        APOSTROPHE: -4.0,
+        DASH: -4.0,
+        OTHER: -5.0,
+    },
+)
 
 
 def context_key(state: ModelState) -> int:
@@ -302,10 +340,17 @@ def context_key(state: ModelState) -> int:
         return CTX_AFTER_DASH
     if cls == UPPER:
         if state.speaker_label_state == 2:
+            # Inside speaker label; if we've already seen a lowercase,
+            # this is a Mixed-Case label (next letter probably lowercase).
+            if state.speaker_label_saw_lower:
+                return CTX_IN_MIXED_LABEL_WORD
             return CTX_IN_SPEAKER_LABEL
         if state.upper_run_len == 1:
             return CTX_AFTER_UPPER_START
         return CTX_IN_SPEAKER_LABEL
+    # Lowercase letter(s) in a speaker label → mixed-case context.
+    if state.speaker_label_state == 2 and state.speaker_label_saw_lower:
+        return CTX_IN_MIXED_LABEL_WORD
     pos = state.letter_run_len
     if pos <= 3:
         return CTX_IN_WORD_SHORT

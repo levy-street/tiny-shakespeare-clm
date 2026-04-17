@@ -94,9 +94,13 @@ class ModelState(BaseModel):
     # Speaker-label FSM state:
     #   0 — not in / just after speaker label
     #   1 — right after "\n\n", expecting capital letter
-    #   2 — inside upper-case speaker label (UPPERS [space UPPERS]*)
+    #   2 — inside speaker label (UPPERCASE or Mixed-Case)
     #   3 — just past ":" at end of speaker label; newline expected
     speaker_label_state: int = 0
+    # True once we've seen a lowercase letter in state 2 — lets the
+    # predict layer know this is a Mixed-Case label like "First Citizen"
+    # rather than an all-caps label like "HAMLET".
+    speaker_label_saw_lower: bool = False
     # Whether last char was start-of-line context that we treat as
     # "beginning of a sentence" (post double-newline or post ". ").
     sentence_start_pending: bool = False

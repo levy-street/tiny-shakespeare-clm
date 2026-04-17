@@ -102,8 +102,10 @@ def update_linguistic(state: ModelState, token_id: int) -> ModelState:
     # Speaker-label FSM.
     #   0 — default
     #   1 — just saw "\n\n", awaiting capital letter (or blank line)
-    #   2 — in upper-case name
-    #   3 — just saw ":" after upper name, expecting newline
+    #   2 — inside speaker label (allows both UPPERCASE and Mixed-Case
+    #       names like "KING HENRY IV" and "First Citizen")
+    #   3 — just saw ":" closing the label, expecting newline
+    is_letter_any = is_letter
     sp = state.speaker_label_state
     if is_newline and consecutive_newlines >= 2:
         sp_next = 1
@@ -115,13 +117,15 @@ def update_linguistic(state: ModelState, token_id: int) -> ModelState:
         else:
             sp_next = 0
     elif sp == 2:
-        if is_upper or is_space:
-            # allow "KING HENRY IV" style multi-word labels
+        # Stay in-label for letters (any case) and spaces.
+        # Leave on ":" into state 3, on newline or other chars back to 0.
+        if is_letter_any or is_space:
             sp_next = 2
         elif cls == PUNCT_MID and ch == ":":
             sp_next = 3
         else:
             sp_next = 0
+    # (sp == 3 handled below)
     elif sp == 3:
         if is_newline:
             sp_next = 0  # label is closed by newline; go back to default
@@ -155,17 +159,29 @@ def update_linguistic(state: ModelState, token_id: int) -> ModelState:
         last_completed_word = state.last_completed_word
 
     # speaker_buffer: active inside a speaker label (state 1/2), reset
-    # when the label ends or we leave speaker-label territory.
+    # when the label ends or we leave speaker-label territory. The buffer
+    # stores an *uppercased* form of the label so it matches the speaker
+    # trie (which is built from UPPERCASE canonical names). Both
+    # UPPERCASE names ("HAMLET") and Mixed-Case names ("First Citizen")
+    # are buffered the same way.
     SPEAKER_BUF_CAP = 24
     if sp_next in (1, 2):
-        if is_upper:
-            sb = (state.speaker_buffer + ch)[-SPEAKER_BUF_CAP:]
+        if is_letter:
+            sb = (state.speaker_buffer + ch.upper())[-SPEAKER_BUF_CAP:]
         elif is_space and sp_next == 2:
             sb = (state.speaker_buffer + " ")[-SPEAKER_BUF_CAP:]
         else:
             sb = state.speaker_buffer
     else:
         sb = ""
+
+    # Mixed-case label detection: set flag once we've seen a lowercase
+    # letter while in state 2; reset when we leave speaker territory.
+    is_lower = cls in (LOWER_VOWEL, LOWER_CONS)
+    if sp_next == 2:
+        speaker_label_saw_lower = state.speaker_label_saw_lower or is_lower
+    else:
+        speaker_label_saw_lower = False
 
     return state.model_copy(
         update={
@@ -177,6 +193,7 @@ def update_linguistic(state: ModelState, token_id: int) -> ModelState:
             "upper_run_len": upper_run_len,
             "consecutive_newlines": consecutive_newlines,
             "chars_since_newline": chars_since_newline,
+            "speaker_label_saw_lower": speaker_label_saw_lower,
             "chars_since_space": chars_since_space,
             "chars_since_sentence_end": chars_since_sentence_end,
             "just_finished_word": just_finished_word,
