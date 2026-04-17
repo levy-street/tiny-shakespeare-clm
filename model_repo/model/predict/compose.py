@@ -38,6 +38,7 @@ from .context import CTX_BIAS_VECTORS, context_key
 from .letter3 import letter3_bias
 from .letter4 import letter4_bias
 from .next_word import next_word_bias
+from .pos_next import pos_next_bias
 from .speaker_trie import speaker_trie_bias
 from .start4gram import start4gram_bias
 from .start5gram import start5gram_bias
@@ -172,6 +173,12 @@ def predict(state: ModelState) -> list[float]:
             if nw is not None:
                 for i in range(VOCAB_SIZE):
                     logits[i] += nw[i]
+            else:
+                # Fallback: POS-based next-letter bias.
+                pn = pos_next_bias(state.last_word_pos)
+                if pn is not None:
+                    for i in range(VOCAB_SIZE):
+                        logits[i] += pn[i]
 
         # Layer 4c: at a sentence start (post ". ", post "? ", post "! "
         # or post a double-newline blank line), strongly boost capital

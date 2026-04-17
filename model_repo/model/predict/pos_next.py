@@ -153,7 +153,7 @@ _POS_NEXT: dict[int, dict[str, int]] = {
 }
 
 
-_GLOBAL_SCALE = 0.4
+_GLOBAL_SCALE = 0.3
 
 
 def _build_vectors() -> list[list[float] | None]:
