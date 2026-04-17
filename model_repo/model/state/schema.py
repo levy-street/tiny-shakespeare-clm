@@ -102,6 +102,9 @@ class ModelState(BaseModel):
     sentence_start_pending: bool = False
     # Is last char a vowel (aeiouAEIOU)?
     last_is_vowel: bool = False
+    # The current partially-written word (lowercased, up to a cap) since
+    # the last non-letter character. Used to bias word completions.
+    word_buffer: str = ""
 
     # --- Tier 3: flow ---
     # (add fields here)

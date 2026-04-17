@@ -137,6 +137,16 @@ def update_linguistic(state: ModelState, token_id: int) -> ModelState:
 
     last_is_vowel = ch.lower() in _VOWELS
 
+    # word_buffer: accumulate letters (lowercased); reset on non-letter,
+    # but treat apostrophe as part of the word ('tis, ne'er, o'er, 'em, 'd, 's).
+    WORD_BUF_CAP = 16
+    if is_letter:
+        wb = (state.word_buffer + ch.lower())[-WORD_BUF_CAP:]
+    elif ch == "'":
+        wb = (state.word_buffer + "'")[-WORD_BUF_CAP:]
+    else:
+        wb = ""
+
     return state.model_copy(
         update={
             "prev_char": state.last_char,
@@ -155,5 +165,6 @@ def update_linguistic(state: ModelState, token_id: int) -> ModelState:
             "speaker_label_state": sp_next,
             "sentence_start_pending": sentence_start_pending,
             "last_is_vowel": last_is_vowel,
+            "word_buffer": wb,
         }
     )

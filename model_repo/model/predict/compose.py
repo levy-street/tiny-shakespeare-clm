@@ -29,6 +29,7 @@ from .context import CTX_BIAS_VECTORS, context_key
 from .startword import START_BIAS
 from .trigram import trigram_bias
 from .unigram import UNIGRAM_LOGPROBS
+from .word_trie import word_trie_bias
 
 
 def _log_softmax(logits: list[float]) -> list[float]:
@@ -64,6 +65,13 @@ def predict(state: ModelState) -> list[float]:
         if tg is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += tg[i]
+
+    # Layer 3c: word-trie completion bias.
+    if state.word_buffer:
+        wt = word_trie_bias(state.word_buffer)
+        if wt is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += wt[i]
 
     # Layer 4: start-of-word bias (after space or single newline).
     if last_cls == SPACE or (
