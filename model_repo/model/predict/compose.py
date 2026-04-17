@@ -31,6 +31,7 @@ from .letter4 import letter4_bias
 from .next_word import next_word_bias
 from .speaker_trie import speaker_trie_bias
 from .start4gram import start4gram_bias
+from .start5gram import start5gram_bias
 from .startbigram import startbigram_bias
 from .starttrigram import starttrigram_bias
 from .startword import START_BIAS
@@ -120,6 +121,20 @@ def predict(state: ModelState) -> list[float]:
         if s4 is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += s4[i]
+
+    # Layer 3b6: word-start 5-gram bias — at letter_run_len == 4, the
+    # fifth letter is conditioned on the first four letters of the
+    # fresh word. Many 4-letter word starts uniquely determine the next
+    # letter (ther→e, woul→d, migh→t, ligh→t, ough→t, whic→h, frie→n).
+    if (
+        state.letter_run_len == 4
+        and len(state.word_buffer) == 4
+        and state.speaker_label_state not in (2,)
+    ):
+        s5 = start5gram_bias(state.word_buffer)
+        if s5 is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += s5[i]
 
     # Layer 3c: word-trie completion bias.
     if state.word_buffer:
