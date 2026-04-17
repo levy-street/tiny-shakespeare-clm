@@ -327,17 +327,20 @@ _T: dict[str, dict[str, float]] = {
 }
 
 
+_GLOBAL_SCALE = 0.5
+
+
 def _build_bias_vectors() -> dict[str, list[float]]:
     out: dict[str, list[float]] = {}
     for digraph, entries in _T.items():
         vec = [0.0] * VOCAB_SIZE
         for nxt, bias in entries.items():
             if nxt in VOCAB_INDEX:
-                vec[VOCAB_INDEX[nxt]] = bias
+                vec[VOCAB_INDEX[nxt]] = bias * _GLOBAL_SCALE
                 if nxt.isalpha() and nxt.lower() == nxt:
                     up = nxt.upper()
                     if up in VOCAB_INDEX:
-                        vec[VOCAB_INDEX[up]] = bias * 0.4
+                        vec[VOCAB_INDEX[up]] = bias * 0.4 * _GLOBAL_SCALE
         out[digraph] = vec
     return out
 
