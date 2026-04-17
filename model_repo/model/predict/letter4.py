@@ -152,6 +152,85 @@ _L4: dict[str, dict[str, float]] = {
     # -rest (rest, forest, dearest, interest)
     "rest": {" ": 2.0, ",": 0.6, ".": 0.4, "\n": 0.3, "s": 0.4, ";": 0.3,
              "l": 0.3, "i": 0.3},
+    # -eath (death, breath, heath, wreath)
+    "eath": {" ": 1.8, ",": 0.5, ".": 0.4, "\n": 0.3, "s": 0.4, "e": 0.3,
+             "l": 0.3},
+    # -ower (power, tower, lower, flower)
+    "ower": {" ": 1.6, ",": 0.5, ".": 0.3, "\n": 0.3, "s": 0.5, "e": 0.3,
+             "f": 0.3, "l": 0.3},
+    # -over (over, cover, lover, rover)
+    "over": {" ": 2.0, ",": 0.6, ".": 0.4, "\n": 0.3, "s": 0.4, "e": 0.3,
+             "l": 0.3, "t": 0.3, "n": 0.3, "h": 0.3},
+    # -arly (early, nearly, dearly, clearly)
+    "arly": {" ": 1.8, ",": 0.5, ".": 0.4, "\n": 0.3},
+    # -ious (various, curious, precious, serious, glorious)
+    "ious": {" ": 2.2, ",": 0.6, ".": 0.4, "\n": 0.3, ";": 0.3},
+    # -eous (piteous, hideous, righteous, courteous)
+    "eous": {" ": 2.0, ",": 0.5, ".": 0.4, "\n": 0.3, ";": 0.3},
+    # -uous (continuous, virtuous, strenuous)
+    "uous": {" ": 1.8, ",": 0.5, ".": 0.4, "\n": 0.3},
+    # -each (reach, each, beach, teach, peach)
+    "each": {" ": 1.8, ",": 0.5, ".": 0.4, "\n": 0.3, "e": 0.4, "i": 0.3},
+    # -ouch (touch, couch, pouch)
+    "ouch": {" ": 1.6, ",": 0.4, ".": 0.3, "\n": 0.3, "e": 0.3, "i": 0.3},
+    # -urch (church)
+    "urch": {" ": 1.5, ",": 0.4, ".": 0.3},
+    # -unto, -upon as word endings
+    "unto": {" ": 2.0, ",": 0.5, ".": 0.3, "\n": 0.3},
+    "upon": {" ": 2.2, ",": 0.6, ".": 0.4, "\n": 0.3, ";": 0.3},
+    # -inst (against)
+    "inst": {" ": 1.8, ",": 0.5, ".": 0.4, "\n": 0.3},
+    # -ndst (against, amongst, midst, wilst)
+    "ongs": {"t": 2.0, ",": 0.3, ".": 0.3, " ": 0.3, "'": 0.3},
+    # -hilst (whilst)
+    "ilst": {" ": 1.8, ",": 0.5, ".": 0.3, "\n": 0.3},
+    # -adst (hadst)
+    "adst": {" ": 1.8, ",": 0.5, ".": 0.4},
+    # -ouldst (wouldst, shouldst, couldst)
+    "ldst": {" ": 1.8, ",": 0.5, ".": 0.4},
+    # -ayst, -eest (sayst, seest)
+    "ayst": {" ": 1.5, ",": 0.4, ".": 0.3},
+    "eest": {" ": 1.5, ",": 0.4, ".": 0.3},
+    # -orld (world)
+    "orld": {" ": 2.5, ",": 0.5, "s": 0.5, "l": 0.3, ".": 0.3, "\n": 0.3},
+    # -ance, -ence already listed; -ince (since, prince, convince)
+    "ince": {" ": 1.8, ",": 0.5, ".": 0.4, "\n": 0.3, "l": 0.3, "s": 0.3,
+             "e": 0.3},
+    # -ould (would, should, could)
+    "ould": {" ": 2.0, ",": 0.3, "'": 0.5, "s": 0.4, "n": 0.3, ";": 0.3,
+             ".": 0.3},
+    # -urse (curse, course, nurse, verse, horse)
+    # Note: technically -orse; this is just -urse
+    "urse": {" ": 1.6, ",": 0.4, ".": 0.3, "\n": 0.3, "s": 0.3, "d": 0.3},
+    # -orse
+    "orse": {" ": 1.6, ",": 0.4, ".": 0.3, "\n": 0.3, "s": 0.3, "r": 0.3,
+             "l": 0.3},
+    # -erse (verse, diverse, universe, adverse)
+    "erse": {" ": 1.6, ",": 0.4, ".": 0.3, "\n": 0.3, "s": 0.3, "l": 0.3,
+             "d": 0.3},
+    # -aven, -even, -iven (heaven, seven, given, driven)
+    "aven": {" ": 1.5, ",": 0.4, ".": 0.3, "\n": 0.3, "s": 0.5, "'": 0.3,
+             "l": 0.3},
+    "even": {" ": 1.5, ",": 0.4, ".": 0.3, "\n": 0.3, "i": 0.3, "s": 0.3,
+             "e": 0.3},
+    "iven": {" ": 1.5, ",": 0.4, ".": 0.3, "\n": 0.3, "s": 0.3},
+    "oven": {" ": 1.4, ",": 0.4, ".": 0.3, "\n": 0.3},
+    # -urns, -ourn
+    "urns": {" ": 1.8, ",": 0.5, ".": 0.4, "\n": 0.3, ";": 0.3},
+    "ourn": {"s": 0.8, "e": 0.8, " ": 0.4, ",": 0.3},
+    # -ways (always, sideways, anyways)
+    "ways": {" ": 2.0, ",": 0.5, ".": 0.4, "\n": 0.3},
+    # -rink/-rank/-rink (drink, think, bank, rank, frank)
+    "rink": {" ": 1.5, ",": 0.4, "s": 0.4, ".": 0.3, "l": 0.3},
+    "rank": {" ": 1.5, ",": 0.4, "s": 0.4, ".": 0.3},
+    # -eant (meant, leant)
+    "eant": {" ": 1.6, ",": 0.4, ".": 0.3, "\n": 0.3, "s": 0.3},
+    # -ream (dream, cream, stream)
+    "ream": {" ": 1.6, ",": 0.4, ".": 0.3, "\n": 0.3, "s": 0.4, "t": 0.3,
+             "i": 0.3, "e": 0.3},
+    # -eave (leave, weave, cleave, behave, brave)
+    "eave": {" ": 1.6, ",": 0.4, ".": 0.3, "\n": 0.3, "s": 0.4, "n": 0.3,
+             "d": 0.3, "r": 0.3},
 }
 
 
