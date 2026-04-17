@@ -503,19 +503,15 @@ def predict(state: ModelState) -> list[float]:
             if is_closed:
                 # After function words, period/?/! are very unlikely;
                 # space is the clear winner.
-                logits[VOCAB_INDEX["."]] -= 2.5
+                logits[VOCAB_INDEX["."]] -= 3.0
                 if "?" in VOCAB_INDEX:
-                    logits[VOCAB_INDEX["?"]] -= 2.0
+                    logits[VOCAB_INDEX["?"]] -= 2.5
                 if "!" in VOCAB_INDEX:
-                    logits[VOCAB_INDEX["!"]] -= 2.0
-                if "," in VOCAB_INDEX:
-                    logits[VOCAB_INDEX[","]] -= 1.5
-                if ";" in VOCAB_INDEX:
-                    logits[VOCAB_INDEX[";"]] -= 1.0
+                    logits[VOCAB_INDEX["!"]] -= 2.5
                 if ":" in VOCAB_INDEX:
-                    logits[VOCAB_INDEX[":"]] -= 1.0
+                    logits[VOCAB_INDEX[":"]] -= 1.5
                 # Next char is almost always a space (preceding next word).
-                logits[VOCAB_INDEX[" "]] += 0.8
+                logits[VOCAB_INDEX[" "]] += 1.2
                 # Newline almost never happens after a function word.
                 logits[VOCAB_INDEX["\n"]] -= 1.8
 
