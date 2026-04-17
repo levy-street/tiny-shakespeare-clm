@@ -496,7 +496,7 @@ def _bias_for(prefix: str) -> list[float] | None:
     # Scale: how strongly we believe the prefix implies a known word.
     # Too strong on short prefixes would overfit to our word list; so we
     # ramp up aggressively with length.
-    scale = min(0.4 + 0.5 * n, 2.5)
+    scale = min(-0.3 + 0.5 * n, 2.5)
     total = sum(nexts.values())
     vec = [0.0] * VOCAB_SIZE
     # Also apply a negative bump to *all* letters so that unlisted
