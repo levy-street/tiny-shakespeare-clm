@@ -110,4 +110,20 @@ def predict(state: ModelState) -> list[float]:
                           ("r", 0.8), ("v", 0.8)):
             logits[VOCAB_INDEX[ch]] += boost
 
+    # Layer 6: line-position / flow-aware modulations.
+    # Only apply when we're outside speaker-label territory.
+    if state.speaker_label_state == 0:
+        llb = state.line_length_bucket
+        # At end-of-word position (letter_run >= 2 AND on_word_trie)
+        # on progressively longer lines, newline becomes more likely as
+        # the word's terminator. Training verse wraps ~30-50 chars;
+        # prose ~60-80.
+        if state.letter_run_len >= 2 and state.on_word_trie:
+            if llb == 1:
+                logits[VOCAB_INDEX["\n"]] += 1.8
+            elif llb == 2:
+                logits[VOCAB_INDEX["\n"]] += 3.5
+            elif llb == 3:
+                logits[VOCAB_INDEX["\n"]] += 5.0
+
     return _log_softmax(logits)
