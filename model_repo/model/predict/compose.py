@@ -96,6 +96,26 @@ def predict(state: ModelState) -> list[float]:
                 for i in range(VOCAB_SIZE):
                     logits[i] += nw[i]
 
+        # Layer 4c: at a sentence start (post ". ", post "? ", post "! "
+        # or post a double-newline blank line), strongly boost capital
+        # letters relative to lowercase. The training corpus always
+        # starts new sentences with a capital (outside of mid-sentence
+        # continuations).
+        is_sentence_start = (
+            state.prev_char_class == 6  # PUNCT_END — . ? !
+            and last_cls == SPACE
+        ) or (
+            last_cls == NEWLINE and state.consecutive_newlines == 1
+            and state.chars_since_sentence_end <= 2
+        )
+        if is_sentence_start:
+            for ch in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
+                if ch in VOCAB_INDEX:
+                    logits[VOCAB_INDEX[ch]] += 1.2
+            for ch in "abcdefghijklmnopqrstuvwxyz":
+                if ch in VOCAB_INDEX:
+                    logits[VOCAB_INDEX[ch]] -= 0.5
+
     # Layer 5: speaker-label-specific boosts.
     if state.speaker_label_state == 3:
         # After ":" closing a label: strongly expect \n.
