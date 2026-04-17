@@ -73,8 +73,14 @@ _SB: dict[str, dict[str, float]] = {
 
 def _build_vectors() -> dict[str, list[float]]:
     out: dict[str, list[float]] = {}
+    lowers = "abcdefghijklmnopqrstuvwxyz"
     for first_letter, entries in _SB.items():
         vec = [0.0] * VOCAB_SIZE
+        # Negative default for letters not listed — unusual word-start
+        # bigrams (lf, df, sz, rb, mb, kd, pn...) get mildly penalized.
+        for target in lowers:
+            if target not in entries:
+                vec[VOCAB_INDEX[target]] = -9.0
         for nxt, bias in entries.items():
             if nxt in VOCAB_INDEX:
                 vec[VOCAB_INDEX[nxt]] = bias
