@@ -299,7 +299,7 @@ def predict(state: ModelState) -> list[float]:
         # this line appears to be a standalone utterance (previous line
         # was a speaker label or blank).
         elif csn >= 3 and state.prev_line_length < 25:
-            logits[VOCAB_INDEX["\n"]] += 1.0
+            logits[VOCAB_INDEX["\n"]] += 3.0
 
     # After ".\n" (sentence-end + single newline), the next character is
     # very often another newline (blank line before next speaker).
