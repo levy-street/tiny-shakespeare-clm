@@ -29,6 +29,7 @@ from .context import CTX_BIAS_VECTORS, context_key
 from .letter3 import letter3_bias
 from .next_word import next_word_bias
 from .speaker_trie import speaker_trie_bias
+from .startbigram import startbigram_bias
 from .startword import START_BIAS
 from .trigram import trigram_bias
 from .unigram import UNIGRAM_LOGPROBS
@@ -75,6 +76,20 @@ def predict(state: ModelState) -> list[float]:
         if l3 is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += l3[i]
+
+    # Layer 3b3: word-start bigram bias — at letter_run_len == 1, the
+    # second letter is heavily conditioned on the first (word-start
+    # distributions differ from mid-word). Applies only when speaker
+    # label is not constraining things.
+    if (
+        state.letter_run_len == 1
+        and state.last_char
+        and state.speaker_label_state not in (2,)
+    ):
+        sb = startbigram_bias(state.last_char)
+        if sb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += sb[i]
 
     # Layer 3c: word-trie completion bias.
     if state.word_buffer:
