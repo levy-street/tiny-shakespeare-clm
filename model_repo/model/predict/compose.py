@@ -153,6 +153,8 @@ def predict(state: ModelState) -> list[float]:
             for i in range(VOCAB_SIZE):
                 logits[i] += wt[i]
 
+
+
     # Layer 3d: speaker-label trie bias.
     if state.speaker_buffer:
         st = speaker_trie_bias(state.speaker_buffer)
@@ -327,11 +329,30 @@ def predict(state: ModelState) -> list[float]:
             logits[VOCAB_INDEX["\n"]] += 1.8
 
 
-    # After apostrophe, specifically boost common contraction letters.
+    # After apostrophe, the bias depends on what preceded the apostrophe:
+    # - If preceded by a letter: it's a contraction ('s, 'd, 't, 'll, 've)
+    #   or possessive. Boost common contraction letters.
+    # - If preceded by space/newline: it's opening a quoted phrase (e.g.
+    #   'Thanks', 'God save...', 'tis, 'gainst, 'Tis). Boost capitals +
+    #   archaic contraction leaders (t, g).
     if last_cls == APOSTROPHE:
-        for ch, boost in (("s", 2.0), ("d", 1.5), ("t", 1.5), ("l", 1.0),
-                          ("r", 0.8), ("v", 0.8)):
-            logits[VOCAB_INDEX[ch]] += boost
+        prev_cls = state.prev_char_class
+        # SPACE == 2, NEWLINE == 3 — can't import constants here without
+        # existing import; use direct numeric comparison with class enum.
+        opened_quote = prev_cls in (SPACE, NEWLINE) or state.tokens_seen == 1
+        if opened_quote:
+            # Quote-opening context — bias capitals and 't / 'g
+            # (archaic contraction leaders like 'tis, 'twas, 'gainst).
+            for ch in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
+                if ch in VOCAB_INDEX:
+                    logits[VOCAB_INDEX[ch]] += 5.0
+            # Archaic contraction leaders (lowercase): 'tis, 'twas, 'gainst.
+            for ch, boost in (("t", 4.0), ("g", 1.3)):
+                logits[VOCAB_INDEX[ch]] += boost
+        else:
+            for ch, boost in (("s", 2.0), ("d", 1.5), ("t", 1.5), ("l", 1.0),
+                              ("r", 0.8), ("v", 0.8)):
+                logits[VOCAB_INDEX[ch]] += boost
 
     # After a contraction letter (apostrophe two characters back, with a
     # letter in between — e.g. "I'l", "he's", "I'v"), the next char is
