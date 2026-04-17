@@ -118,6 +118,9 @@ _B: dict[str, dict[str, float]] = {
 }
 
 
+_GLOBAL_SCALE = 0.6
+
+
 def _build_bias_vectors() -> dict[str, list[float]]:
     """For each previous letter (a–z), produce a VOCAB_SIZE-length bias
     vector nudging likely/unlikely next letters. Only letter-target indices
@@ -132,14 +135,14 @@ def _build_bias_vectors() -> dict[str, list[float]]:
         for target in lowers:
             if target not in entries:
                 # Slight negative — the listed ones are the common ones.
-                vec[VOCAB_INDEX[target]] = -0.2
+                vec[VOCAB_INDEX[target]] = -0.2 * _GLOBAL_SCALE
         for target, bias in entries.items():
             if target in VOCAB_INDEX and len(target) == 1 and target.isalpha():
-                vec[VOCAB_INDEX[target]] = bias
+                vec[VOCAB_INDEX[target]] = bias * _GLOBAL_SCALE
                 # also apply half-bias to the uppercase counterpart
                 up = target.upper()
                 if up in VOCAB_INDEX:
-                    vec[VOCAB_INDEX[up]] = bias * 0.5
+                    vec[VOCAB_INDEX[up]] = bias * 0.5 * _GLOBAL_SCALE
         out[prev] = vec
     return out
 
