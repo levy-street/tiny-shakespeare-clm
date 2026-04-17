@@ -117,6 +117,25 @@ def update_flow(state: ModelState, token_id: int) -> ModelState:
             vowels_in_word = state.vowels_in_word
             vowels_since_consonant = state.vowels_since_consonant
 
+    # Verse-mode rolling score. Update only when a line has just
+    # completed (newline emitted that terminated a non-blank line).
+    # We read from the updated `prev_line_length` (the just-finished
+    # line's length). The score decays toward 0 on blank lines so that
+    # speaker-label blanks don't force any particular mode.
+    verse_score = state.verse_score
+    if state.last_char == "\n":
+        ln = state.prev_line_length
+        if 1 < ln < 60:  # verse-shaped line
+            delta = 0.7 if 20 <= ln <= 52 else 0.3
+            verse_score = min(3.0, verse_score + delta)
+        elif ln >= 70:  # prose-shaped line
+            verse_score = max(-3.0, verse_score - 0.9)
+        elif ln >= 60:
+            verse_score = max(-3.0, verse_score - 0.4)
+        else:
+            # blank or very short: mild decay toward 0
+            verse_score *= 0.9
+
     return state.model_copy(
         update={
             "on_word_trie": on_trie,
@@ -128,5 +147,6 @@ def update_flow(state: ModelState, token_id: int) -> ModelState:
             "consonants_since_vowel": consonants_since_vowel,
             "vowels_in_word": vowels_in_word,
             "vowels_since_consonant": vowels_since_consonant,
+            "verse_score": verse_score,
         }
     )

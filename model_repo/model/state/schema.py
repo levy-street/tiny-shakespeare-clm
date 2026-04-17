@@ -181,3 +181,13 @@ class ModelState(BaseModel):
     # (or since the start of the text). Used to detect "first word of
     # sentence" for type classification.
     words_in_sentence: int = 0
+
+    # --- Tier 3: verse-mode flow ---
+    # Rolling score in [-3, +3] estimating whether we're inside a verse
+    # passage (positive) vs. a prose passage (negative). Updated each
+    # time a line completes, based on that line's length and a decay
+    # toward zero. Verse lines are typically 25-55 chars with ~95% of
+    # lines falling under 55; prose lines frequently exceed 60 and
+    # commonly run 70-90. Downstream: verse_mode strengthens line-end
+    # biases at ~30-45 chars and slightly penalizes overflow.
+    verse_score: float = 0.0
