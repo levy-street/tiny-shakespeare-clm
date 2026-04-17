@@ -267,6 +267,25 @@ def predict(state: ModelState) -> list[float]:
         # Name is long enough to plausibly end; boost ":"
         logits[VOCAB_INDEX[":"]] += 2.0
 
+    # After sentence-ending punctuation (. ? !) at a verse-line-length
+    # position, newline is a far more likely continuation than space.
+    # Shakespeare's verse lines end with "." + newline very often.
+    if (
+        last_cls == 6  # PUNCT_END
+        and state.speaker_label_state == 0
+    ):
+        csn = state.chars_since_newline
+        if csn >= 50:
+            logits[VOCAB_INDEX["\n"]] += 7.5
+        elif csn >= 40:
+            logits[VOCAB_INDEX["\n"]] += 6.0
+        elif csn >= 30:
+            logits[VOCAB_INDEX["\n"]] += 4.5
+        elif csn >= 20:
+            logits[VOCAB_INDEX["\n"]] += 3.0
+        elif csn >= 10:
+            logits[VOCAB_INDEX["\n"]] += 1.2
+
     # After apostrophe, specifically boost common contraction letters.
     if last_cls == APOSTROPHE:
         for ch, boost in (("s", 2.0), ("d", 1.5), ("t", 1.5), ("l", 1.0),
