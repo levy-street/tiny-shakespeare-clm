@@ -265,7 +265,7 @@ def predict(state: ModelState) -> list[float]:
         logits[VOCAB_INDEX["\n"]] += 3.5
     elif state.speaker_label_state == 2 and state.upper_run_len >= 3:
         # Name is long enough to plausibly end; boost ":"
-        logits[VOCAB_INDEX[":"]] += 2.0
+        logits[VOCAB_INDEX[":"]] += 3.0
 
     # After sentence-ending punctuation (. ? !) at a verse-line-length
     # position, newline is a far more likely continuation than space.
@@ -283,6 +283,8 @@ def predict(state: ModelState) -> list[float]:
             logits[VOCAB_INDEX["\n"]] += 4.5
         elif csn >= 20:
             logits[VOCAB_INDEX["\n"]] += 3.0
+        elif csn >= 15:
+            logits[VOCAB_INDEX["\n"]] += 2.0
         elif csn >= 10:
             logits[VOCAB_INDEX["\n"]] += 1.2
         # Very short lines ending with PUNCT_END — typical in post-
