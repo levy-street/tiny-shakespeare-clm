@@ -216,3 +216,20 @@ class ModelState(BaseModel):
     # a non-blank line). Helps calibrate whether the next line is also
     # expected to be verse-length.
     prev_line_syllables: int = 0
+
+    # --- Tier 2: clause-structure tracking ---
+    # Count of clausal breaks (commas/semicolons/colons, excluding those
+    # inside speaker labels) since the last sentence-end punctuation.
+    # Shakespeare sentences typically have 1-3 clauses before closing;
+    # at 4+ clauses, sentence-end becomes highly overdue.
+    clauses_in_sentence: int = 0
+    # True iff the current clause was opened by a subordinating
+    # conjunction ("that", "which", "who", "when", "where", "while",
+    # "if", "though", "because", "unless", "as"). Reset on
+    # sentence-ending punctuation or on a new comma/semicolon.
+    in_dependent_clause: bool = False
+    # The dominant subject pronoun of the current clause/sentence, if
+    # any ("i", "thou", "he", "she", "it", "we", "ye", "you", "they").
+    # Used for verb-agreement-aware mid-word bias (e.g., after "thou"
+    # the form "hast" is expected, not "have"). Reset on sentence end.
+    subject_pronoun: str = ""

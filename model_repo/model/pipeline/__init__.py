@@ -15,6 +15,7 @@ from __future__ import annotations
 from typing import Callable
 
 from ..state import ModelState
+from .clause import update_clause
 from .counters import update_basic_counters
 from .flow import update_flow
 from .linguistic import update_linguistic
@@ -29,6 +30,7 @@ PIPELINE: list[Stage] = [
     update_linguistic,      # Tier 2: linguistic structure
     update_pos,             # Tier 2: POS tag of last completed word
     update_sentence,        # Tier 2/3: sentence-type FSM
+    update_clause,          # Tier 2: clause-structure (clauses, subj pronoun)
     update_prosody,         # Tier 3: syllable / cadence tracking
     update_flow,            # Tier 3: flow / mood / cadence
 ]
