@@ -93,6 +93,51 @@ _FUNC_FIRST_LETTERS: dict[str, float] = {
 }
 
 
+def np_head_wordend_bias(
+    np_open: bool,
+    np_wait_words: int,
+    word_buffer: str,
+    letter_run_len: int,
+    on_word_trie: bool,
+    speaker_label_state: int,
+    last_word_pos: int,
+) -> list[float] | None:
+    """At word-end on-trie, when np_open is True AND the buffer is
+    a short function-word (determiner/possessive/preposition), heavily
+    penalize sentence-enders, newline, and comma — an NP can't end
+    a sentence or line without a head noun.
+    """
+    if speaker_label_state != 0:
+        return None
+    if not np_open:
+        return None
+    if letter_run_len < 1 or not on_word_trie:
+        return None
+    # Only fire when the buffer is itself a short word that would
+    # NOT be a head noun — otherwise np_open would close.
+    # We identify by letter count: most closed-class NP-openers are
+    # 1-4 letters (a, an, the, of, to, in, on, at, by, my, thy,
+    # his, her, our, your, their, its, this, that).
+    if len(word_buffer) < 1 or len(word_buffer) > 4:
+        return None
+    vec = [0.0] * VOCAB_SIZE
+    # Sentence-enders: strong penalty.
+    pen_strong = 1.0 + 0.3 * min(np_wait_words, 3)
+    for ch in ".?!":
+        if ch in VOCAB_INDEX:
+            vec[VOCAB_INDEX[ch]] -= pen_strong
+    # Newline: medium penalty (line can enjamb through "the\n___"
+    # but it's uncommon).
+    if "\n" in VOCAB_INDEX:
+        vec[VOCAB_INDEX["\n"]] -= 0.8
+    # Comma / semicolon / colon: mild penalty — a clause-break
+    # mid-NP is very rare.
+    for ch in ",;:":
+        if ch in VOCAB_INDEX:
+            vec[VOCAB_INDEX[ch]] -= 0.5
+    return vec
+
+
 def np_head_start_bias(
     np_open: bool,
     np_wait_words: int,

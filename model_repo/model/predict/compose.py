@@ -44,6 +44,7 @@ from .letter3 import letter3_bias
 from .letter4 import letter4_bias
 from .next_word import next_word_bias
 from .np_head import np_head_start_bias
+from .ornament import ornament_start_bias
 from .phrase_bigram import phrase_bigram_bias
 from .pos_next import pos_next_bias
 from .repetition import repetition_start_bias
@@ -571,6 +572,19 @@ def predict(state: ModelState) -> list[float]:
             if rpb is not None:
                 for i in range(VOCAB_SIZE):
                     logits[i] += rpb[i]
+
+        # Layer 4b4b-orn: ornament-density word-start bias. Tier 3
+        # flow field reads ornament_density and nudges toward noun vs
+        # adjective starters based on the ornateness groove.
+        if state.speaker_label_state == 0 and state.ornament_density >= 0.10:
+            ob = ornament_start_bias(
+                state.ornament_density,
+                state.np_open,
+                state.speaker_label_state,
+            )
+            if ob is not None:
+                for i in range(VOCAB_SIZE):
+                    logits[i] += ob[i]
 
         # Layer 4b4c: NP-head expectation. When np_open is True we're
         # waiting for a head noun to close the current noun phrase

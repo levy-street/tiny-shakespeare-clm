@@ -16,6 +16,17 @@ from __future__ import annotations
 
 from ..state import ModelState
 from ..predict.word_trie import COMPLETE_WORDS, is_on_trie
+from .pos import (
+    POS_ADJECTIVE,
+    POS_ADVERB,
+    POS_AUX_VERB,
+    POS_MODAL,
+    POS_NOUN,
+    POS_PROPER_NOUN,
+    POS_VERB,
+    POS_VERB_ED,
+    POS_VERB_ING,
+)
 
 # Short closed-class words whose follow-up is almost always a
 # content word (noun / verb / adjective), not another function word.
@@ -470,6 +481,28 @@ def update_flow(state: ModelState, token_id: int) -> ModelState:
     if state.consecutive_newlines >= 2 and lc == "\n":
         cadence *= 0.4
 
+    # Ornament density: rolling [0, 1] tracking adjective/adverb
+    # stacking richness vs. spare action-verb-driven diction.
+    ornament_density = state.ornament_density
+    if state.just_finished_word:
+        ornament_density *= 0.96  # per-word decay
+        pos = state.last_word_pos
+        if pos == POS_ADJECTIVE:
+            ornament_density = min(1.0, ornament_density + 0.18)
+        elif pos == POS_ADVERB:
+            ornament_density = min(1.0, ornament_density + 0.08)
+        elif pos in (POS_NOUN, POS_PROPER_NOUN):
+            ornament_density = max(0.0, ornament_density - 0.10)
+        elif pos in (POS_VERB, POS_AUX_VERB, POS_MODAL,
+                     POS_VERB_ING, POS_VERB_ED):
+            ornament_density = max(0.0, ornament_density - 0.06)
+    # Sentence-end: partial reset.
+    if lc in ".!?":
+        ornament_density *= 0.85
+    # Speaker turn: dampen carryover.
+    if state.consecutive_newlines >= 2 and lc == "\n":
+        ornament_density *= 0.4
+
     return state.model_copy(
         update={
             "on_word_trie": on_trie,
@@ -490,5 +523,6 @@ def update_flow(state: ModelState, token_id: int) -> ModelState:
             "imagery_density": imagery_density,
             "addressing_register": addressing_register,
             "cadence": cadence,
+            "ornament_density": ornament_density,
         }
     )

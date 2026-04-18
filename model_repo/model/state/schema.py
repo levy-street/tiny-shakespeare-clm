@@ -546,6 +546,37 @@ class ModelState(BaseModel):
     # Small magnitude bias, scaled by |cadence|.
     cadence: float = 0.0
 
+    # --- Tier 3: ornament density (ornate ↔ spare texture) ---
+    # Rolling [0, 1] float tracking whether the recent text has been
+    # *ornate* (heavy with adjectives / adverbs stacked before head
+    # nouns — "good sweet gentle rose", "most fair dear lord",
+    # "noble and valiant captain") vs. *spare* (few pre-modifiers,
+    # direct predication — "I am dead", "go now", "he hath fled").
+    #
+    # Distinct from tonal_weight (valence), imagery_density (sensory),
+    # and archaic_density (register): ornament tracks *how decorated*
+    # the noun phrases have been. Shakespeare alternates between
+    # highly ornate passages (royal speeches, love scenes, soliloquies)
+    # and spare passages (action, urgent dialogue, terse commands).
+    # Once a speaker is in an ornate groove, more adjectives follow;
+    # once they're in spare mode, direct diction follows.
+    #
+    # Bumps per completed word:
+    #   ADJECTIVE:  +0.18 (ornament)
+    #   ADVERB:     +0.08 (ornament-ish)
+    #   NOUN / PROPER_NOUN:  -0.10 (noun consumed; resets a bit)
+    #   VERB / AUX / MODAL:  -0.06 (action mode, spare)
+    # Decays toward 0 at 0.96 per completed word.
+    # Sentence-end: *0.85 (partial reset).
+    # Speaker turn: *0.4 (dampen).
+    #
+    # Consumed by predict.ornament at word-start: when np_open AND
+    # ornament_density is high, push harder toward noun head (resolve
+    # the NP); when low, allow adjective modifiers. Also shapes
+    # cadence-like decisions about whether to insert another adjective
+    # before the head noun.
+    ornament_density: float = 0.0
+
     # --- Tier 2: per-word phonotactic red-flag accumulator ---
     # Count of phonotactic "red flags" observed in the current word
     # buffer so far. A red flag is a non-English-like substructure
