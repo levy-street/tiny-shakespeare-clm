@@ -64,6 +64,46 @@ VA_IMPERATIVE = 5
 _VOWELS = frozenset("aeiouy")
 
 
+_THOU_VERB_STARTERS: dict[str, float] = {
+    "a": 0.18,  # art
+    "h": 0.22,  # hast, hadst, hearst
+    "d": 0.18,  # didst, doest, dost, durst
+    "c": 0.12,  # canst, couldst
+    "w": 0.18,  # wast, wert, wilt, wouldst
+    "s": 0.15,  # shalt, shouldst, seest, speakest, sayest
+    "m": 0.12,  # mayest, must
+    "k": 0.10,  # knowest
+    "l": 0.08,  # lovest, liest
+    "t": 0.08,  # thinkest
+    "g": 0.06,  # givest
+    "b": 0.05,  # boughtest, bidst
+}
+
+
+def verb_agreement_start_bias(
+    verb_agreement: int,
+    clause_slot: int,
+    speaker_label_state: int,
+    letter_run_len: int,
+    last_cls: int,
+) -> list[float] | None:
+    """Return a first-letter bias when the upcoming word is likely
+    a verb matching verb_agreement. Fires at word-start only."""
+    if speaker_label_state != 0:
+        return None
+    if clause_slot != 1:  # need HAS_SUBJ
+        return None
+    if letter_run_len != 0:
+        return None
+    if verb_agreement != VA_THOU:
+        return None
+    vec = [0.0] * VOCAB_SIZE
+    for ch, w in _THOU_VERB_STARTERS.items():
+        if ch in VOCAB_INDEX:
+            vec[VOCAB_INDEX[ch]] += w
+    return vec
+
+
 def verb_agreement_bias(
     verb_agreement: int,
     clause_slot: int,
@@ -93,6 +133,14 @@ def verb_agreement_bias(
                 vec[VOCAB_INDEX["t"]] += 2.4
             if " " in VOCAB_INDEX:
                 vec[VOCAB_INDEX[" "]] -= 0.8
+            return vec
+        if letter_run_len >= 4 and last == "d":
+            # buffer ends in "d"; push "s" then "t" to form -dst
+            # (didst, couldst, wouldst, shouldst).
+            if "s" in VOCAB_INDEX:
+                vec[VOCAB_INDEX["s"]] += 1.3
+            if " " in VOCAB_INDEX:
+                vec[VOCAB_INDEX[" "]] -= 0.4
             return vec
         if letter_run_len >= 3 and last in _VOWELS:
             # buffer ends in vowel; push "s" to form -est.

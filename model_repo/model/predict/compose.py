@@ -66,7 +66,7 @@ from .topic import content_repeat_bias, topic_bias, topic_midword_bias
 from .addressee import addressee_midword_bias, addressee_start_bias
 from .adjacent_repeat import adjacent_repeat_bias
 from .trie_recovery import trie_recovery_bias
-from .verb_agreement import verb_agreement_bias
+from .verb_agreement import verb_agreement_bias, verb_agreement_start_bias
 from .clause_depth import clause_depth_close_bias
 from .red_flags import red_flags_close_bias
 from .trigram import trigram_bias
@@ -444,6 +444,21 @@ def predict(state: ModelState) -> list[float]:
                 if pn is not None:
                     for i in range(VOCAB_SIZE):
                         logits[i] += pn[i]
+
+            # Layer 4b2: subject-verb agreement word-start bias.
+            # When a thou-subject has been identified and the verb
+            # role is still unfilled, boost typical thou-verb
+            # starter letters.
+            vas = verb_agreement_start_bias(
+                state.verb_agreement,
+                state.clause_slot,
+                state.speaker_label_state,
+                state.letter_run_len,
+                last_cls,
+            )
+            if vas is not None:
+                for i in range(VOCAB_SIZE):
+                    logits[i] += vas[i]
 
 
         # Layer 4b1: word-repetition bias. Shakespeare's emotional
