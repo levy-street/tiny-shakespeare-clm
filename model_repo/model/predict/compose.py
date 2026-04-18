@@ -261,7 +261,18 @@ def predict(state: ModelState) -> list[float]:
         if wt is not None:
             # Scale slightly up at longer prefixes — fewer completions
             # remain, so the bias is more discriminating.
-            wt_scale = 1.0 + 0.02 * min(state.letter_run_len, 5)
+            # Scale per letter_run_len: longer prefixes are more
+            # discriminating. Asymmetric: slightly down-weight very
+            # short prefixes (1-2 letters) since word_trie massively
+            # over-weights common 2-letter prefix branches relative
+            # to the residual context-class/bigram priors.
+            rl = state.letter_run_len
+            if rl <= 1:
+                wt_scale = 0.85
+            elif rl == 2:
+                wt_scale = 0.95
+            else:
+                wt_scale = 1.0 + 0.02 * min(rl, 5)
             for i in range(VOCAB_SIZE):
                 logits[i] += wt[i] * wt_scale
 
