@@ -218,6 +218,40 @@ def predict(state: ModelState) -> list[float]:
                 if up != w[0] and up in VOCAB_INDEX:
                     logits[VOCAB_INDEX[up]] += 1.4
 
+        # Layer 4b1a: verb-overdue bias. When the clause has a subject
+        # but no verb yet, and we're at a word-start position, bias
+        # toward verb/aux/modal-starter letters.
+        if (
+            state.clause_slot == 1  # HAS_SUBJ
+            and state.speaker_label_state == 0
+            and state.words_since_verb >= 1
+        ):
+            wsv = min(state.words_since_verb, 4)
+            vb_scale = 0.05 + 0.10 * min(wsv, 3)
+            # Verb-starter first letters (aux, modal, main).
+            verb_letters: dict[str, float] = {
+                "h": 1.0,  # have/hath/hast/had
+                "a": 0.9,  # am/art/are
+                "i": 0.8,  # is
+                "w": 1.0,  # will/would/was/were
+                "d": 0.8,  # do/did/dost/doth/didst
+                "s": 0.7,  # shall/should/shalt/shouldst
+                "c": 0.6,  # can/canst/could/couldst
+                "m": 0.6,  # may/mayst/might/must
+                "b": 0.5,  # be/been/being
+                "g": 0.4,  # go/gave/got
+                "t": 0.4,  # take/tell/think
+                "l": 0.3,  # look/let/love/live
+                "k": 0.3,  # know/kill
+                "f": 0.3,  # feel/find/fall/fight
+            }
+            for ch, lean in verb_letters.items():
+                if ch in VOCAB_INDEX:
+                    logits[VOCAB_INDEX[ch]] += vb_scale * lean
+                up = ch.upper()
+                if up in VOCAB_INDEX:
+                    logits[VOCAB_INDEX[up]] += vb_scale * lean * 0.6
+
         # Layer 4b1b: vocative-noun first-letter bias when the state
         # machine has detected a vocative-construction lead-in (e.g.
         # "my dear ___" / "O sweet ___"). Only active at word-start
