@@ -450,6 +450,29 @@ class ModelState(BaseModel):
     # passages or at the first line of a turn.
     verse_line_run: int = 0
 
+    # --- Tier 2/3: addressee / vocative memory ---
+    # The most recent vocative noun used (lowercased) to address the
+    # interlocutor within the current speaker turn. Empty when none
+    # has been recorded. Reset on speaker-turn boundary
+    # (consecutive_newlines >= 2). Captured at word completion when
+    # the completed word matches a known vocative-noun class AND the
+    # word immediately preceding it was a vocative-lead ("my", "thy",
+    # "good", "dear", ...) — the diagnostic two-word construction.
+    #
+    # Motivation: Shakespeare speakers are remarkably consistent in
+    # which addressee-noun they use within a single turn. A speaker
+    # who opens with "my lord" will say "my lord" again ten lines
+    # later, not "my friend". The existing vocative_expectation flag
+    # knows a vocative is imminent but has no memory of WHICH noun —
+    # so the predict layer biases the same generic l/s/m/f/p letter
+    # set every time. This field adds the memory.
+    last_vocative: str = ""
+    # Count of vocative-noun mentions observed this turn. 0 at turn
+    # start; bumped each time last_vocative is updated. Used as a
+    # confidence gauge: 2+ mentions of the same noun is very strong
+    # evidence that future vocatives in this turn will be that noun.
+    turn_vocative_count: int = 0
+
     # --- Tier 2: formulaic-phrase progress ---
     # Current node ID in a precomputed trie of common multi-word
     # Shakespeare formulas ("I pray thee", "good my lord", "by my

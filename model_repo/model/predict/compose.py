@@ -57,6 +57,7 @@ from .startword import START_BIAS
 from .formula import formula_midword_bias, formula_start_bias
 from .imagery import imagery_start_bias
 from .topic import content_repeat_bias, topic_bias, topic_midword_bias
+from .addressee import addressee_midword_bias, addressee_start_bias
 from .adjacent_repeat import adjacent_repeat_bias
 from .trie_recovery import trie_recovery_bias
 from .trigram import trigram_bias
@@ -237,6 +238,28 @@ def predict(state: ModelState) -> list[float]:
         if tr is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += tr[i]
+
+    # Layer 3c1-addr: addressee-memory mid-word bias. When vocative
+    # expectation is active AND the current buffer is a prefix of the
+    # last vocative noun this speaker used, boost the continuing
+    # letter so we complete to the same noun.
+    if (
+        state.word_buffer
+        and state.speaker_label_state == 0
+        and state.vocative_expectation
+        and state.last_vocative
+        and state.turn_vocative_count >= 1
+    ):
+        amw = addressee_midword_bias(
+            state.last_vocative,
+            state.turn_vocative_count,
+            state.word_buffer,
+            state.vocative_expectation,
+            state.speaker_label_state,
+        )
+        if amw is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += amw[i]
 
     # Layer 3c1-adj: adjacent-word-repeat blocker. "of of", "the the",
     # "and and" never happen. Narrow rule; fires at word-start, mid-
@@ -447,6 +470,18 @@ def predict(state: ModelState) -> list[float]:
         if state.vocative_expectation and state.speaker_label_state == 0:
             for i in range(VOCAB_SIZE):
                 logits[i] += VOCATIVE_START_BIAS[i]
+            # Layer 4b1c: addressee-memory bias — if we've already
+            # committed to a specific vocative noun this turn, bias
+            # strongly toward repeating it.
+            ab = addressee_start_bias(
+                state.last_vocative,
+                state.turn_vocative_count,
+                state.vocative_expectation,
+                state.speaker_label_state,
+            )
+            if ab is not None:
+                for i in range(VOCAB_SIZE):
+                    logits[i] += ab[i]
 
         # Layer 4b3: tonal-texture bias — at word-start outside speaker
         # labels, nudge first-letter choice toward the lexicon consistent

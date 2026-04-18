@@ -15,6 +15,7 @@ from __future__ import annotations
 from typing import Callable
 
 from ..state import ModelState
+from .addressee import update_addressee
 from .anaphora import update_anaphora
 from .clause import update_clause
 from .clause_slot import update_clause_slot
@@ -42,6 +43,7 @@ PIPELINE: list[Stage] = [
     update_clause,          # Tier 2: clause-structure (clauses, subj pronoun)
     update_clause_slot,     # Tier 2: syntactic-slot state machine
     update_vocative,        # Tier 2: vocative-expectation flag
+    update_addressee,       # Tier 2/3: vocative-noun memory
     update_speaker_memory,  # Tier 2/3: recent-speakers rolling window
     update_anaphora,        # Tier 2: line-starter anaphora tracking
     update_rhyme,           # Tier 2/3: line-tail rhyme memory
