@@ -44,6 +44,7 @@ from .next_word import next_word_bias
 from .phrase_bigram import phrase_bigram_bias
 from .pos_next import pos_next_bias
 from .repetition import repetition_start_bias
+from .rhyme import rhyme_midword_bias
 from .slot_next import slot_start_bias
 from .speaker_recency import speaker_recency_bias
 from .speaker_trie import speaker_trie_bias
@@ -243,6 +244,25 @@ def predict(state: ModelState) -> list[float]:
         if am is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += am[i]
+
+    # Layer 3c2c: rhyme-position mid-word bias. When we're in a verse
+    # run and approaching line-end, nudge the next letter toward the
+    # previous line's rhyme letter.
+    if (
+        state.word_buffer
+        and state.speaker_label_state == 0
+        and state.verse_line_run >= 1
+    ):
+        rb = rhyme_midword_bias(
+            state.prev_line_tail,
+            state.prev_prev_line_tail,
+            state.verse_line_run,
+            state.chars_since_newline,
+            state.word_buffer,
+        )
+        if rb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += rb[i]
 
     # Layer 3c2b: anaphora mid-word continuation. When an anaphora
     # pattern is active AND we're mid-way through the first word of

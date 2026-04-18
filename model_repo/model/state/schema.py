@@ -421,6 +421,35 @@ class ModelState(BaseModel):
     # bias as drift grows.
     letters_past_complete: int = 0
 
+    # --- Tier 2/3: rhyme position / line-tail memory ---
+    # Last 3 letters (lowercased) of the most recently completed
+    # non-empty verse-plausible line. Captured at the "\n" that closed
+    # the line, iff the line itself had letters. Empty string when
+    # there is no previous line (start of text, speaker-turn change,
+    # or the line before was blank or a speaker-label).
+    #
+    # Shakespeare's verse uses couplets (AA) to close scenes and
+    # sonnets; his quatrains use ABAB. A model with no memory of the
+    # previous line's ending letter can never produce a rhyme by
+    # construction — it can only stumble onto one. This field lets
+    # the predict layer, when near line-end in verse mode, bias the
+    # current word's completion toward letters that match the
+    # previous tail — a letter-level proxy for rhyme.
+    prev_line_tail: str = ""
+    # The line-tail before prev_line_tail, for ABAB scheme detection.
+    # Same reset rules.
+    prev_prev_line_tail: str = ""
+    # Rolling 3-char buffer of the most recent letters on the CURRENT
+    # line (lowercased, non-letters ignored). Used to capture
+    # prev_line_tail at the moment the line closes with \n. Reset on
+    # newline (the line closed) and on speaker-turn change.
+    line_tail_buffer: str = ""
+    # Consecutive count of verse-plausible lines (length 15-55 chars,
+    # non-empty, non-label) ending at the most recent \n. Helps the
+    # rhyme predict layer gate: don't bias toward rhyme in prose
+    # passages or at the first line of a turn.
+    verse_line_run: int = 0
+
     # --- Tier 2: formulaic-phrase progress ---
     # Current node ID in a precomputed trie of common multi-word
     # Shakespeare formulas ("I pray thee", "good my lord", "by my
