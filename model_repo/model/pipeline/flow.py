@@ -256,6 +256,31 @@ _ADDR_BUMP = 1.1
 _ADDR_DECAY = 0.92  # per completed word
 _ADDR_MAX = 3.0
 
+# --- Invocation mode (rhetorical / declamatory texture) ---
+# Canonical sentence-opener invocation words. Detected via
+# words_in_sentence == 1 (first completed word of sentence) and
+# match against this set.
+_INVOC_OPENERS_STRONG: frozenset[str] = frozenset({
+    "o", "oh", "alas", "alack", "ah", "ay",
+    "hark", "behold", "hail", "hear", "lo",
+    "heavens", "gods",
+})
+# Rhetorical WH-openers signal declamatory voice (though weaker).
+_INVOC_OPENERS_WH: frozenset[str] = frozenset({
+    "what", "why", "whence", "wherefore", "how", "when",
+})
+# Vocative nouns that in invocation mode reinforce it.
+_INVOC_VOCATIVES: frozenset[str] = frozenset({
+    "lord", "lords", "god", "gods", "heaven", "heavens",
+    "death", "fortune", "muse", "fate", "love", "nature",
+    "time", "night", "day", "sun", "moon", "world", "soul",
+})
+_INVOC_STRONG_BUMP = 0.45
+_INVOC_WH_BUMP = 0.18
+_INVOC_VOCATIVE_BUMP = 0.10
+_INVOC_EXCLAIM_BUMP = 0.25
+_INVOC_DECAY = 0.92
+
 
 def update_flow(state: ModelState, token_id: int) -> ModelState:
     # Linguistic updates have already run; use the post-update state.
@@ -481,6 +506,34 @@ def update_flow(state: ModelState, token_id: int) -> ModelState:
     if state.consecutive_newlines >= 2 and lc == "\n":
         cadence *= 0.4
 
+    # Invocation mode: rolling [0, 1] tracking rhetorical/declamatory
+    # voice. Bumped by invocation openers at sentence start, WH
+    # rhetorical openers, "!" at sentence end, and vocatives when
+    # mode is already warm. Decays per completed word.
+    invocation_mode = state.invocation_mode
+    if state.just_finished_word:
+        invocation_mode *= _INVOC_DECAY
+        w = state.last_completed_word
+        if w:
+            # First word of the sentence? words_in_sentence == 1 means
+            # this was the opener.
+            if state.words_in_sentence == 1:
+                if w in _INVOC_OPENERS_STRONG:
+                    invocation_mode = min(1.0, invocation_mode + _INVOC_STRONG_BUMP)
+                elif w in _INVOC_OPENERS_WH:
+                    invocation_mode = min(1.0, invocation_mode + _INVOC_WH_BUMP)
+            # Vocatives reinforce when already in mode.
+            if invocation_mode > 0.2 and w in _INVOC_VOCATIVES:
+                invocation_mode = min(1.0, invocation_mode + _INVOC_VOCATIVE_BUMP)
+    # "!" at sentence end bumps for the *next* sentence.
+    if lc == "!":
+        invocation_mode = min(1.0, invocation_mode + _INVOC_EXCLAIM_BUMP)
+    elif lc in ".?":
+        invocation_mode *= 0.92  # mild attenuation
+    # Speaker turn: new speaker, damp carryover.
+    if state.consecutive_newlines >= 2 and lc == "\n":
+        invocation_mode *= 0.25
+
     # Ornament density: rolling [0, 1] tracking adjective/adverb
     # stacking richness vs. spare action-verb-driven diction.
     ornament_density = state.ornament_density
@@ -524,5 +577,6 @@ def update_flow(state: ModelState, token_id: int) -> ModelState:
             "addressing_register": addressing_register,
             "cadence": cadence,
             "ornament_density": ornament_density,
+            "invocation_mode": invocation_mode,
         }
     )

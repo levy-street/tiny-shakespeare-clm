@@ -64,6 +64,11 @@ from .starttrigram import starttrigram_bias
 from .startword import START_BIAS
 from .formula import formula_midword_bias, formula_start_bias
 from .imagery import imagery_start_bias
+from .invocation import (
+    invocation_sentence_end_bias,
+    invocation_sentence_start_bias,
+    invocation_word_start_bias,
+)
 from .topic import content_repeat_bias, topic_bias, topic_midword_bias
 from .addressee import addressee_midword_bias, addressee_start_bias
 from .adjacent_repeat import adjacent_repeat_bias
@@ -618,6 +623,19 @@ def predict(state: ModelState) -> list[float]:
                     for i in range(VOCAB_SIZE):
                         logits[i] += tb[i]
 
+        # Layer 4b3a: invocation-mode mid-sentence word-start bias.
+        # When the speaker is in declamatory voice, boost vocative-lead
+        # modifier starters (my/thy/good/sweet/noble/dear/fair/holy).
+        # Distinct from sentence-start invocation bias (which boosts
+        # opening capitals like O/Alas/Hark); this fires at every
+        # word-start within the invocation passage.
+        iwb = invocation_word_start_bias(
+            state.invocation_mode, state.speaker_label_state
+        )
+        if iwb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += iwb[i]
+
         # Layer 4b3b: imagery-density bias — at word-start outside
         # speaker labels, when imagery_density has risen above baseline,
         # nudge next-word first letter toward concrete/sensory starter
@@ -803,6 +821,15 @@ def predict(state: ModelState) -> list[float]:
             for ch in "abcdefghijklmnopqrstuvwxyz":
                 if ch in VOCAB_INDEX:
                     logits[VOCAB_INDEX[ch]] -= 0.5
+            # Invocation-mode sentence-start: when the speaker has been
+            # in declamatory voice, tilt first letter toward canonical
+            # invocation openers (O/Alas/Hark/Lo/What/Why/Behold).
+            isb = invocation_sentence_start_bias(
+                state.invocation_mode, state.speaker_label_state
+            )
+            if isb is not None:
+                for i in range(VOCAB_SIZE):
+                    logits[i] += isb[i]
 
         # Verse-line-start capital boost: after a *single* newline that
         # terminated a VERSE-length line (typically 15-55 chars),
@@ -1266,6 +1293,19 @@ def predict(state: ModelState) -> list[float]:
             shift_p = min(0.95 * emo, 0.95)
             ratio_excl += ratio_period * shift_p
             ratio_period *= (1.0 - shift_p)
+
+        # Invocation-mode end-punctuation shift: when the speaker has
+        # been in declamatory voice, tilt sentence-end mass toward "!"
+        # at the expense of ".". This is a softer effect than the
+        # emotional-intensity shift (which spikes on short bursts).
+        # Invocation-mode !/. shift — disabled; net-negative on BPC
+        # in isolation. The sentence-start capital-letter bias below
+        # carries the signal.
+        # inv = state.invocation_mode
+        # if inv > 0.2 and st_type != 2:
+        #     shift_i = min(0.08 * inv, 0.08)
+        #     ratio_excl += ratio_period * shift_i
+        #     ratio_period *= (1.0 - shift_i)
 
         # Overdue sentence end: at word-end on-trie, boost sentence-end
         # punctuation so the model actually closes sentences. The

@@ -824,6 +824,44 @@ class ModelState(BaseModel):
     # articles/possessives as we build the NP. Caps at 5.
     vt_wait_words: int = 0
 
+    # --- Tier 3: invocation mode (rhetorical / declamatory texture) ---
+    # Rolling [0, 1] float tracking whether the current speaker is in
+    # *invocation mode* — the grand, oratorical, apostrophe-driven
+    # texture that characterizes Shakespeare's high rhetorical passages
+    # (Gaunt's "This royal throne of kings...", Hamlet's "O, what a
+    # rogue and peasant slave am I!", Henry V's "O for a muse of
+    # fire..."). Distinct from:
+    #   - archaic_density (register of individual words)
+    #   - emotional_intensity (outburst heat, short-decay)
+    #   - tonal_weight (dark vs light valence)
+    #   - imagery_density (sensory vs abstract)
+    #   - cadence (staccato vs flowing)
+    #   - ornament_density (adjective stacking)
+    #
+    # Invocation mode captures whether the SYNTAX-LEVEL voice is in
+    # declamatory address mode, separate from what lexicon is in use.
+    # Signals that raise it:
+    #   - Sentence begins with "o"/"oh"/"alas"/"ah"/"hark"/"behold"/
+    #     "hail"/"hear"/"lo"/"heavens" (+0.45) — canonical invocation
+    #     openers
+    #   - Sentence ends with "!" (+0.25) — invocation tends to chain
+    #   - WH-rhetorical opener ("what"/"why"/"whence"/"wherefore"/
+    #     "how"/"when") at sentence-start (+0.18)
+    #   - Vocative noun completed while mode > 0.2 (+0.10) — reinforces
+    #
+    # Decay: 0.92 per completed word (mode is medium-persistence —
+    # it lingers across 1-2 sentences but fades over a long passage).
+    # Sentence-end: *0.92 (mild attenuation at punctuation).
+    # Speaker turn: *0.25 (new speaker may or may not inherit).
+    #
+    # Consumed by predict/invocation.py at:
+    #   - sentence starts: boost "O", "A" (Alas/Ah), "H" (Hark/Hail/
+    #     Hear/How), "W" (What/Why/Whence), "L" (Lo)
+    #   - sentence-end punctuation choice: boost "!" over "."
+    #   - in-invocation word starts: boost vocative-lead letters
+    #     (m=my, t=thy, g=good/gentle, s=sweet/sacred, n=noble, d=dear)
+    invocation_mode: float = 0.0
+
     # --- Tier 2: speaker-label off-trie run-length ---
     # Count of consecutive letters added to `speaker_buffer` (while the
     # speaker-label FSM is in state 1 or 2) that took the buffer OFF
