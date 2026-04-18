@@ -354,7 +354,7 @@ def content_repeat_bias(
             nxt = w[len(buffer)]
             if nxt in VOCAB_INDEX:
                 # Decay per-slot; most-recent is strongest.
-                weight = (0.55, 0.38, 0.24, 0.15)[i]
+                weight = (2.20, 1.05, 0.50, 0.22)[i]
                 vec[VOCAB_INDEX[nxt]] += weight
                 hit = True
     if not hit:
