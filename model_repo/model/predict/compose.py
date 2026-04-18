@@ -50,7 +50,7 @@ from .start5gram import start5gram_bias
 from .startbigram import startbigram_bias
 from .starttrigram import starttrigram_bias
 from .startword import START_BIAS
-from .topic import topic_bias
+from .topic import topic_bias, topic_midword_bias
 from .trigram import trigram_bias
 from .vocative import VOCATIVE_START_BIAS
 from .unigram import UNIGRAM_LOGPROBS
@@ -167,6 +167,22 @@ def predict(state: ModelState) -> list[float]:
         if wt is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += wt[i]
+
+    # Layer 3c1: topic-midword bias — when content_words indicate an
+    # active topical cluster (DARK/LIGHT/ROYAL), tilt mid-word letter
+    # choice toward completions that stay within the cluster. This
+    # rides atop word_trie (which votes for all known words) and
+    # nudges equipoised completions toward topically-coherent ones
+    # ("bl" after dark content → bleed/blood over bless).
+    if (
+        state.word_buffer
+        and state.content_words
+        and state.speaker_label_state == 0
+    ):
+        tmw = topic_midword_bias(state.word_buffer, state.content_words)
+        if tmw is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += tmw[i]
 
 
     # Layer 3c2: archaic mid-word disambiguation — when buffer matches

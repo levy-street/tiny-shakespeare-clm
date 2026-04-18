@@ -140,6 +140,8 @@ for w in _LIGHT:
 for w in _ROYAL:
     _WORD_TO_CLUSTER[w] = 2
 
+_CLUSTERS: tuple[frozenset[str], ...] = (_DARK, _LIGHT, _ROYAL)
+
 N_CLUSTERS = 3
 
 # --- Per-cluster starter-letter biases ---
@@ -239,10 +241,11 @@ _GAIN = 0.45
 _MAX_SCALE = 0.75
 
 
-def topic_bias(content_words: tuple[str, ...]) -> list[float] | None:
-    """Compute a first-letter bias vector from recent content words.
-
-    Returns None if no clear topical signal is present.
+def _dominant_cluster(
+    content_words: tuple[str, ...]
+) -> tuple[int, float] | None:
+    """Return (cluster_id, score) if a topical cluster dominates the
+    recent content-words window above _THRESHOLD; else None.
     """
     if not content_words:
         return None
@@ -260,8 +263,99 @@ def topic_bias(content_words: tuple[str, ...]) -> list[float] | None:
             top_score = scores[cid]
     if top_score < _THRESHOLD:
         return None
+    return top, top_score
+
+
+def topic_bias(content_words: tuple[str, ...]) -> list[float] | None:
+    """Compute a first-letter bias vector from recent content words.
+
+    Returns None if no clear topical signal is present.
+    """
+    dom = _dominant_cluster(content_words)
+    if dom is None:
+        return None
+    top, top_score = dom
     scale = min((top_score - _THRESHOLD) * _GAIN, _MAX_SCALE)
     if scale <= 0.0:
         return None
     vec = _CLUSTER_VECS[top]
     return [scale * v for v in vec]
+
+
+# --- Midword consumer ---
+# For each (cluster, buffer-prefix) we precompute a tiny map of
+# "next letters that continue buffer into a cluster word" with raw
+# weights. Weights are small; final bias scales by activation score.
+#
+# Precomputing by buffer avoids iterating the cluster on every token.
+
+_MIDWORD_MAX_PREFIX = 8  # cap precomputed prefix length
+
+def _build_midword_maps() -> list[dict[str, dict[str, float]]]:
+    maps: list[dict[str, dict[str, float]]] = []
+    for cluster in _CLUSTERS:
+        prefix_map: dict[str, dict[str, float]] = {}
+        for w in cluster:
+            # Skip very short words (no midword context) and very long.
+            if len(w) < 3:
+                continue
+            for i in range(1, min(len(w), _MIDWORD_MAX_PREFIX + 1)):
+                pref = w[:i]
+                nxt = w[i] if i < len(w) else " "
+                if nxt.isalpha():
+                    nxt = nxt.lower()
+                prefix_map.setdefault(pref, {})
+                # Accumulate weight — prefixes shared by multiple
+                # cluster words get stronger next-letter signal on
+                # their shared continuation.
+                prefix_map[pref][nxt] = prefix_map[pref].get(nxt, 0.0) + 1.0
+        # Normalize per-prefix so large clusters don't dominate
+        # (each prefix's total next-letter weight is 1.0).
+        for pref, nmap in prefix_map.items():
+            total = sum(nmap.values())
+            if total > 0:
+                for k in nmap:
+                    nmap[k] = nmap[k] / total
+        maps.append(prefix_map)
+    return maps
+
+
+_MIDWORD_MAPS: list[dict[str, dict[str, float]]] = _build_midword_maps()
+
+
+_MIDWORD_THRESHOLD = 0.40  # slightly softer than word-start
+_MIDWORD_GAIN = 0.35
+_MIDWORD_MAX_SCALE = 0.60
+
+
+def topic_midword_bias(
+    buffer: str, content_words: tuple[str, ...]
+) -> list[float] | None:
+    """At mid-word position, if a topical cluster dominates, bias the
+    next letter toward letters that continue buffer into one of the
+    cluster's words. Returns None if no signal applies.
+    """
+    if not buffer or not content_words:
+        return None
+    if len(buffer) > _MIDWORD_MAX_PREFIX:
+        return None
+    dom = _dominant_cluster(content_words)
+    if dom is None:
+        return None
+    top, top_score = dom
+    if top_score < _MIDWORD_THRESHOLD:
+        return None
+    nmap = _MIDWORD_MAPS[top].get(buffer)
+    if not nmap:
+        return None
+    scale = min(
+        (top_score - _MIDWORD_THRESHOLD) * _MIDWORD_GAIN,
+        _MIDWORD_MAX_SCALE,
+    )
+    if scale <= 0.0:
+        return None
+    vec = [0.0] * VOCAB_SIZE
+    for nxt, w in nmap.items():
+        if nxt in VOCAB_INDEX:
+            vec[VOCAB_INDEX[nxt]] += scale * w * 2.5
+    return vec
