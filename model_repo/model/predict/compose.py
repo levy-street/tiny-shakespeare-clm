@@ -199,23 +199,23 @@ def predict(state: ModelState) -> list[float]:
                         logits[i] += pn[i]
 
         # Layer 4b1: word-repetition bias. Shakespeare's emotional
-        # climaxes chain identical words ("Never, never, never, never,
-        # never!"; "O, O, O, O!"; "Why, why, why, why?"; "No, no, no,
-        # no!"). When last_completed_word == prev_completed_word, the
-        # probability that the next word is the same one again spikes.
-        # We bias the first letter of the next word toward the first
-        # letter of the repeated word.
+        # climaxes chain identical words with comma separators
+        # ("Never, never, never, never, never!"; "O, O, O, O!";
+        # "Why, why, why, why?"; "No, no, no, no!"). We trigger only
+        # when the two previous words are identical AND the recent
+        # char context shows a comma-space separator (so we're in a
+        # repetition rhythm, not a random accidental repeat).
         if (
             state.last_completed_word
             and state.last_completed_word == state.prev_completed_word
+            and state.prev_char_class == 7  # PUNCT_MID before the space
         ):
             w = state.last_completed_word
             if w and w[0] in VOCAB_INDEX:
-                # Lowercase first letter bias.
-                logits[VOCAB_INDEX[w[0]]] += 2.2
+                logits[VOCAB_INDEX[w[0]]] += 2.4
                 up = w[0].upper()
                 if up != w[0] and up in VOCAB_INDEX:
-                    logits[VOCAB_INDEX[up]] += 1.2
+                    logits[VOCAB_INDEX[up]] += 1.4
 
         # Layer 4b2: phrase bigram — given the previous TWO completed
         # words, bias next word's first letter for known 3-word formulas.
