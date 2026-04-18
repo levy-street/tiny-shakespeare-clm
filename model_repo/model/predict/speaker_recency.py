@@ -55,7 +55,7 @@ def speaker_recency_bias(
     # Each partner contributes a bump on the next char of its name
     # after the buffer. Also ":" / " " if the buffer IS the complete
     # partner name.
-    PARTNER_BUMP = 1.5
+    PARTNER_BUMP = 4.0
     for sp in matching_partners:
         if len(sp) > len(buf):
             nxt = sp[len(buf)]
@@ -73,7 +73,7 @@ def speaker_recency_bias(
     # Negative nudge for the self-speaker continuation: they almost
     # never speak two labels in a row. Only apply if the buffer is
     # already at least 1 char and matches self.
-    SELF_PENALTY = -0.8
+    SELF_PENALTY = -1.8
     if self_matches and len(self_sp) > len(buf):
         nxt = self_sp[len(buf)]
         if nxt in VOCAB_INDEX:
