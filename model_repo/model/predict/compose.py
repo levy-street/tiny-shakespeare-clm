@@ -41,6 +41,7 @@ from .letter4 import letter4_bias
 from .next_word import next_word_bias
 from .phrase_bigram import phrase_bigram_bias
 from .pos_next import pos_next_bias
+from .slot_next import slot_start_bias
 from .speaker_trie import speaker_trie_bias
 from .start4gram import start4gram_bias
 from .start5gram import start5gram_bias
@@ -650,7 +651,10 @@ def predict(state: ModelState) -> list[float]:
             ratio_period *= (1.0 - shift_p)
 
         # Overdue sentence end: at word-end on-trie, boost sentence-end
-        # punctuation so the model actually closes sentences.
+        # punctuation so the model actually closes sentences. The
+        # clause_slot state machine (FRESH=0, HAS_SUBJ=1, HAS_VERB=2,
+        # POST_OBJ=3) modulates this: a clause that hasn't yet seen
+        # its verb is syntactically unfinished and shouldn't close.
         if (
             (state.letter_run_len >= 2 and state.on_word_trie)
             or (state.letter_run_len == 1
@@ -719,10 +723,20 @@ def predict(state: ModelState) -> list[float]:
             )
             and state.chars_since_sentence_end < 40
         ):
+            # Clause-slot modulation: commas are more natural at
+            # post-object positions (end of phrase) than immediately
+            # after a fresh-subject position.
+            slot = state.clause_slot
+            if slot == 3:      # POST_OBJ
+                slot_mul = 1.15
+            elif slot == 2:    # HAS_VERB
+                slot_mul = 1.05
+            else:              # HAS_SUBJ / FRESH
+                slot_mul = 0.85
             if "," in VOCAB_INDEX:
-                logits[VOCAB_INDEX[","]] += 5.5
+                logits[VOCAB_INDEX[","]] += 5.5 * slot_mul
             if ";" in VOCAB_INDEX:
-                logits[VOCAB_INDEX[";"]] += 2.5
+                logits[VOCAB_INDEX[";"]] += 2.5 * slot_mul
         # Also off-trie with a longer min-length: archaic/proper words
         # can certainly be followed by ",".
         elif (

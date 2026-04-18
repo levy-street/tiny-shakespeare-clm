@@ -256,3 +256,29 @@ class ModelState(BaseModel):
     # speaker cries "O!" they tend to repeat — this field captures
     # that texture.
     emotional_intensity: float = 0.0
+
+    # --- Tier 2: clause slot state machine ---
+    # Coarse syntactic-slot tracker for the current clause:
+    #   0 = FRESH       — sentence start / post-clause-break; expect
+    #                     subject, interjection, or WH-question word.
+    #   1 = HAS_SUBJ    — saw subject-like element (pronoun, proper
+    #                     noun, determiner+noun); expect aux/modal/
+    #                     verb or adjective.
+    #   2 = HAS_VERB    — saw aux/modal/verb; expect object (noun,
+    #                     pronoun, adjective, participle, preposition).
+    #   3 = POST_OBJ    — saw object/complement; clause is complete;
+    #                     expect sentence end, conjunction, or clausal
+    #                     break.
+    # Transitions are driven by the POS of last_completed_word. This
+    # gives the predict layer a real syntactic-position prior that
+    # tells it "after a subject, a verb is expected; after a verb,
+    # a determiner/noun is expected" — which the existing n-gram
+    # layers don't see.
+    clause_slot: int = 0
+    # Number of completed words since the last verb-like (VERB,
+    # AUX_VERB, MODAL, VERB_ING, VERB_ED) word was seen. Reset to 0
+    # on a verb-ish word completion and at sentence-end punctuation.
+    # High values indicate the clause has been wandering through
+    # function words and content without reaching a verb — a strong
+    # syntactic signal that a verb is overdue.
+    words_since_verb: int = 0
