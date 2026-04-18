@@ -1464,6 +1464,14 @@ def predict(state: ModelState) -> list[float]:
             ratio_period, ratio_q, ratio_excl = 0.35, 1.15, 0.15
         elif st_type == 3:  # EXCLAMATIVE
             ratio_period, ratio_q, ratio_excl = 0.55, 0.20, 0.90
+        elif st_type == 4:  # IMPERATIVE
+            # Bare-verb imperative: "Come!", "Speak, friends.", "Hark
+            # thee!". Exclamation is elevated; period stays strong
+            # (reflective imperatives close with "."); question mark
+            # is suppressed. Conservative shift — the cost of an
+            # occasional mis-tag on a declarative is larger than the
+            # gain on a correct imperative.
+            ratio_period, ratio_q, ratio_excl = 0.80, 0.15, 0.65
         else:  # DECL or UNKNOWN: original shape
             ratio_period, ratio_q, ratio_excl = 1.0, 0.3, 0.3
 
@@ -1601,6 +1609,12 @@ def predict(state: ModelState) -> list[float]:
                 logits[VOCAB_INDEX[","]] += 3.0
             if ";" in VOCAB_INDEX:
                 logits[VOCAB_INDEX[";"]] += 1.3
+
+        # (An imperative-first-word comma/! boost was tried here and
+        # net-regressed BPC. The sentence_type end-punct-ratio branch
+        # carries the imperative signal by itself; a direct boost at
+        # word-end over-fires on declaratives that happen to start with
+        # the same verb.)
 
 
         # Clause-depth close pressure: when we're nested inside a

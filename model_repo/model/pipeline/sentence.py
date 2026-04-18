@@ -1,13 +1,15 @@
 """Sentence-type FSM.
 
-Classifies the sentence currently being written into one of four types
+Classifies the sentence currently being written into one of five types
 based on its first word. The classification, plus a running count of
 completed words in the sentence, lets the predict layer bias toward the
 right terminal punctuation when the sentence becomes overdue:
 
-  - Declarative → period dominant
+  - Declarative   → period dominant
   - Interrogative → question mark dominant
-  - Exclamative  → exclamation mark elevated
+  - Exclamative   → exclamation mark elevated
+  - Imperative    → exclamation mark dominant, period secondary, early
+                    vocative comma favored, question mark suppressed
 
 Classification happens exactly once per sentence — when the first word
 completes. It resets on any PUNCT_END character.
@@ -44,11 +46,44 @@ _AUX_STARTERS: frozenset[str] = frozenset({
 })
 
 # Interjections / exclamative starters — almost always yield a ! or a
-# strong-feeling . line.
+# strong-feeling . line. Kept as the original set; imperative-only
+# classifiers (_IMPER_STARTERS) are a separate tier; EXCLAM wins in
+# the classifier's if/else order so overlap is harmless.
 _EXCLAM_STARTERS: frozenset[str] = frozenset({
     "o", "oh", "ah", "alas", "hark", "lo", "fie", "pshaw",
     "marry", "zounds", "away", "hence", "come",
     "welcome", "hail", "behold",
+})
+
+# Bare-verb imperative starters — Shakespeare's "Speak, sirrah",
+# "Hark thee!", "Begone!". An imperative opener is a bare verb that
+# almost ALWAYS commands rather than declares at sentence start. We
+# keep the list tight: ambiguous words (say/tell/see/look/get/hear/
+# stay/hold/rise/sit/stand/give/take/bring/keep/serve/...) are also
+# common declarative/subjunctive openers and belong under DECL. The
+# cost of mis-tagging a DECL as IMPER (via the end-punct ratio shift
+# toward "!") is high, so we err toward inclusion only for verbs
+# that are essentially imperative-only at sentence start.
+_IMPER_STARTERS: frozenset[str] = frozenset({
+    # Sensory / attention imperatives — archaic, command-only at
+    # sentence-initial position. "hark" also lives in _EXCLAM_STARTERS;
+    # EXCLAM check wins first so that path is uncontested. Keeping
+    # "hark" here too is harmless.
+    "hark", "listen", "hearken", "mark",
+    # Speech-act imperatives — almost always commands at sentence open.
+    "speak", "tell",
+    # Observation / attention imperatives.
+    "look",
+    # Stopping / holding imperatives.
+    "stay", "hold", "cease", "forbear",
+    # Archaic dismissals — unambiguously imperative.
+    "begone", "avaunt",
+    # Exhortative — "Let us go", "Let me speak" always imperative.
+    "let",
+    # NOTE: "come" / "go" are ambiguous at sentence start ("Come the
+    # appointed hour..." subjunctive declarative) and net-regress
+    # BPC when tagged as imperative. "come" already tags EXCLAM via
+    # _EXCLAM_STARTERS.
 })
 
 
@@ -56,6 +91,7 @@ SENT_UNKNOWN = 0
 SENT_DECL = 1
 SENT_INTERROG = 2
 SENT_EXCLAM = 3
+SENT_IMPER = 4
 
 
 def _classify_first_word(word: str) -> int:
@@ -78,6 +114,8 @@ def _classify_first_word(word: str) -> int:
         return SENT_INTERROG
     if w in _EXCLAM_STARTERS:
         return SENT_EXCLAM
+    if w in _IMPER_STARTERS:
+        return SENT_IMPER
     return SENT_DECL
 
 
