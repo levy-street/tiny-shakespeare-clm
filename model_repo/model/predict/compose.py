@@ -38,6 +38,7 @@ from .anaphora import anaphora_midword_bias, anaphora_start_bias
 from .archaic import archaic_midword_bias, archaic_start_bias
 from .bigram import bigram_bias
 from .cadence import cadence_wordend_bias
+from .meter import pentameter_wordend_bias
 from .context import CTX_BIAS_VECTORS, context_key
 from .letter3 import letter3_bias
 from .letter4 import letter4_bias
@@ -1149,6 +1150,20 @@ def predict(state: ModelState) -> list[float]:
                 if cb is not None:
                     for i in range(VOCAB_SIZE):
                         logits[i] += cb[i]
+                # Pentameter meter-aware newline bias. At word-end in
+                # a verse passage, nudge \n when syllables_in_line is
+                # at or past the 10-syllable target (matching the
+                # prior line's length when established).
+                pb = pentameter_wordend_bias(
+                    state.syllables_in_line,
+                    state.prev_line_syllables,
+                    state.verse_score,
+                    state.verse_line_run,
+                    state.chars_since_newline,
+                )
+                if pb is not None:
+                    for i in range(VOCAB_SIZE):
+                        logits[i] += pb[i]
             elif state.letter_run_len >= 5:
                 # Non-complete on-trie buffer that's gotten long (5+).
                 # Less confident but still plausible to end.
