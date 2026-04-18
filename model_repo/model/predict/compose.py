@@ -64,6 +64,7 @@ from .startbigram import startbigram_bias
 from .starttrigram import starttrigram_bias
 from .startword import START_BIAS
 from .formula import formula_midword_bias, formula_start_bias
+from .iambic import iambic_word_start_bias
 from .imagery import imagery_start_bias
 from .invocation import (
     invocation_sentence_end_bias,
@@ -699,6 +700,22 @@ def predict(state: ModelState) -> list[float]:
                 if asb is not None:
                     for i in range(VOCAB_SIZE):
                         logits[i] += asb[i]
+
+        # Layer 4b3-iamb: iambic-foot stress bias. In confident
+        # pentameter verse, bias the first letter of the next word
+        # toward function-word starters (if next syllable falls on
+        # an unstressed beat) or content-word starters (if stressed).
+        # A genuinely metrical signal — orthogonal to pos_next / topic.
+        ib = iambic_word_start_bias(
+            state.syllables_in_line,
+            state.verse_score,
+            state.verse_line_run,
+            state.prev_line_syllables,
+            state.speaker_label_state,
+        )
+        if ib is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += ib[i]
 
         # Layer 4b3c: formulaic-phrase word-start bias. When we're
         # inside a known multi-word formula, boost first letters of
