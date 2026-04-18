@@ -28,6 +28,7 @@ from .counters import update_basic_counters
 from .flow import update_flow
 from .formula import update_formula
 from .linguistic import update_linguistic
+from .list_structure import update_list_structure
 from .pos import update_pos
 from .prosody import update_prosody
 from .referent import update_referent
@@ -47,6 +48,7 @@ PIPELINE: list[Stage] = [
     update_linguistic,      # Tier 2: linguistic structure
     update_speaker_offtrie, # Tier 2: speaker-buffer off-trie run
     update_pos,             # Tier 2: POS tag of last completed word
+    update_list_structure,  # Tier 2: list-parallelism progress
     update_repetition,      # Tier 2: short-range word-repetition memory
     update_formula,         # Tier 2: formulaic-phrase trie position
     update_sentence,        # Tier 2/3: sentence-type FSM

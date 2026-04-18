@@ -1008,3 +1008,37 @@ class ModelState(BaseModel):
     # chains. AUX/MODAL starters are not penalized (legitimate
     # "had gone", "would have seen" chains).
     verb_chain_len: int = 0
+
+    # --- Tier 2: list-parallelism structure ---
+    # Shakespeare uses "X, Y, and Z" / "nor A nor B" / "by heaven,
+    # by earth, by all ..." heavily. Once a comma-separated list is
+    # underway, the first letter/POS of subsequent items is often
+    # parallel to prior items; and after 2+ commas in a clause, the
+    # conjunction "and"/"or"/"nor"/"but" becomes very likely as the
+    # penultimate element.
+    #
+    # Count of commas/semicolons/colons since the last sentence-end
+    # punctuation — a proxy for list-progression depth. Resets on
+    # PUNCT_END and on speaker-turn boundary (consecutive_newlines
+    # >= 2).
+    commas_since_sent_end: int = 0
+    # First letter (lowercased) of the most recent "list-item" word —
+    # the first word whose start immediately follows a comma (possibly
+    # with an intervening space). Captured at word-start, committed
+    # when the word completes. Empty string when no list item pending.
+    list_last_item_first_letter: str = ""
+    # True during the first word after a comma — the upcoming letters
+    # are the "item start" position. Cleared once that word completes.
+    list_item_pending: bool = False
+    # Count of consecutive list items whose first letter matched the
+    # previous list item's first letter. >=2 signals an alliterative
+    # parallel list ("hand to hand, heart to heart, hope to hope");
+    # boosts the same starter letter on future list items and on
+    # continuation. Resets on sentence-end punctuation.
+    list_parallel_run: int = 0
+    # POS of the first "list item" word (the word that started right
+    # after the FIRST comma of this sentence). Used to bias future
+    # items toward the same POS class — most Shakespearean lists are
+    # NOUN-NOUN-NOUN or ADJ-ADJ-ADJ or VERB-VERB-VERB. 0 when no
+    # list item recorded yet in this sentence.
+    list_first_item_pos: int = 0

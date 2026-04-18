@@ -43,6 +43,7 @@ from .meter import pentameter_wordend_bias
 from .context import CTX_BIAS_VECTORS, context_key
 from .letter3 import letter3_bias
 from .letter4 import letter4_bias
+from .list_bias import list_start_bias, list_wordend_comma_bias
 from .next_word import next_word_bias
 from .np_head import np_head_start_bias
 from .ornament import ornament_start_bias
@@ -536,6 +537,24 @@ def predict(state: ModelState) -> list[float]:
     ):
         for i in range(VOCAB_SIZE):
             logits[i] += START_BIAS[i]
+
+        # Layer 4-LIST: list-parallelism first-letter bias. When we're
+        # in a comma-separated list, bias toward (a) the same first
+        # letter as the previous items (alliterative parallelism),
+        # (b) closing conjunctions "and/or/nor/but" after 2+ commas,
+        # and (c) POS-consistent starter letters if the first list
+        # item's POS was a noun/verb/adjective.
+        lsb = list_start_bias(
+            state.commas_since_sent_end,
+            state.list_item_pending,
+            state.list_last_item_first_letter,
+            state.list_parallel_run,
+            state.list_first_item_pos,
+            state.speaker_label_state,
+        )
+        if lsb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += lsb[i]
 
         # Layer 4b: next-word (word-bigram) first-letter bias.
         if state.last_completed_word:
@@ -1479,6 +1498,18 @@ def predict(state: ModelState) -> list[float]:
                 logits[VOCAB_INDEX[","]] += 4.5 * slot_mul
             if ";" in VOCAB_INDEX:
                 logits[VOCAB_INDEX[";"]] += 1.9 * slot_mul
+            # List-parallelism extra comma boost: when we already have
+            # 1+ commas and an alliterative / POS-parallel pattern is
+            # running, keep the list chaining.
+            lwc = list_wordend_comma_bias(
+                state.commas_since_sent_end,
+                state.list_parallel_run,
+                state.list_first_item_pos,
+                state.chars_since_sentence_end,
+                state.speaker_label_state,
+            )
+            if lwc > 0.0:
+                logits[VOCAB_INDEX[","]] += lwc
         # Also off-trie with a longer min-length: archaic/proper words
         # can certainly be followed by ",".
         elif (
