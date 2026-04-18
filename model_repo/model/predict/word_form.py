@@ -181,6 +181,23 @@ def word_form_start_bias(
 # For PAST_PART, after a word buffer of length 2-3, boost letters that
 # complete -en/-n/-ed endings.
 
+# Mid-word PP-ending bias: biases toward -en/-n and -ed completions.
+# Only fires when WFE_PAST_PART is active and buffer is 3+ letters.
+#
+# Key suffix shapes for past participles in Shakespeare:
+#   -en:  seen, taken, given, gone→(not -en), broken, spoken, stolen,
+#         borne, worn, torn, drawn, thrown, fallen, forgotten, forsaken,
+#         risen, woken, chosen
+#   -n (not after e): gone, slain, known, done, drawn, worn, torn, borne
+#   -ed:  loved, feared, killed, hated, pleased, grieved, cursed
+
+_PP_ENDING_2: dict[str, float] = {
+    # After 2 letters, the 3rd-letter choice slightly favors suffix
+    # progression: e.g., "ta" → "k" (taken), "gi" → "v" (given).
+    # But at 2 letters, suffix bias is weak — many words have yet
+    # to diverge from their base forms.
+}
+
 def word_form_midword_bias(
     wfe: int,
     wfe_wait_words: int,
@@ -188,8 +205,58 @@ def word_form_midword_bias(
     letter_run_len: int,
     speaker_label_state: int,
 ) -> list[float] | None:
-    # Disabled for initial version — letter-trigram and word_trie
-    # already handle continuation priors; adding form-specific
-    # endings on top tended to conflict. Kept as a no-op hook for
-    # a future pass.
-    return None
+    if speaker_label_state != 0:
+        return None
+    if wfe != WFE_PAST_PART:
+        return None
+    if wfe_wait_words >= 3:
+        return None
+    if letter_run_len < 3 or letter_run_len > 6:
+        return None
+    if not word_buffer:
+        return None
+
+    wb = word_buffer
+    vec = [0.0] * VOCAB_SIZE
+
+    # Common ending transitions (hand-specified from known Shakespeare
+    # past participles). The premise: at 3-5 letters into a PP context,
+    # the next letter is more likely to be part of a -en/-n or -ed
+    # completion than in an average mid-word position.
+    last = wb[-1] if wb else ""
+    last2 = wb[-2:] if len(wb) >= 2 else ""
+
+    # Boost "e" after many 3-letter PP stems (seen/take/giv/brok/spok...
+    # trajectories land on "e" next):
+    #   s-e-e: already at e
+    #   t-a-k, t-o-o: → e
+    #   g-i-v: → e
+    #   b-o-r, b-r-o: → n/e
+    #   s-p-o: → k (spoken); w-o-r: → n (worn)
+    # Rough heuristic: after a vowel-consonant pair at letters 2-3,
+    # tilt toward "e" (for -en).
+    if letter_run_len == 3:
+        # 3 letters in. Tilt toward "n" or "e" depending on the
+        # stem's last letter.
+        if last in "rlwvk":
+            # e.g., "wor", "tor", "dra", "bor" → n (worn/torn/drawn/borne)
+            vec[VOCAB_INDEX["n"]] += 0.65
+        if last in "kbvz":
+            # e.g., "tak", "brok", "giv", "spok", "sto" → e
+            vec[VOCAB_INDEX["e"]] += 0.42
+    elif letter_run_len == 4:
+        # 4 letters in. Tilt toward "n" completing -en.
+        if last == "e":
+            vec[VOCAB_INDEX["n"]] += 0.80
+        # Also tilt toward "d" for -ed completions on common stems.
+        if last in "relod":
+            vec[VOCAB_INDEX["d"]] += 0.40
+    elif letter_run_len == 5:
+        if last == "e":
+            vec[VOCAB_INDEX["n"]] += 0.45
+
+    # If no component bumped, return None to signal no-op.
+    any_nonzero = any(v != 0.0 for v in vec)
+    if not any_nonzero:
+        return None
+    return vec

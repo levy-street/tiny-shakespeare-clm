@@ -74,7 +74,7 @@ from .topic import content_repeat_bias, topic_bias, topic_midword_bias
 from .addressee import addressee_midword_bias, addressee_start_bias
 from .adjacent_repeat import adjacent_repeat_bias
 from .transitivity import transitivity_midword_bias, transitivity_start_bias
-from .word_form import word_form_start_bias
+from .word_form import word_form_midword_bias, word_form_start_bias
 from .trie_recovery import trie_recovery_bias
 from .word_end_bigram import word_end_bigram_bias
 from .referent import referent_start_bias
@@ -145,6 +145,21 @@ def predict(state: ModelState) -> list[float]:
         if l3 is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += l3[i]
+
+    # Layer 3b2b: word-form mid-word bias. When WFE_PAST_PART is
+    # active, tilt letters 3-5 of the word toward -en/-n/-ed ending
+    # trajectories (seen/taken/given/borne/drawn/loved/feared).
+    if state.word_buffer and state.letter_run_len >= 3:
+        wfm = word_form_midword_bias(
+            state.word_form_expectation,
+            state.wfe_wait_words,
+            state.word_buffer,
+            state.letter_run_len,
+            state.speaker_label_state,
+        )
+        if wfm is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += wfm[i]
 
     # (Layer 3b2c: sonority-texture bias — disabled; letter-n-gram
     # priors already capture phonotactic regularities better than a
