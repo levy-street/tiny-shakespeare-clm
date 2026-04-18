@@ -231,8 +231,10 @@ def _build_cluster_vectors() -> list[list[float]]:
 _CLUSTER_VECS: list[list[float]] = _build_cluster_vectors()
 
 
-# Decay weights for content_words[0..3] (most-recent first).
-_SLOT_WEIGHTS: tuple[float, ...] = (1.0, 0.72, 0.48, 0.28)
+# Decay weights for content_words[0..7] (most-recent first).
+_SLOT_WEIGHTS: tuple[float, ...] = (
+    1.00, 0.75, 0.55, 0.40, 0.28, 0.18, 0.10, 0.06,
+)
 
 # If top cluster score < THRESHOLD: no bias.
 # Above THRESHOLD, scale = (score - THRESHOLD) * GAIN, capped at MAX.
@@ -250,7 +252,7 @@ def _dominant_cluster(
     if not content_words:
         return None
     scores = [0.0] * N_CLUSTERS
-    for i, w in enumerate(content_words[:4]):
+    for i, w in enumerate(content_words[:8]):
         cid = _WORD_TO_CLUSTER.get(w)
         if cid is None:
             continue
@@ -359,15 +361,15 @@ def content_repeat_bias(
         len_scale = 3.30
     else:
         len_scale = 3.70
-    for i, w in enumerate(content_words[:4]):
+    slot_weights = (2.20, 1.05, 0.50, 0.22, 0.12, 0.06, 0.03, 0.02)
+    for i, w in enumerate(content_words[:8]):
         if (
             len(w) > len(buffer)
             and w.startswith(buffer)
         ):
             nxt = w[len(buffer)]
             if nxt in VOCAB_INDEX:
-                # Decay per-slot; most-recent is strongest.
-                weight = (2.20, 1.05, 0.50, 0.22)[i] * len_scale
+                weight = slot_weights[i] * len_scale
                 vec[VOCAB_INDEX[nxt]] += weight
                 hit = True
     if not hit:

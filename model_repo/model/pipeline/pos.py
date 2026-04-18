@@ -299,7 +299,7 @@ _CONTENT_TAGS = frozenset({
     POS_PROPER_NOUN,
     POS_UNKNOWN,  # unknown words are usually open-class content
 })
-_CONTENT_WORDS_CAP = 4
+_CONTENT_WORDS_CAP = 8
 
 
 def update_pos(state: ModelState, token_id: int) -> ModelState:
