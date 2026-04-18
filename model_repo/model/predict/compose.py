@@ -74,6 +74,7 @@ from .invocation import (
     invocation_word_start_bias,
 )
 from .next_sentence_bias import next_sentence_start_bias
+from .sentence_anaphora import sentence_anaphora_start_bias
 from .topic import content_repeat_bias, topic_bias, topic_midword_bias
 from .addressee import addressee_midword_bias, addressee_start_bias
 from .adjacent_repeat import adjacent_repeat_bias
@@ -958,6 +959,18 @@ def predict(state: ModelState) -> list[float]:
             if nsb is not None:
                 for i in range(VOCAB_SIZE):
                     logits[i] += nsb[i]
+            # Sentence-level anaphora: if the previous sentence opened
+            # with a chain-worthy word (And/When/Let/O/I/My/To/...),
+            # boost that same first letter at this sentence's start,
+            # scaled by the run length.
+            sab = sentence_anaphora_start_bias(
+                state.prev_sentence_first_word,
+                state.sentence_anaphora_run,
+                state.speaker_label_state,
+            )
+            if sab is not None:
+                for i in range(VOCAB_SIZE):
+                    logits[i] += sab[i]
 
         # Verse-line-start capital boost: after a *single* newline that
         # terminated a VERSE-length line (typically 15-55 chars),

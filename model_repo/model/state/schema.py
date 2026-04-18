@@ -1096,3 +1096,27 @@ class ModelState(BaseModel):
     # scaffolding — once "sword" and "blood" appear, the next content
     # word is more likely "foe"/"steel"/"wound" than "rose"/"charm".
     scene_topics: tuple[float, ...] = (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+
+    # --- Tier 2: sentence-level anaphora ---
+    # First completed word (lowercased) of the PREVIOUS sentence of
+    # this turn — captured at the moment the previous sentence closes.
+    # Empty "" if no previous sentence, or at speaker-turn start.
+    # Used by predict to detect and reinforce inter-sentence anaphora:
+    # Shakespeare frequently chains sentences that begin with the same
+    # word:
+    #   "And so he dies. And so his name is gone. And so I weep."
+    #   "Let me not to the marriage... Let me say..."
+    #   "O, that ... O, that ... O, that ..."
+    #   "When I was young... When I had seen... When I had lost..."
+    # Reset on speaker-turn boundary (consecutive_newlines >= 2).
+    prev_sentence_first_word: str = ""
+    # First completed word of the CURRENT sentence (set when that word
+    # completes; otherwise "" until first word of a sentence completes).
+    # Reset to "" on sentence-end punctuation (the first word of the
+    # next sentence fills it). Also reset on speaker-turn boundary.
+    curr_sentence_first_word: str = ""
+    # Count of consecutive sentences in the current turn that started
+    # with the same first word as the one before them. 0 at turn start;
+    # reset on mismatch or on speaker-turn boundary. >=1 signals an
+    # active sentence-anaphora pattern.
+    sentence_anaphora_run: int = 0

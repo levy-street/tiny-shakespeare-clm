@@ -105,11 +105,18 @@ def update_sentence(state: ModelState, token_id: int) -> ModelState:
             saved = SENT_EXCLAM
         elif ch == "?" and saved == SENT_DECL:
             saved = SENT_INTERROG
+        # Sentence-level anaphora bookkeeping: save the just-finished
+        # sentence's first word into prev_sentence_first_word so the
+        # NEXT sentence's first word can be compared against it. Leave
+        # curr_sentence_first_word empty (the next sentence's first
+        # word will fill it when that word completes).
         return state.model_copy(
             update={
                 "sentence_type": SENT_UNKNOWN,
                 "words_in_sentence": 0,
                 "prev_sentence_type": saved,
+                "prev_sentence_first_word": state.curr_sentence_first_word,
+                "curr_sentence_first_word": "",
             }
         )
 
@@ -122,6 +129,9 @@ def update_sentence(state: ModelState, token_id: int) -> ModelState:
                 "sentence_type": SENT_UNKNOWN,
                 "words_in_sentence": 0,
                 "prev_sentence_type": SENT_UNKNOWN,
+                "prev_sentence_first_word": "",
+                "curr_sentence_first_word": "",
+                "sentence_anaphora_run": 0,
             }
         )
 
@@ -149,9 +159,24 @@ def update_sentence(state: ModelState, token_id: int) -> ModelState:
     if new_type == SENT_DECL and word in _EXCLAM_STARTERS:
         new_type = SENT_EXCLAM
 
+    # Sentence-level anaphora tracking: at the first word of a sentence,
+    # compare against the previous sentence's first word and update
+    # sentence_anaphora_run accordingly.
+    curr_first = state.curr_sentence_first_word
+    anaphora_run = state.sentence_anaphora_run
+    if state.words_in_sentence == 0:
+        # This IS the first word of the current sentence.
+        curr_first = word
+        if state.prev_sentence_first_word and word == state.prev_sentence_first_word:
+            anaphora_run = min(anaphora_run + 1, 4)
+        else:
+            anaphora_run = 0
+
     return state.model_copy(
         update={
             "sentence_type": new_type,
             "words_in_sentence": state.words_in_sentence + 1,
+            "curr_sentence_first_word": curr_first,
+            "sentence_anaphora_run": anaphora_run,
         }
     )
