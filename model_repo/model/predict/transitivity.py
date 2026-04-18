@@ -122,6 +122,114 @@ _DO_VEC = _build_vec(_DO_STARTERS, global_scale=0.12)
 _COMP_VEC = _build_vec(_COMP_STARTERS, global_scale=0.08)
 
 
+def transitivity_midword_bias(
+    verb_transitivity: int,
+    vt_wait_words: int,
+    word_buffer: str,
+    letter_run_len: int,
+    speaker_label_state: int,
+) -> list[float] | None:
+    """When a DO/COMP expectation is active AND the current 1-2
+    letter prefix is a common determiner/possessive lead, nudge the
+    continuation letter toward completing a real determiner.
+
+    Examples:
+      - 't' → 'h' (the/this/that/thy/thine/thou/these/those) over
+        'w', 'r', 't'; strongly favor 'h'.
+      - 'm' → 'y' (my) standalone; or 'i' (mine) if letter_run_len==1.
+      - 'th' → 'e', 'i', 'a', 'y', 'o' (the/this/that/thy/those).
+    This sits atop word_trie (which already knows these completions)
+    and adds a small push to prefer determiner forms over longer
+    words starting with the same letter (e.g., "thought", "thrill").
+    """
+    if speaker_label_state != 0:
+        return None
+    if verb_transitivity == VT_NONE:
+        return None
+    if vt_wait_words >= 2:
+        return None
+    if not word_buffer or letter_run_len < 1 or letter_run_len > 3:
+        return None
+
+    buf = word_buffer.lower()
+    vec = [0.0] * VOCAB_SIZE
+
+    # One-letter prefixes.
+    if letter_run_len == 1:
+        if buf == "t":
+            # the/this/that/thy/thine/thou/these/those/to
+            if "h" in VOCAB_INDEX:
+                vec[VOCAB_INDEX["h"]] += 1.10
+            if "o" in VOCAB_INDEX:
+                vec[VOCAB_INDEX["o"]] += 0.25  # to
+        elif buf == "m":
+            # my/mine/me
+            if "y" in VOCAB_INDEX:
+                vec[VOCAB_INDEX["y"]] += 0.90
+            if "i" in VOCAB_INDEX:
+                vec[VOCAB_INDEX["i"]] += 0.40  # mine
+        elif buf == "h":
+            # his/her/him
+            if "i" in VOCAB_INDEX:
+                vec[VOCAB_INDEX["i"]] += 0.55
+            if "e" in VOCAB_INDEX:
+                vec[VOCAB_INDEX["e"]] += 0.55
+        elif buf == "a":
+            # a/an/all
+            if " " in VOCAB_INDEX:
+                vec[VOCAB_INDEX[" "]] += 0.35  # 'a' standalone
+            if "n" in VOCAB_INDEX:
+                vec[VOCAB_INDEX["n"]] += 0.40
+            if "l" in VOCAB_INDEX:
+                vec[VOCAB_INDEX["l"]] += 0.28
+        elif buf == "y":
+            # your/yours
+            if "o" in VOCAB_INDEX:
+                vec[VOCAB_INDEX["o"]] += 0.85
+        elif buf == "o":
+            # our
+            if "u" in VOCAB_INDEX:
+                vec[VOCAB_INDEX["u"]] += 0.60
+    elif letter_run_len == 2:
+        # Two-letter prefixes.
+        if buf == "th":
+            # the/this/that/thy/thine/those/these/they
+            for ch, w in (("e", 0.55), ("i", 0.40), ("a", 0.35),
+                          ("y", 0.25), ("o", 0.20)):
+                if ch in VOCAB_INDEX:
+                    vec[VOCAB_INDEX[ch]] += w
+        elif buf == "my":
+            # my standalone — boost space
+            if " " in VOCAB_INDEX:
+                vec[VOCAB_INDEX[" "]] += 0.50
+        elif buf == "hi":
+            # his/him
+            if "s" in VOCAB_INDEX:
+                vec[VOCAB_INDEX["s"]] += 0.50
+            if "m" in VOCAB_INDEX:
+                vec[VOCAB_INDEX["m"]] += 0.40
+        elif buf == "he":
+            # her
+            if "r" in VOCAB_INDEX:
+                vec[VOCAB_INDEX["r"]] += 0.40
+        elif buf == "an":
+            # an/and (prefer 'd' slightly less — and is conj)
+            if " " in VOCAB_INDEX:
+                vec[VOCAB_INDEX[" "]] += 0.45
+        elif buf == "yo":
+            # your/you
+            if "u" in VOCAB_INDEX:
+                vec[VOCAB_INDEX["u"]] += 0.55
+        elif buf == "ou":
+            # our
+            if "r" in VOCAB_INDEX:
+                vec[VOCAB_INDEX["r"]] += 0.45
+
+    if all(x == 0.0 for x in vec):
+        return None
+    return vec
+
+
 def transitivity_start_bias(
     verb_transitivity: int,
     vt_wait_words: int,

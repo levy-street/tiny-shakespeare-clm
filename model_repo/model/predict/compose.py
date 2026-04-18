@@ -67,7 +67,7 @@ from .imagery import imagery_start_bias
 from .topic import content_repeat_bias, topic_bias, topic_midword_bias
 from .addressee import addressee_midword_bias, addressee_start_bias
 from .adjacent_repeat import adjacent_repeat_bias
-from .transitivity import transitivity_start_bias
+from .transitivity import transitivity_midword_bias, transitivity_start_bias
 from .trie_recovery import trie_recovery_bias
 from .word_end_bigram import word_end_bigram_bias
 from .referent import referent_start_bias
@@ -304,6 +304,26 @@ def predict(state: ModelState) -> list[float]:
         if rf is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += rf[i]
+
+    # Layer 3c1-trans: transitivity mid-word bias. When an object is
+    # expected AND the current buffer is a short determiner-prefix
+    # ("t"/"th"/"m"/"my"/"h"/"hi"/"a"/"an"/"y"/"yo"), nudge the
+    # continuation toward completing the determiner.
+    if (
+        state.word_buffer
+        and state.speaker_label_state == 0
+        and state.verb_transitivity != 0
+    ):
+        trmb = transitivity_midword_bias(
+            state.verb_transitivity,
+            state.vt_wait_words,
+            state.word_buffer,
+            state.letter_run_len,
+            state.speaker_label_state,
+        )
+        if trmb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += trmb[i]
 
     # Layer 3c2: subject-verb agreement morphology bias. When a
     # subject has been identified (clause_slot == HAS_SUBJ), the
@@ -1346,6 +1366,7 @@ def predict(state: ModelState) -> list[float]:
                 logits[VOCAB_INDEX[","]] += 3.0
             if ";" in VOCAB_INDEX:
                 logits[VOCAB_INDEX[";"]] += 1.3
+
 
         # Clause-depth close pressure: when we're nested inside a
         # subordinator clause and it's been running for several words,
