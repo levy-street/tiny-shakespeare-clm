@@ -45,6 +45,7 @@ from .letter4 import letter4_bias
 from .next_word import next_word_bias
 from .np_head import np_head_start_bias
 from .ornament import ornament_start_bias
+from .parallel import parallel_start_bias
 from .phrase_bigram import phrase_bigram_bias
 from .pos_next import pos_next_bias
 from .repetition import repetition_start_bias
@@ -572,6 +573,21 @@ def predict(state: ModelState) -> list[float]:
             if rpb is not None:
                 for i in range(VOCAB_SIZE):
                     logits[i] += rpb[i]
+
+        # Layer 4b2-par: parallel-structure bias after a coordinating
+        # conjunction. When last_completed_word is "and"/"or"/"nor"/
+        # "but"/"yet", bias next-word first letters toward the POS
+        # family of the word BEFORE the conjunction (prev_word_pos).
+        if state.speaker_label_state == 0:
+            parb = parallel_start_bias(
+                state.last_completed_word,
+                state.last_word_pos,
+                state.prev_word_pos,
+                state.speaker_label_state,
+            )
+            if parb is not None:
+                for i in range(VOCAB_SIZE):
+                    logits[i] += parb[i]
 
         # Layer 4b4b-orn: ornament-density word-start bias. Tier 3
         # flow field reads ornament_density and nudges toward noun vs
