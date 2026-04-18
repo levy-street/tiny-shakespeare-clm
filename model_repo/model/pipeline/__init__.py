@@ -38,6 +38,7 @@ from .rhyme import update_rhyme
 from .sentence import update_sentence
 from .speaker_memory import update_speaker_memory
 from .speaker_offtrie import update_speaker_offtrie
+from .topic_tracker import update_topic_tracker
 from .turn import update_turn_progress
 from .vocative import update_vocative
 
@@ -62,6 +63,7 @@ PIPELINE: list[Stage] = [
     update_addressee,       # Tier 2/3: vocative-noun memory
     update_speaker_memory,  # Tier 2/3: recent-speakers rolling window
     update_referent,        # Tier 2: anaphoric referent gender tracking
+    update_topic_tracker,   # Tier 3: scene-topic semantic cluster memory
     update_turn_progress,   # Tier 2/3: words/sentences/lines in current turn
     update_anaphora,        # Tier 2: line-starter anaphora tracking
     update_alliteration,    # Tier 2/3: within-line alliteration memory

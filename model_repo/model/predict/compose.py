@@ -67,6 +67,7 @@ from .startword import START_BIAS
 from .formula import formula_midword_bias, formula_start_bias
 from .iambic import iambic_word_start_bias
 from .imagery import imagery_start_bias
+from .scene_topic import scene_topic_start_bias
 from .invocation import (
     invocation_sentence_end_bias,
     invocation_sentence_start_bias,
@@ -720,6 +721,20 @@ def predict(state: ModelState) -> list[float]:
             if ib is not None:
                 for i in range(VOCAB_SIZE):
                     logits[i] += ib[i]
+
+        # Layer 4b3c: scene-topic cluster bias. When one of the 8
+        # semantic clusters (war/love/death/royalty/nature/body/faith/
+        # fortune) has been clearly activated by recent content words
+        # (dominance threshold + margin), bias the next word's first
+        # letter toward that cluster's characteristic starter letters.
+        # Orthogonal to tonal_weight (valence) and imagery_density
+        # (concreteness): this captures *categorical topic*.
+        stb = scene_topic_start_bias(
+            state.scene_topics, state.speaker_label_state
+        )
+        if stb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += stb[i]
 
         # Layer 4b3b2: 2nd-person addressing-register word-start bias.
         # When the register is established (|register| > 0.5), nudge

@@ -1054,3 +1054,45 @@ class ModelState(BaseModel):
     # NOUN-NOUN-NOUN or ADJ-ADJ-ADJ or VERB-VERB-VERB. 0 when no
     # list item recorded yet in this sentence.
     list_first_item_pos: int = 0
+
+    # --- Tier 3: scene-topic tracker (semantic cluster memory) ---
+    # Rolling activation vector over 8 semantic clusters, each a
+    # non-negative float representing how recently/strongly that
+    # cluster has been invoked by the emerging text:
+    #   0 TOPIC_WAR       — sword, blood, battle, foe, arms, steel,
+    #                       slain, fight, siege, wound, strike, war,
+    #                       field, spear, arrow, soldier, captain,
+    #                       victory, defeat, banner
+    #   1 TOPIC_LOVE      — love, heart, dear, kiss, sweet, rose,
+    #                       charm, beauty, eye, cheek, mistress, bride
+    #   2 TOPIC_DEATH     — death, grave, tomb, die, dead, corpse,
+    #                       bury, grave, soul, ghost, dust, rot,
+    #                       mourn, funeral, pale
+    #   3 TOPIC_ROYALTY   — king, queen, crown, throne, prince, duke,
+    #                       royal, sceptre, lord, lady, noble, court,
+    #                       majesty, sovereign, reign, realm, subject
+    #   4 TOPIC_NATURE    — sun, moon, stars, wind, rain, sea, sky,
+    #                       flower, tree, bird, field, storm, morn,
+    #                       night, day, shore, leaf, fire, earth
+    #   5 TOPIC_BODY      — hand, eye, face, lip, tongue, cheek, arm,
+    #                       breast, head, foot, heart (overlaps love),
+    #                       tears, blood (overlaps war)
+    #   6 TOPIC_FAITH     — god, heaven, hell, soul, prayer, sin,
+    #                       holy, faith, grace, mercy, angel, devil,
+    #                       sacred, spirit, church
+    #   7 TOPIC_FORTUNE   — fate, chance, luck, fortune, star, doom,
+    #                       destiny, providence, hap, wheel, time
+    #
+    # Updated by pipeline/topic_tracker.py at word completion:
+    #   - word in cluster k → bump scene_topics[k] by +1.0
+    #   - all clusters decay by 0.90 per completed word
+    #   - speaker-turn boundary multiplies all by 0.35
+    # Capped at 4.0 per cluster.
+    #
+    # Consumed by predict/scene_topic.py at word-start: the dominant
+    # cluster (if any significantly above others) biases the next
+    # word's first letter toward the cluster's characteristic starter
+    # letters. This bleeds semantic coherence through function-word
+    # scaffolding — once "sword" and "blood" appear, the next content
+    # word is more likely "foe"/"steel"/"wound" than "rose"/"charm".
+    scene_topics: tuple[float, ...] = (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
