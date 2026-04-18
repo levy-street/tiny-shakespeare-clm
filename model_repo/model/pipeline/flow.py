@@ -98,6 +98,60 @@ _MODERN_MARKERS: frozenset[str] = frozenset({
     "okay", "really",  # won't appear in Shakespeare; kept empty-ish
 })
 
+# --- Tonal texture: dark/heavy vs light/hopeful ---
+# Word classes for the rolling tonal_weight field. Each completed
+# word bumps the rolling float toward +1 (light) or -1 (dark) by
+# the class-specific amount. The field decays toward 0 per word.
+_TONAL_STRONG_DARK: frozenset[str] = frozenset({
+    "death", "dead", "die", "dies", "died", "dying",
+    "blood", "bloody", "murder", "slain", "slay", "slays",
+    "grief", "griefs", "sorrow", "sorrows", "woe", "woes",
+    "hell", "grave", "tomb", "coffin", "corpse", "corse",
+    "tears", "weep", "weeping", "wept", "mourn", "mourning",
+    "hate", "hatred", "rage", "wrath", "fury", "curse", "cursed",
+    "fear", "fears", "dread", "horror", "horrors", "terror",
+    "devil", "fiend", "monster", "traitor", "villain", "villains",
+    "poison", "poisoned", "dagger", "sword", "wound", "wounds",
+    "dark", "darkness", "night", "black", "bleak", "cold",
+    "cruel", "cruelty", "bitter", "foul", "vile", "loathsome",
+    "despair", "anguish", "pain", "suffering", "plague",
+    "war", "battle", "slaughter", "tyranny", "tyrant",
+    "ghost", "spectre", "damn", "damned", "sin", "sins",
+    "betray", "betrayed", "betrayal",
+})
+_TONAL_MILD_DARK: frozenset[str] = frozenset({
+    "pale", "dim", "sad", "heavy", "weary", "faint", "sick",
+    "silent", "still", "hollow", "lost", "gone", "fall", "fallen",
+    "broken", "break", "broke", "shadow", "shadows",
+    "lonely", "alone", "cruel", "cold",
+    "poor", "dead", "deaf", "blind", "mad",
+    "forgot", "forget", "forgotten",
+    "wild", "fierce", "harsh",
+})
+_TONAL_MILD_LIGHT: frozenset[str] = frozenset({
+    "bright", "warm", "gentle", "soft", "smile", "smiling",
+    "laugh", "laughter", "kind", "kindly", "kindness",
+    "good", "fair", "peace", "peaceful", "quiet",
+    "pure", "noble", "noblest", "gracious", "mercy",
+    "calm", "glad", "sweet", "sweetly",
+    "music", "song", "sing", "singing",
+    "friend", "friends", "friendship",
+})
+_TONAL_STRONG_LIGHT: frozenset[str] = frozenset({
+    "love", "loves", "loved", "loving", "beloved", "lover",
+    "joy", "joys", "joyful", "bliss", "delight", "delights",
+    "fairest", "sweetest", "beauty", "beauteous",
+    "heart", "hearts",  # associated with affection here
+    "grace", "graceful", "blessing", "blessed", "bless",
+    "angel", "heaven", "heavens", "heavenly",
+    "light", "lights", "dawn", "sun", "sunshine", "golden",
+    "hope", "hopes", "hopeful",
+    "peace", "mirth", "merry", "cheer", "cheerful",
+})
+_TONAL_STRONG_BUMP = 0.30
+_TONAL_MILD_BUMP = 0.12
+_TONAL_DECAY = 0.96
+
 
 def update_flow(state: ModelState, token_id: int) -> ModelState:
     # Linguistic updates have already run; use the post-update state.
@@ -217,6 +271,26 @@ def update_flow(state: ModelState, token_id: int) -> ModelState:
     if state.consecutive_newlines >= 2 and lc == "\n":
         emo *= 0.5
 
+    # Tonal texture: rolling [-1, +1] capturing dark/heavy vs
+    # light/hopeful mood of the recent lexicon. Decays toward 0
+    # per completed word, then bumps by word class.
+    tonal_weight = state.tonal_weight
+    if state.just_finished_word:
+        tonal_weight *= _TONAL_DECAY
+        w = state.last_completed_word
+        if w:
+            if w in _TONAL_STRONG_DARK:
+                tonal_weight = max(-1.0, tonal_weight - _TONAL_STRONG_BUMP)
+            elif w in _TONAL_STRONG_LIGHT:
+                tonal_weight = min(1.0, tonal_weight + _TONAL_STRONG_BUMP)
+            elif w in _TONAL_MILD_DARK:
+                tonal_weight = max(-1.0, tonal_weight - _TONAL_MILD_BUMP)
+            elif w in _TONAL_MILD_LIGHT:
+                tonal_weight = min(1.0, tonal_weight + _TONAL_MILD_BUMP)
+    # Fresh speaker: damp carryover (scene tone is speaker-specific).
+    if state.consecutive_newlines >= 2 and lc == "\n":
+        tonal_weight *= 0.55
+
     return state.model_copy(
         update={
             "on_word_trie": on_trie,
@@ -231,5 +305,6 @@ def update_flow(state: ModelState, token_id: int) -> ModelState:
             "verse_score": verse_score,
             "archaic_density": archaic_density,
             "emotional_intensity": emo,
+            "tonal_weight": tonal_weight,
         }
     )

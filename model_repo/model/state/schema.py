@@ -291,3 +291,22 @@ class ModelState(BaseModel):
     # verb, or non-adjective word. This captures a distinctive
     # Shakespearean construction: ", my dear lord," / ", good sir,".
     vocative_expectation: bool = False
+
+    # --- Tier 3: tonal texture ---
+    # A rolling float in [-1, +1] tracking the dark/heavy vs
+    # light/hopeful tonal texture of the emerging text. Shakespeare's
+    # scenes have strong tonal coherence — once "blood" and "death"
+    # appear, more dark lexicon follows; once "love" and "sweet"
+    # appear, more tender lexicon follows. This field bleeds that
+    # register through word boundaries.
+    #
+    # Bumps per completed word by the word's tonal class:
+    #   STRONG_DARK  (death, blood, grief, murder, hell, ...)  : -0.30
+    #   MILD_DARK    (cold, pale, dim, weary, sick, ...)       : -0.12
+    #   MILD_LIGHT   (bright, gentle, soft, warm, ...)         : +0.12
+    #   STRONG_LIGHT (love, joy, bliss, fair, sweet, ...)      : +0.30
+    # Decays toward 0 at 0.96 per completed word.
+    # Resets a fraction on speaker change (consecutive_newlines >= 2).
+    # Consumed by predict.tonal.word_start_bias at word-starts to shift
+    # next-word first-letter mass toward the in-register lexicon.
+    tonal_weight: float = 0.0

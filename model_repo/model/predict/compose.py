@@ -44,6 +44,7 @@ from .pos_next import pos_next_bias
 from .slot_next import slot_start_bias
 from .speaker_trie import speaker_trie_bias
 from .start4gram import start4gram_bias
+from .tonal import tonal_start_bias
 from .start5gram import start5gram_bias
 from .startbigram import startbigram_bias
 from .starttrigram import starttrigram_bias
@@ -259,6 +260,19 @@ def predict(state: ModelState) -> list[float]:
         if state.vocative_expectation and state.speaker_label_state == 0:
             for i in range(VOCAB_SIZE):
                 logits[i] += VOCATIVE_START_BIAS[i]
+
+        # Layer 4b3: tonal-texture bias — at word-start outside speaker
+        # labels, nudge first-letter choice toward the lexicon consistent
+        # with the rolling tonal_weight (dark vs light register). This
+        # is a flow-texture layer: lexical coherence bleeds across word
+        # boundaries. Scale is proportional to |tonal_weight|.
+        if state.speaker_label_state == 0:
+            tw = state.tonal_weight
+            if tw != 0.0:
+                tb = tonal_start_bias(tw)
+                if tb is not None:
+                    for i in range(VOCAB_SIZE):
+                        logits[i] += tb[i]
 
         # Layer 4b2: phrase bigram — given the previous TWO completed
         # words, bias next word's first letter for known 3-word formulas.
