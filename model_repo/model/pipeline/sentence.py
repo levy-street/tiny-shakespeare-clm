@@ -87,12 +87,41 @@ def update_sentence(state: ModelState, token_id: int) -> ModelState:
     ch = state.last_char  # already updated by linguistic stage
     cls = state.last_char_class
 
-    # Reset on sentence-end punctuation.
+    # Reset on sentence-end punctuation — but save the just-finished
+    # sentence's type into prev_sentence_type so downstream predict
+    # layers can condition the NEXT sentence's opener on what kind of
+    # sentence just ended. If we never classified (sentence was too
+    # short), keep the prior prev_sentence_type rather than losing it.
     if cls == PUNCT_END:
+        if state.sentence_type != SENT_UNKNOWN:
+            saved = state.sentence_type
+        else:
+            saved = state.prev_sentence_type
+        # Also elevate to EXCLAM if the terminal punctuation is "!"
+        # and the classifier hadn't already caught it — "!" itself
+        # is strong evidence of an exclamative sentence, whatever the
+        # opener was.
+        if ch == "!" and saved == SENT_DECL:
+            saved = SENT_EXCLAM
+        elif ch == "?" and saved == SENT_DECL:
+            saved = SENT_INTERROG
         return state.model_copy(
             update={
                 "sentence_type": SENT_UNKNOWN,
                 "words_in_sentence": 0,
+                "prev_sentence_type": saved,
+            }
+        )
+
+    # Speaker-turn boundary: clear the cross-sentence memory; a new
+    # speaker's first sentence should not inherit the prior speaker's
+    # sentence-type context.
+    if state.consecutive_newlines >= 2 and ch == "\n":
+        return state.model_copy(
+            update={
+                "sentence_type": SENT_UNKNOWN,
+                "words_in_sentence": 0,
+                "prev_sentence_type": SENT_UNKNOWN,
             }
         )
 

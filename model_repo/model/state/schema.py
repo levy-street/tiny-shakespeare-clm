@@ -210,6 +210,18 @@ class ModelState(BaseModel):
     # (or since the start of the text). Used to detect "first word of
     # sentence" for type classification.
     words_in_sentence: int = 0
+    # Classification of the PREVIOUS sentence, preserved across the
+    # sentence boundary. Saved when PUNCT_END fires (before sentence_type
+    # is reset). Lets predict condition the first letter of a new
+    # sentence on what kind of sentence just ended:
+    #   - After ? (INTERROG): a response sentence typically starts with
+    #     a declarative or an interjection ("Ay,", "No,", "I ...");
+    #     another wh/aux opener is less likely.
+    #   - After ! (EXCLAM): emotional momentum — another exclamative
+    #     opener (O/Ah/Alas) is elevated, as is a first-person declarative.
+    #   - After . (DECL): neutral default.
+    # Reset to SENT_UNKNOWN on speaker-turn boundary.
+    prev_sentence_type: int = 0
 
     # --- Tier 3: verse-mode flow ---
     # Rolling score in [-3, +3] estimating whether we're inside a verse
