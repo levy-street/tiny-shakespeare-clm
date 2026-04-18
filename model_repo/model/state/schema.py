@@ -371,6 +371,22 @@ class ModelState(BaseModel):
     # pronouns at word-start once the register is established.
     addressing_register: float = 0.0
 
+    # --- Tier 2: line-starter anaphora tracking ---
+    # Count of completed words so far on the current line. Reset to 0
+    # on newline. Used to detect "this is the first word of the line"
+    # (transitions to 1 on the space that terminates the first word).
+    words_completed_on_line: int = 0
+    # Rolling tuple of the last 3 first-words-of-line. Each time the
+    # first word of a line completes, append; oldest is dropped.
+    # Captures anaphoric patterns — "Now is... / Now are...",
+    # "O, that... / O, that...", "And... / And...".
+    # Empty tuple when we haven't seen 3 line-starters yet.
+    #
+    # Consumed by predict.anaphora at line-start positions: when the
+    # letters agree across the tuple, boost the shared starter letter
+    # at the next line-start.
+    recent_line_starters: tuple[str, ...] = ()
+
     # --- Tier 2: formulaic-phrase progress ---
     # Current node ID in a precomputed trie of common multi-word
     # Shakespeare formulas ("I pray thee", "good my lord", "by my

@@ -34,6 +34,7 @@ from ..pipeline.pos import (
 from ..state import ModelState
 from ..vocab import VOCAB, VOCAB_INDEX, VOCAB_SIZE
 from .address import address_midword_bias, address_start_bias
+from .anaphora import anaphora_midword_bias, anaphora_start_bias
 from .archaic import archaic_midword_bias, archaic_start_bias
 from .bigram import bigram_bias
 from .context import CTX_BIAS_VECTORS, context_key
@@ -220,6 +221,24 @@ def predict(state: ModelState) -> list[float]:
         if am is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += am[i]
+
+    # Layer 3c2b: anaphora mid-word continuation. When an anaphora
+    # pattern is active AND we're mid-way through the first word of
+    # a fresh line, push toward completing the anaphora-repeated word.
+    if (
+        state.word_buffer
+        and state.speaker_label_state == 0
+        and state.words_completed_on_line == 0
+        and state.recent_line_starters
+    ):
+        amw = anaphora_midword_bias(
+            state.recent_line_starters,
+            state.word_buffer,
+            state.chars_since_newline,
+        )
+        if amw is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += amw[i]
 
     # Layer 3c3: 2nd-person addressing-register mid-word bias. When
     # buffer is a prefix of a pronoun in the currently-established
@@ -484,6 +503,22 @@ def predict(state: ModelState) -> list[float]:
             for ch in "abcdefghijklmnopqrstuvwxyz":
                 if ch in VOCAB_INDEX:
                     logits[VOCAB_INDEX[ch]] -= 1.2
+
+        # Layer 4b5: line-starter anaphora bias. At verse-line-start
+        # (NOT sentence-start — anaphora is about repeated line
+        # openings within the flow, not about fresh-sentence capital
+        # bias), boost the first letter shared across recent line-
+        # starters. Skip post-label starts: dialogue openings aren't
+        # anaphoric with the prior speaker's lines.
+        if (
+            on_verse_line_start
+            and state.speaker_label_state == 0
+            and state.recent_line_starters
+        ):
+            ab = anaphora_start_bias(state.recent_line_starters)
+            if ab is not None:
+                for i in range(VOCAB_SIZE):
+                    logits[i] += ab[i]
         # Additionally, at BOTH sentence-start and verse-line-start,
         # bias specific common starting capitals: T, A, W, I, O, B, H,
         # S, M, N, F, C, L, P, G, D, R, Y. Skip speaker-label context.
