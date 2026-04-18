@@ -1120,3 +1120,48 @@ class ModelState(BaseModel):
     # reset on mismatch or on speaker-turn boundary. >=1 signals an
     # active sentence-anaphora pattern.
     sentence_anaphora_run: int = 0
+
+    # --- Tier 3: doubt register (assertion ↔ uncertainty texture) ---
+    # Rolling [-1, +1] float tracking whether the recent text is in
+    # DOUBTING mode (+) — "perhaps", "methinks", "haply", "belike",
+    # "may", "might", "perchance", "if it be so", "I wonder",
+    # rhetorical questions — vs ASSERTIVE mode (-) — "verily",
+    # "surely", "certain", "indeed", "I know", "I am", "it is",
+    # imperatives, resolute exclamations.
+    #
+    # Distinct from:
+    #   - emotional_intensity: heat, not commitment-direction
+    #   - tonal_weight: valence (dark/light), not epistemic stance
+    #   - invocation_mode: rhetorical declamation, orthogonal to doubt
+    #   - sentence_type: per-sentence syntactic type, not a rolling
+    #     cross-sentence register
+    #
+    # Shakespeare's long monologues arc along this axis: Hamlet opens
+    # in doubt and moves toward resolution; Lady Macbeth opens in
+    # resolution and collapses into doubt. This field captures that
+    # arc.
+    #
+    # Bumps per completed word (additive):
+    #   doubt words  (+): perhaps, perchance, belike, methinks,
+    #                     haply, may, might, maybe, peradventure,
+    #                     seem, seems, seemed      : +0.14 each
+    #   doubt-light  (+): if, whether, or         : +0.05 each
+    #   certain words(-): verily, surely, indeed, truly, certain,
+    #                     doubtless, no-doubt      : -0.14 each
+    #   strong knows (-): know, knows, known, knew : -0.08 each
+    #   imperatives  (-): go, come, speak, hear, look, stay (when
+    #                     appearing at start of a sentence)   : -0.06
+    # Punctuation:
+    #   "?" end-of-sentence : +0.06  (question = doubt spike)
+    #   "!" end-of-sentence : -0.06  (exclamation = assertion spike)
+    # Decay: 0.93 per completed word (multiplicative toward 0).
+    # Clip: [-1.0, +1.0].
+    # Speaker turn: *0.3  (new speaker may inherit faint register).
+    #
+    # Consumed by predict.doubt at:
+    #   - word-start: in doubt mode boost p (perhaps, perchance, peradventure),
+    #                 m (may, might, methinks), h (haply), b (belike), s (seem);
+    #                 in assertion mode boost v (verily), s (surely/so),
+    #                 i (indeed/I), k (know), t (truly/the/that).
+    #   - sentence-end: in doubt mode boost "?"; in assertion mode boost "!"/"."
+    doubt_register: float = 0.0

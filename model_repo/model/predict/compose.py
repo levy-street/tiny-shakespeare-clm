@@ -74,6 +74,7 @@ from .invocation import (
     invocation_word_start_bias,
 )
 from .next_sentence_bias import next_sentence_start_bias
+from .doubt import doubt_sentence_end_bias, doubt_word_start_bias
 from .sentence_anaphora import sentence_anaphora_start_bias
 from .topic import content_repeat_bias, topic_bias, topic_midword_bias
 from .addressee import addressee_midword_bias, addressee_start_bias
@@ -749,6 +750,17 @@ def predict(state: ModelState) -> list[float]:
         if stb is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += stb[i]
+
+        # Layer 4b3c+: doubt-register word-start bias. When the rolling
+        # doubt_register float has drifted into doubt (+) or assertion
+        # (-) territory, nudge first letter toward the matching lexical
+        # family (perhaps/may/methinks vs verily/surely/indeed).
+        dwsb = doubt_word_start_bias(
+            state.doubt_register, state.speaker_label_state
+        )
+        if dwsb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += dwsb[i]
 
         # Layer 4b3b2: 2nd-person addressing-register word-start bias.
         # When the register is established (|register| > 0.5), nudge
