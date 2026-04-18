@@ -602,6 +602,34 @@ class ModelState(BaseModel):
     # 2+ is a strong signal that sentence-close is overdue.
     words_in_subordinate: int = 0
 
+    # --- Tier 2: NP-head expectation ---
+    # True when the most recent noun-phrase opener (article,
+    # possessive, or preposition) has been emitted, and no head noun
+    # has been resolved yet. We're waiting for a head noun, possibly
+    # after pre-modifiers (adjectives). Set to True on ARTICLE,
+    # POSSESSIVE, or PREPOSITION word completion; set to False when:
+    #   - a NOUN / PROPER_NOUN / PRONOUN completes (head noun found),
+    #   - a VERB / AUX_VERB / MODAL / VERB_ING / VERB_ED completes
+    #     (verb consumed slot; NP abandoned),
+    #   - a CONJUNCTION / INTERJECTION / NEGATION completes,
+    #   - sentence-ending punctuation fires,
+    #   - speaker-turn boundary.
+    #
+    # Motivation: clause_slot tracks whole-clause structure (has
+    # subject? has verb?). np_open tracks the finer-grained PHRASE
+    # structure: after "of", "the", "my", a head noun is expected —
+    # and the predict layer should heavily favor noun/adjective
+    # first letters at word-start while np_open, and strongly
+    # penalize sentence-enders and another determiner/preposition.
+    # Without this, the model produces "winter of to" sequences —
+    # preposition directly following preposition with nothing in
+    # between, which virtually never happens in real English.
+    np_open: bool = False
+    # Number of completed words since np_open became True (or the
+    # most recent re-opener). 0 on the word that set it. Grows
+    # through adjectives; caps at 5.
+    np_wait_words: int = 0
+
     # --- Tier 2: enjambment / line-end punctuation class ---
     # Classification of the final non-newline character of the
     # previous line (the char immediately before its closing \n).

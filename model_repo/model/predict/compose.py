@@ -43,6 +43,7 @@ from .context import CTX_BIAS_VECTORS, context_key
 from .letter3 import letter3_bias
 from .letter4 import letter4_bias
 from .next_word import next_word_bias
+from .np_head import np_head_start_bias
 from .phrase_bigram import phrase_bigram_bias
 from .pos_next import pos_next_bias
 from .repetition import repetition_start_bias
@@ -570,6 +571,22 @@ def predict(state: ModelState) -> list[float]:
             if rpb is not None:
                 for i in range(VOCAB_SIZE):
                     logits[i] += rpb[i]
+
+        # Layer 4b4c: NP-head expectation. When np_open is True we're
+        # waiting for a head noun to close the current noun phrase
+        # (opened by an article/possessive/preposition). Boost noun/
+        # adjective first letters; penalize re-opener function-word
+        # first letters.
+        if state.np_open and state.speaker_label_state == 0:
+            nhb = np_head_start_bias(
+                state.np_open,
+                state.np_wait_words,
+                state.speaker_label_state,
+                state.last_word_pos,
+            )
+            if nhb is not None:
+                for i in range(VOCAB_SIZE):
+                    logits[i] += nhb[i]
 
         # Layer 4b2: phrase bigram — given the previous TWO completed
         # words, bias next word's first letter for known 3-word formulas.

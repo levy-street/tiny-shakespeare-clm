@@ -19,6 +19,7 @@ from .addressee import update_addressee
 from .anaphora import update_anaphora
 from .clause import update_clause
 from .clause_slot import update_clause_slot
+from .np_head import update_np_head
 from .counters import update_basic_counters
 from .flow import update_flow
 from .formula import update_formula
@@ -44,6 +45,7 @@ PIPELINE: list[Stage] = [
     update_sentence,        # Tier 2/3: sentence-type FSM
     update_clause,          # Tier 2: clause-structure (clauses, subj pronoun)
     update_clause_slot,     # Tier 2: syntactic-slot state machine
+    update_np_head,         # Tier 2: NP-head expectation (np_open, np_wait_words)
     update_vocative,        # Tier 2: vocative-expectation flag
     update_addressee,       # Tier 2/3: vocative-noun memory
     update_speaker_memory,  # Tier 2/3: recent-speakers rolling window
