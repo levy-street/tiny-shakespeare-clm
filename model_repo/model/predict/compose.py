@@ -50,6 +50,7 @@ from .start5gram import start5gram_bias
 from .startbigram import startbigram_bias
 from .starttrigram import starttrigram_bias
 from .startword import START_BIAS
+from .imagery import imagery_start_bias
 from .topic import content_repeat_bias, topic_bias, topic_midword_bias
 from .trigram import trigram_bias
 from .vocative import VOCATIVE_START_BIAS
@@ -330,6 +331,20 @@ def predict(state: ModelState) -> list[float]:
                 if tb is not None:
                     for i in range(VOCAB_SIZE):
                         logits[i] += tb[i]
+
+        # Layer 4b3b: imagery-density bias — at word-start outside
+        # speaker labels, when imagery_density has risen above baseline,
+        # nudge next-word first letter toward concrete/sensory starter
+        # letters (b=blood/body/blade, e=eye/ear/earth, s=sword/sun/
+        # star, h=hand/heart/head, f=face/fire/flower, r=rose/river,
+        # t=tear/tongue/throne, c=cheek/chain/cloud, m=moon/mouth, ...).
+        # Orthogonal to tonal_weight (valence) and topic clusters
+        # (categorical) — this is a continuous imagistic-texture axis.
+        if state.speaker_label_state == 0 and state.imagery_density > 0.0:
+            ib = imagery_start_bias(state.imagery_density)
+            if ib is not None:
+                for i in range(VOCAB_SIZE):
+                    logits[i] += ib[i]
 
         # Layer 4b4: topic bias — at word-start outside speaker labels,
         # use the rolling content_words tuple (last 4 content words) to

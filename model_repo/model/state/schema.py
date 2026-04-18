@@ -336,3 +336,22 @@ class ModelState(BaseModel):
     # Consumed by predict.tonal.word_start_bias at word-starts to shift
     # next-word first-letter mass toward the in-register lexicon.
     tonal_weight: float = 0.0
+
+    # A rolling [0, 1] float tracking *imagery density* — how much
+    # sensory, concrete, embodied lexicon has appeared recently.
+    # Distinct axis from tonal_weight (dark/light valence) and
+    # archaic_density (formal/archaic register): imagery is about
+    # whether the text is painting pictures (blood, sword, moon,
+    # eye, hand, rose, crown, shadow, blade, dagger, fire, storm)
+    # vs. speaking abstractly (thought, matter, case, cause,
+    # reason, purpose, sake, manner).
+    #
+    # Shakespeare's imagistic passages cluster: once a scene turns
+    # toward sensory language, more sensory language follows. This
+    # field bleeds that texture through the function-word scaffolding
+    # the same way tonal_weight does, but tracks a different axis
+    # and selects different next-letter priors.
+    #
+    # Consumed by predict.imagery.word_start_bias at word-starts
+    # outside speaker labels.
+    imagery_density: float = 0.0

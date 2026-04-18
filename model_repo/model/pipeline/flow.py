@@ -152,6 +152,82 @@ _TONAL_STRONG_BUMP = 0.30
 _TONAL_MILD_BUMP = 0.12
 _TONAL_DECAY = 0.96
 
+# --- Imagery density: concrete/sensory vs abstract ---
+# Words that paint pictures: body parts, instruments, weather,
+# nature objects, colors, textures, gestures. Distinct from tonal
+# lexicon (which carries valence, not imagery).
+_IMAGERY_STRONG: frozenset[str] = frozenset({
+    # Body
+    "eye", "eyes", "ear", "ears", "hand", "hands", "head", "face",
+    "faces", "hair", "brow", "brows", "lip", "lips", "tongue",
+    "cheek", "cheeks", "throat", "breast", "breasts", "bosom",
+    "bosoms", "arm", "arms", "leg", "legs", "foot", "feet", "knee",
+    "knees", "finger", "fingers", "skin", "flesh", "bone", "bones",
+    "blood", "tears", "tear", "breath", "pulse", "heart",
+    # Weapons / objects
+    "sword", "swords", "dagger", "daggers", "blade", "blades",
+    "knife", "knives", "spear", "spears", "arrow", "arrows",
+    "bow", "bows", "crown", "crowns", "throne", "thrones", "ring",
+    "rings", "chain", "chains", "mirror", "mirrors", "cup", "cups",
+    "goblet", "goblets", "letter", "letters", "cloak", "cloaks",
+    "robe", "robes", "gown", "gowns", "mask", "masks", "key",
+    "keys", "coin", "coins",
+    # Sky / nature concrete
+    "moon", "sun", "star", "stars", "cloud", "clouds",
+    "fire", "flame", "flames", "smoke", "ash", "ashes",
+    "wind", "storm", "rain", "snow", "frost", "dew", "mist",
+    "lightning", "thunder", "sea", "wave", "waves", "shore",
+    "river", "stream", "tide", "flood",
+    # Plants / earth
+    "rose", "roses", "flower", "flowers", "leaf", "leaves", "tree",
+    "trees", "bough", "boughs", "grass", "thorn", "thorns",
+    "stone", "stones", "rock", "rocks", "earth", "dust", "mud",
+    "gold", "silver", "pearl", "pearls", "gem", "gems",
+    # Animals
+    "horse", "horses", "dog", "dogs", "wolf", "wolves", "lion",
+    "serpent", "snake", "snakes", "worm", "worms", "bird", "birds",
+    "crow", "crows", "dove", "doves", "fly", "flies", "bee", "bees",
+    # Light / color / shadow
+    "shadow", "shadows", "light", "lights", "dark", "darkness",
+    "gleam", "shine", "shines", "blush", "red", "white", "black",
+    "pale", "bright",
+    # Gesture / motion concrete
+    "kiss", "kisses", "smile", "smiles", "touch", "touches",
+    "blow", "blows", "wound", "wounds", "cut", "cuts", "stab",
+    "stabs",
+})
+_IMAGERY_MILD: frozenset[str] = frozenset({
+    # Abstract but still sense-adjacent / bodied
+    "sound", "sounds", "voice", "voices", "music", "song", "songs",
+    "scent", "smell", "taste", "silence", "noise",
+    "warm", "cold", "soft", "hard", "sharp", "smooth", "rough",
+    "sweet", "bitter", "sour",
+    "green", "blue", "gray", "grey",
+    "shape", "form", "forms", "line", "edge",
+    "house", "houses", "door", "doors", "window", "windows",
+    "gate", "gates", "wall", "walls", "tower", "towers", "bed",
+    "beds", "field", "fields", "garden", "road", "roads", "path",
+    "paths", "ship", "ships", "boat", "boats",
+    "day", "night", "morning", "evening", "dawn", "dusk",
+})
+# Abstract nouns that pull imagery_density down (text is moving
+# toward argument/abstraction rather than image).
+_IMAGERY_ABSTRACT: frozenset[str] = frozenset({
+    "thought", "thoughts", "matter", "matters", "case", "cases",
+    "fact", "facts", "manner", "manners", "reason", "reasons",
+    "cause", "causes", "sake", "sakes", "kind", "kinds", "sort",
+    "sorts", "state", "thing", "things", "whit", "ought", "naught",
+    "issue", "issues", "purpose", "purposes", "means", "mean",
+    "argument", "arguments", "opinion", "opinions", "notion",
+    "notions", "sense", "senses", "truth", "truths", "way", "ways",
+    "word", "words", "name", "names", "speech", "speeches",
+    "promise", "promises",
+})
+_IMAGERY_STRONG_BUMP = 0.28
+_IMAGERY_MILD_BUMP = 0.10
+_IMAGERY_ABSTRACT_BUMP = -0.10
+_IMAGERY_DECAY = 0.95  # per completed word
+
 
 def update_flow(state: ModelState, token_id: int) -> ModelState:
     # Linguistic updates have already run; use the post-update state.
@@ -291,6 +367,23 @@ def update_flow(state: ModelState, token_id: int) -> ModelState:
     if state.consecutive_newlines >= 2 and lc == "\n":
         tonal_weight *= 0.55
 
+    # Imagery density: concrete/sensory vs abstract register.
+    # Decays per completed word, then bumps by imagery class.
+    imagery_density = state.imagery_density
+    if state.just_finished_word:
+        imagery_density *= _IMAGERY_DECAY
+        w = state.last_completed_word
+        if w:
+            if w in _IMAGERY_STRONG:
+                imagery_density = min(1.0, imagery_density + _IMAGERY_STRONG_BUMP)
+            elif w in _IMAGERY_MILD:
+                imagery_density = min(1.0, imagery_density + _IMAGERY_MILD_BUMP)
+            elif w in _IMAGERY_ABSTRACT:
+                imagery_density = max(0.0, imagery_density + _IMAGERY_ABSTRACT_BUMP)
+    # Fresh speaker: damp carryover.
+    if state.consecutive_newlines >= 2 and lc == "\n":
+        imagery_density *= 0.55
+
     return state.model_copy(
         update={
             "on_word_trie": on_trie,
@@ -306,5 +399,6 @@ def update_flow(state: ModelState, token_id: int) -> ModelState:
             "archaic_density": archaic_density,
             "emotional_intensity": emo,
             "tonal_weight": tonal_weight,
+            "imagery_density": imagery_density,
         }
     )
