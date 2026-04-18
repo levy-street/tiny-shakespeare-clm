@@ -124,6 +124,16 @@ class ModelState(BaseModel):
     # "by my troth", "good my lord", "I have been", etc.). Set at word
     # completion, holds steady between completions.
     prev_completed_word: str = ""
+    # Up to 4 most-recently-completed *content* words (NOUN, VERB,
+    # VERB_ING, VERB_ED, ADJECTIVE, ADVERB, PROPER_NOUN, or UNKNOWN),
+    # most-recent first. Function words (articles, pronouns, aux,
+    # prepositions, conjunctions, etc.) are filtered out. This gives
+    # the predict layer a rolling *content* memory that outlives the
+    # two-word cursor, enabling topical-coherence biases (dark/war/
+    # death clusters vs love/tender clusters vs royal/court clusters)
+    # to persist across function-word scaffolding. Updated by
+    # `pipeline/pos.py` at word completion.
+    content_words: tuple[str, ...] = ()
 
     # --- Tier 3: flow ---
     # Is the current word_buffer still a prefix of some known word? False

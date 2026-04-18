@@ -50,6 +50,7 @@ from .start5gram import start5gram_bias
 from .startbigram import startbigram_bias
 from .starttrigram import starttrigram_bias
 from .startword import START_BIAS
+from .topic import topic_bias
 from .trigram import trigram_bias
 from .vocative import VOCATIVE_START_BIAS
 from .unigram import UNIGRAM_LOGPROBS
@@ -294,6 +295,20 @@ def predict(state: ModelState) -> list[float]:
                 if tb is not None:
                     for i in range(VOCAB_SIZE):
                         logits[i] += tb[i]
+
+        # Layer 4b4: topic bias — at word-start outside speaker labels,
+        # use the rolling content_words tuple (last 4 content words) to
+        # detect a dominant topical cluster (dark/war/death vs love/
+        # tender vs royal/court) and tilt next-word first-letter choice
+        # toward the cluster's starter lexicon. This sits alongside
+        # tonal_weight (which is a single dark/light scalar) but reads
+        # real words instead of a smoothed score — giving orthogonal
+        # topical signal that tonal_weight's decay can't see.
+        if state.speaker_label_state == 0 and state.content_words:
+            tpc = topic_bias(state.content_words)
+            if tpc is not None:
+                for i in range(VOCAB_SIZE):
+                    logits[i] += tpc[i]
 
         # Layer 4b2: phrase bigram — given the previous TWO completed
         # words, bias next word's first letter for known 3-word formulas.

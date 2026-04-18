@@ -289,6 +289,19 @@ def classify(word: str) -> int:
     return _classify_by_suffix(w)
 
 
+_CONTENT_TAGS = frozenset({
+    POS_NOUN,
+    POS_VERB,
+    POS_VERB_ING,
+    POS_VERB_ED,
+    POS_ADJECTIVE,
+    POS_ADVERB,
+    POS_PROPER_NOUN,
+    POS_UNKNOWN,  # unknown words are usually open-class content
+})
+_CONTENT_WORDS_CAP = 4
+
+
 def update_pos(state: ModelState, token_id: int) -> ModelState:
     # Only recompute when a word just completed; otherwise hold steady.
     if not state.just_finished_word:
@@ -297,10 +310,28 @@ def update_pos(state: ModelState, token_id: int) -> ModelState:
     if not word:
         return state
     new_tag = classify(word)
+
+    # Maintain a rolling content-words tuple (most-recent first,
+    # capped at CAP). Only words classified as content are kept.
+    # Skip single-letter "words" (likely stray chars like "a"/"i"
+    # from speaker-label residue or prefix drift).
+    if new_tag in _CONTENT_TAGS and len(word) >= 2:
+        # Avoid duplicate at the head so immediate repetition ("O, O")
+        # doesn't flood the tuple.
+        if state.content_words and state.content_words[0] == word:
+            new_content = state.content_words
+        else:
+            new_content = (word,) + state.content_words
+            if len(new_content) > _CONTENT_WORDS_CAP:
+                new_content = new_content[:_CONTENT_WORDS_CAP]
+    else:
+        new_content = state.content_words
+
     # Shift current → prev.
     return state.model_copy(
         update={
             "prev_word_pos": state.last_word_pos,
             "last_word_pos": new_tag,
+            "content_words": new_content,
         }
     )
