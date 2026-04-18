@@ -607,6 +607,21 @@ class ModelState(BaseModel):
     red_flag_cluster_fired: bool = False
     red_flag_vowel_fired: bool = False
 
+    # --- Tier 2/3: within-line alliteration memory ---
+    # The lowercase first letter currently being alliterated on this
+    # line (a content-word's first letter). "" when no alliteration
+    # run is active (e.g., fresh line, or last content word started
+    # with a different letter than the running alliteration).
+    line_alliteration_letter: str = ""
+    # Number of consecutive content-words on this line (since the last
+    # newline) whose first letter matches line_alliteration_letter. A
+    # value >= 2 signals active alliteration — the predict layer then
+    # nudges the next word's first letter toward the same character.
+    # Function words (articles, possessives, prepositions, conjunctions,
+    # aux verbs, modals, pronouns) are transparent: they neither
+    # advance nor break the run.
+    line_alliteration_run: int = 0
+
     # --- Tier 2: clause nesting depth (subordinators) ---
     # Count of subordinating-conjunction openings since the last
     # sentence-end punctuation. Each "that"/"which"/"who"/"when"/

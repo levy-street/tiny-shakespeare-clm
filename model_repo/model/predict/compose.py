@@ -34,6 +34,7 @@ from ..pipeline.pos import (
 from ..state import ModelState
 from ..vocab import VOCAB, VOCAB_INDEX, VOCAB_SIZE
 from .address import address_midword_bias, address_start_bias
+from .alliteration import alliteration_start_bias
 from .anaphora import anaphora_midword_bias, anaphora_start_bias
 from .archaic import archaic_midword_bias, archaic_start_bias
 from .bigram import bigram_bias
@@ -643,6 +644,22 @@ def predict(state: ModelState) -> list[float]:
             if parb is not None:
                 for i in range(VOCAB_SIZE):
                     logits[i] += parb[i]
+
+        # Layer 4b4b-allit: within-line alliteration boost. When the
+        # last 2+ content words on this line all started with the
+        # same letter, nudge the next word's first letter toward the
+        # same character. Function-word transparency is handled in
+        # the pipeline stage, so "full fathom of the five" still
+        # reads as run=3 on 'f'.
+        if state.speaker_label_state == 0 and state.line_alliteration_run >= 2:
+            ab = alliteration_start_bias(
+                state.line_alliteration_letter,
+                state.line_alliteration_run,
+                state.speaker_label_state,
+            )
+            if ab is not None:
+                for i in range(VOCAB_SIZE):
+                    logits[i] += ab[i]
 
         # Layer 4b4b-orn: ornament-density word-start bias. Tier 3
         # flow field reads ornament_density and nudges toward noun vs

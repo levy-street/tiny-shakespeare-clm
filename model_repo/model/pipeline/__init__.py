@@ -16,6 +16,7 @@ from typing import Callable
 
 from ..state import ModelState
 from .addressee import update_addressee
+from .alliteration import update_alliteration
 from .anaphora import update_anaphora
 from .clause import update_clause
 from .clause_slot import update_clause_slot
@@ -57,6 +58,7 @@ PIPELINE: list[Stage] = [
     update_referent,        # Tier 2: anaphoric referent gender tracking
     update_turn_progress,   # Tier 2/3: words/sentences/lines in current turn
     update_anaphora,        # Tier 2: line-starter anaphora tracking
+    update_alliteration,    # Tier 2/3: within-line alliteration memory
     update_rhyme,           # Tier 2/3: line-tail rhyme memory
     update_prosody,         # Tier 3: syllable / cadence tracking
     update_word_shape,      # Tier 2: per-word phonotactic red-flag counter
