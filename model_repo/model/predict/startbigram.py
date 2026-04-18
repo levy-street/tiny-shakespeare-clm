@@ -80,7 +80,7 @@ def _build_vectors() -> dict[str, list[float]]:
         # bigrams (lf, df, sz, rb, mb, kd, pn...) get mildly penalized.
         for target in lowers:
             if target not in entries:
-                vec[VOCAB_INDEX[target]] = -9.0
+                vec[VOCAB_INDEX[target]] = -2.0
         for nxt, bias in entries.items():
             if nxt in VOCAB_INDEX:
                 vec[VOCAB_INDEX[nxt]] = bias

@@ -140,6 +140,7 @@ def predict(state: ModelState) -> list[float]:
 
 
 
+
     # Layer 3b3: word-start bigram bias — at letter_run_len == 1, the
     # second letter is heavily conditioned on the first (word-start
     # distributions differ from mid-word). Applies only when speaker

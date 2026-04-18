@@ -361,7 +361,11 @@ def content_repeat_bias(
         len_scale = 3.30
     else:
         len_scale = 3.70
-    slot_weights = (2.20, 1.05, 0.50, 0.22, 0.12, 0.06, 0.03, 0.02)
+    # Slot 0 is the MOST-recent completed content word — it's the one
+    # we literally just said. Echoing it back mid-word at high weight
+    # creates "insatiate, insatiate" / "there there there" stuck
+    # loops. We want motif resonance (slots 1-3) not just-said repeat.
+    slot_weights = (0.60, 1.05, 0.55, 0.25, 0.12, 0.06, 0.03, 0.02)
     for i, w in enumerate(content_words[:8]):
         if (
             len(w) > len(buffer)
