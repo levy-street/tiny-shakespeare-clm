@@ -262,7 +262,7 @@ _PHRASE_NEXT: dict[tuple[str, str], dict[str, int]] = {
 }
 
 
-_GLOBAL_SCALE = 1.0
+_GLOBAL_SCALE = 1.3
 
 
 def _build_vectors() -> dict[tuple[str, str], list[float]]:

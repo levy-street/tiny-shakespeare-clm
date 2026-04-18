@@ -268,7 +268,7 @@ def _build_vectors() -> dict[str, list[float]]:
             if ch not in VOCAB_INDEX:
                 continue
             frac = w / total
-            bias = 1.2 * math.log((frac + 0.02) / 0.05)
+            bias = 1.0 * math.log((frac + 0.02) / 0.05)
             vec[VOCAB_INDEX[ch]] = bias
             up = ch.upper()
             if up in VOCAB_INDEX:
