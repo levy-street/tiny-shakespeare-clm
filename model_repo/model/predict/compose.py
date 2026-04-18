@@ -98,6 +98,7 @@ def predict(state: ModelState) -> list[float]:
                 logits[i] += l3[i]
 
 
+
     # Layer 3b3: word-start bigram bias — at letter_run_len == 1, the
     # second letter is heavily conditioned on the first (word-start
     # distributions differ from mid-word). Applies only when speaker
@@ -196,6 +197,13 @@ def predict(state: ModelState) -> list[float]:
             if nw is not None:
                 for i in range(VOCAB_SIZE):
                     logits[i] += nw[i]
+                # Also add a small pos_next signal on top of next_word,
+                # to pick up POS-class-level patterns that next_word's
+                # per-word bigram doesn't capture.
+                pn = pos_next_bias(state.last_word_pos)
+                if pn is not None:
+                    for i in range(VOCAB_SIZE):
+                        logits[i] += 0.5 * pn[i]
             else:
                 # Fallback: POS-based next-letter bias.
                 pn = pos_next_bias(state.last_word_pos)
