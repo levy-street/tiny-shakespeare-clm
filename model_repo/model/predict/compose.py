@@ -1150,13 +1150,29 @@ def predict(state: ModelState) -> list[float]:
                     logits[VOCAB_INDEX["?"]] -= 1.2 * scale
                 if ":" in VOCAB_INDEX:
                     logits[VOCAB_INDEX[":"]] -= 0.8 * scale
-        # For single-letter complete words (a/I/O), space is even more
-        # certain — they almost always end right there.
+        # For single-letter complete words (A/I/O), space is even more
+        # certain — they almost always end right there. BUT: lowercase
+        # "i" as a standalone word never occurs in Shakespeare (always
+        # "I" capitalized). state.last_char preserves case, so we can
+        # distinguish:
+        #   - "I", "O", "A" (uppercase, standalone): very likely word.
+        #   - "a" (lowercase, as in "a bird"): likely a standalone word.
+        #   - "i" (lowercase): almost always the first letter of a
+        #     longer word (in/is/if/it/into/...). Do NOT boost space.
         elif (
             state.letter_run_len == 1
             and state.word_buffer in COMPLETE_WORDS
         ):
-            logits[VOCAB_INDEX[" "]] += 3.6
+            if state.last_char == "i":
+                # Lowercase "i" standalone is ungrammatical. Penalize
+                # space (and any terminator) so we extend to a longer
+                # word.
+                logits[VOCAB_INDEX[" "]] -= 3.0
+                for ch in ",.;:\n!?":
+                    if ch in VOCAB_INDEX:
+                        logits[VOCAB_INDEX[ch]] -= 2.0
+            else:
+                logits[VOCAB_INDEX[" "]] += 3.6
 
 
 
