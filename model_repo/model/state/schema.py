@@ -719,3 +719,54 @@ class ModelState(BaseModel):
     # VA_NONE on sentence-end punctuation or on a CONJUNCTION that
     # resets the clause.
     verb_agreement: int = 0
+
+    # --- Tier 2: anaphoric pronoun referent tracking ---
+    # Once a named referent has entered the discourse (a proper noun
+    # or a distinctive role-noun like "king" / "lord" / "queen"), we
+    # track its grammatical gender so subsequent pronouns can be
+    # predicted. Shakespeare's character-tagged dialogue has strong
+    # referent continuity: after "the king entered, he ...", the
+    # pronoun "he" (not "she") is very likely. This field captures
+    # that continuity across sentences within a speaker turn.
+    #
+    #   0  REF_NONE   — no tracked referent
+    #   1  REF_MALE   — last tracked referent is masculine
+    #                  (he/him/his; king, lord, duke, sir, father,
+    #                  son, brother, prince, knight, master, boy,
+    #                  man, friar, proper male names)
+    #   2  REF_FEMALE — feminine (she/her; queen, lady, madam, sister,
+    #                  mother, daughter, wife, maid, nurse, mistress,
+    #                  proper female names)
+    #   3  REF_NEUTER — inanimate or abstract (it; heart, soul, love,
+    #                  sword, crown, throne, etc.) — tracked mainly
+    #                  to avoid falsely boosting he/she for inanimates
+    #   4  REF_PLURAL — group (they/them/their; lords, soldiers,
+    #                  friends, gentlemen, ladies)
+    #
+    # Updated by update_referent (new stage after speaker_memory) at
+    # word completion when a new discourse-significant noun is seen.
+    # Decays to REF_NONE on speaker-turn change (new last_speaker_label).
+    # Persists across sentence boundaries within a turn.
+    referent_gender: int = 0
+    # Light decay counter: how many words since the referent was last
+    # confirmed (either by reintroduction or by a matching pronoun).
+    # Used to weaken the bias as the referent stales.
+    referent_staleness: int = 0
+
+    # --- Tier 2: speaker-label off-trie run-length ---
+    # Count of consecutive letters added to `speaker_buffer` (while the
+    # speaker-label FSM is in state 1 or 2) that took the buffer OFF
+    # the known-speaker-prefix trie. 0 whenever the buffer is currently
+    # a prefix of at least one canonical name (or we're not in a
+    # speaker label). Monotonically grows as we extend into gibberish.
+    #
+    # Motivation: sample diagnostics showed phantom speaker labels
+    # like "ZM SYMPATH:" emerging because once the FSM enters state 2
+    # the only escape is ":" (or a rare-class char), and the existing
+    # off-trie drift bias BOOSTED ":" closure regardless of how much
+    # gibberish had accumulated. The run counter gives predict a way
+    # to distinguish a plausible minor-character name (short off-trie
+    # run: 1-2 letters) from run-away gibberish (5+ letters off-trie),
+    # and flip the ":" bias from boost to penalty as the run grows —
+    # pushing the model to escape the phantom label via newline.
+    speaker_label_offtrie_run: int = 0

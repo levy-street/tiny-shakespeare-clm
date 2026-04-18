@@ -27,11 +27,13 @@ from .formula import update_formula
 from .linguistic import update_linguistic
 from .pos import update_pos
 from .prosody import update_prosody
+from .referent import update_referent
 from .repetition import update_repetition
 from .word_shape import update_word_shape
 from .rhyme import update_rhyme
 from .sentence import update_sentence
 from .speaker_memory import update_speaker_memory
+from .speaker_offtrie import update_speaker_offtrie
 from .turn import update_turn_progress
 from .vocative import update_vocative
 
@@ -40,6 +42,7 @@ Stage = Callable[[ModelState, int], ModelState]
 PIPELINE: list[Stage] = [
     update_basic_counters,  # Tier 1: base bookkeeping
     update_linguistic,      # Tier 2: linguistic structure
+    update_speaker_offtrie, # Tier 2: speaker-buffer off-trie run
     update_pos,             # Tier 2: POS tag of last completed word
     update_repetition,      # Tier 2: short-range word-repetition memory
     update_formula,         # Tier 2: formulaic-phrase trie position
@@ -51,6 +54,7 @@ PIPELINE: list[Stage] = [
     update_vocative,        # Tier 2: vocative-expectation flag
     update_addressee,       # Tier 2/3: vocative-noun memory
     update_speaker_memory,  # Tier 2/3: recent-speakers rolling window
+    update_referent,        # Tier 2: anaphoric referent gender tracking
     update_turn_progress,   # Tier 2/3: words/sentences/lines in current turn
     update_anaphora,        # Tier 2: line-starter anaphora tracking
     update_rhyme,           # Tier 2/3: line-tail rhyme memory

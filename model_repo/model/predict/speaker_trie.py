@@ -286,3 +286,9 @@ def speaker_trie_bias(buffer: str) -> list[float] | None:
     if not buffer:
         return None
     return _PREFIX_BIAS.get(buffer)
+
+
+def is_speaker_prefix(buffer: str) -> bool:
+    """True iff `buffer` is a prefix of at least one canonical speaker
+    name (including the empty prefix and complete names)."""
+    return buffer in _TRIE

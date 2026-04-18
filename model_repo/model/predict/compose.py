@@ -66,6 +66,7 @@ from .topic import content_repeat_bias, topic_bias, topic_midword_bias
 from .addressee import addressee_midword_bias, addressee_start_bias
 from .adjacent_repeat import adjacent_repeat_bias
 from .trie_recovery import trie_recovery_bias
+from .referent import referent_start_bias
 from .verb_agreement import verb_agreement_bias, verb_agreement_start_bias
 from .clause_depth import clause_depth_close_bias
 from .red_flags import red_flags_close_bias
@@ -401,14 +402,20 @@ def predict(state: ModelState) -> list[float]:
             state.speaker_label_state == 2
             and len(state.speaker_buffer) >= 3
         ):
-            # Off-trie drift inside a speaker label. We've extended past
-            # any known speaker prefix. Very gentle close-bias only;
-            # some real Shakespeare labels (minor characters, proper
-            # nouns) aren't in our speaker trie, so we don't penalize
-            # letters — we just nudge ":" up slightly.
+            # Off-trie drift inside a speaker label. The offtrie_run
+            # counter tells us how deep we've drifted. Short runs are
+            # plausibly a minor/unknown name (keep a small ":" close-
+            # nudge). Very long runs (6+) are likely phantom labels
+            # the sampler hallucinated — cap the boost and give a
+            # mild newline lift so the FSM can escape.
             drift = min(len(state.speaker_buffer) - 2, 4)
+            run = state.speaker_label_offtrie_run
             if ":" in VOCAB_INDEX:
                 logits[VOCAB_INDEX[":"]] += 0.15 * drift
+            if run >= 4:
+                esc = min(run - 3, 6)
+                if "\n" in VOCAB_INDEX:
+                    logits[VOCAB_INDEX["\n"]] += 0.4 * esc
 
     # Layer 3d1: speaker recency bias — tilt the speaker trie toward
     # characters recently in-scene, and penalize immediate self-repeat.
