@@ -33,6 +33,7 @@ from ..pipeline.pos import (
 )
 from ..state import ModelState
 from ..vocab import VOCAB, VOCAB_INDEX, VOCAB_SIZE
+from .address import address_midword_bias, address_start_bias
 from .archaic import archaic_midword_bias, archaic_start_bias
 from .bigram import bigram_bias
 from .context import CTX_BIAS_VECTORS, context_key
@@ -220,6 +221,22 @@ def predict(state: ModelState) -> list[float]:
             for i in range(VOCAB_SIZE):
                 logits[i] += am[i]
 
+    # Layer 3c3: 2nd-person addressing-register mid-word bias. When
+    # buffer is a prefix of a pronoun in the currently-established
+    # register, push the next letter toward completion of that
+    # register's pronoun. Skip inside speaker-label territory.
+    if (
+        state.word_buffer
+        and state.speaker_label_state == 0
+        and abs(state.addressing_register) > 0.5
+    ):
+        ab = address_midword_bias(
+            state.addressing_register, state.word_buffer
+        )
+        if ab is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += ab[i]
+
 
 
     # Layer 3d: speaker-label trie bias.
@@ -363,6 +380,17 @@ def predict(state: ModelState) -> list[float]:
             if ib is not None:
                 for i in range(VOCAB_SIZE):
                     logits[i] += ib[i]
+
+        # Layer 4b3b2: 2nd-person addressing-register word-start bias.
+        # When the register is established (|register| > 0.5), nudge
+        # first letter toward the matching pronoun series (t vs y).
+        if state.speaker_label_state == 0:
+            ar = state.addressing_register
+            if abs(ar) > 0.5:
+                asb = address_start_bias(ar)
+                if asb is not None:
+                    for i in range(VOCAB_SIZE):
+                        logits[i] += asb[i]
 
         # Layer 4b3c: formulaic-phrase word-start bias. When we're
         # inside a known multi-word formula, boost first letters of

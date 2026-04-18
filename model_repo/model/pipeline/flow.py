@@ -228,6 +228,23 @@ _IMAGERY_MILD_BUMP = 0.10
 _IMAGERY_ABSTRACT_BUMP = -0.10
 _IMAGERY_DECAY = 0.95  # per completed word
 
+# --- 2nd-person addressing register ---
+# Shakespeare characters lock into one of two 2nd-person pronoun
+# registers within a turn: thou-register (thou/thee/thy/thine/thyself
+# and their archaic verb forms) vs. you-register (you/your/yours/
+# yourself/ye). Crossing mid-speech is rare. We push addressing_register
+# positive on thou-forms and negative on you-forms; decay per word;
+# dampen on speaker-turn change (next speaker may inherit or flip).
+_THOU_FORMS: frozenset[str] = frozenset({
+    "thou", "thee", "thy", "thine", "thyself",
+})
+_YOU_FORMS: frozenset[str] = frozenset({
+    "you", "your", "yours", "yourself", "ye",
+})
+_ADDR_BUMP = 1.1
+_ADDR_DECAY = 0.92  # per completed word
+_ADDR_MAX = 3.0
+
 
 def update_flow(state: ModelState, token_id: int) -> ModelState:
     # Linguistic updates have already run; use the post-update state.
@@ -384,6 +401,23 @@ def update_flow(state: ModelState, token_id: int) -> ModelState:
     if state.consecutive_newlines >= 2 and lc == "\n":
         imagery_density *= 0.55
 
+    # Addressing register: push positive on thou-forms, negative on
+    # you-forms. Decay per word; dampen across speaker-turn boundary.
+    addressing_register = state.addressing_register
+    if state.just_finished_word:
+        addressing_register *= _ADDR_DECAY
+        w = state.last_completed_word
+        if w in _THOU_FORMS:
+            addressing_register = min(
+                _ADDR_MAX, addressing_register + _ADDR_BUMP
+            )
+        elif w in _YOU_FORMS:
+            addressing_register = max(
+                -_ADDR_MAX, addressing_register - _ADDR_BUMP
+            )
+    if state.consecutive_newlines >= 2 and lc == "\n":
+        addressing_register *= 0.35
+
     return state.model_copy(
         update={
             "on_word_trie": on_trie,
@@ -400,5 +434,6 @@ def update_flow(state: ModelState, token_id: int) -> ModelState:
             "emotional_intensity": emo,
             "tonal_weight": tonal_weight,
             "imagery_density": imagery_density,
+            "addressing_register": addressing_register,
         }
     )

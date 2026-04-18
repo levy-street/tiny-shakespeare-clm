@@ -356,6 +356,21 @@ class ModelState(BaseModel):
     # outside speaker labels.
     imagery_density: float = 0.0
 
+    # --- Tier 3: second-person addressing register ---
+    # Running scalar in [-3, +3] tracking whether the current speaker's
+    # turn has been addressing in the thou-register (+) or you-register
+    # (-). Shakespeare's characters usually pick one and stay in it
+    # within a turn — thou signals intimacy / condescension / emotion,
+    # you signals formal respect. Updated at word completion when a
+    # 2nd-person pronoun (thou/thee/thy/thine/thyself vs you/your/
+    # yours/yourself/ye) is observed; decays toward 0 each word.
+    # Dampened (but not reset) on speaker-turn change — the next
+    # speaker may inherit or flip.
+    #
+    # Consumed by predict to boost the matching series of 2nd-person
+    # pronouns at word-start once the register is established.
+    addressing_register: float = 0.0
+
     # --- Tier 2: formulaic-phrase progress ---
     # Current node ID in a precomputed trie of common multi-word
     # Shakespeare formulas ("I pray thee", "good my lord", "by my
