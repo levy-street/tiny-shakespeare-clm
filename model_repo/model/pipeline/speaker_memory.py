@@ -5,9 +5,13 @@ at the 2->3 speaker-FSM transition, i.e., the exact moment the ":"
 closes a speaker label) and maintains a rolling window of the most
 recent distinct speakers.
 
-`recent_speakers` is a tuple of up to 4 canonical uppercase names,
+`recent_speakers` is a tuple of up to 7 canonical uppercase names,
 most-recent first. Element [0] is the current speaker (last label
-seen). Element [1] is the previous speaker. Etc.
+seen). Element [1] is the previous speaker. Etc. Seven is the empirically
+optimal capacity: enough to hold the full cast of an ensemble scene
+(often 4-6 speakers alternating with a couple of minor voices); more
+than that, old cross-scene speakers start polluting the partner-letter
+vote and the recency signal degrades.
 
 The detection heuristic: `last_speaker_label` changes only at the
 moment a new label closes. We compare against the previous state's
@@ -28,7 +32,7 @@ from __future__ import annotations
 
 from ..state import ModelState
 
-_MAX_RECENT = 4
+_MAX_RECENT = 7
 
 
 def update_speaker_memory(state: ModelState, token_id: int) -> ModelState:

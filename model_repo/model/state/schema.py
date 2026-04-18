@@ -324,13 +324,15 @@ class ModelState(BaseModel):
     # initialization. Updated by the linguistic stage exactly at the
     # 2->3 speaker-label FSM transition (when the ":" arrives).
     last_speaker_label: str = ""
-    # Tuple of up to 4 most-recently-seen distinct speaker labels,
+    # Tuple of up to 7 most-recently-seen distinct speaker labels,
     # most-recent first. The current speaker is element [0]. Shakespeare
-    # scenes usually have 2-4 recurring speakers; knowing who has
-    # spoken recently lets the predict layer (a) strongly boost
-    # recently-seen names at the next speaker label, and (b) penalize
-    # immediate self-repetition (a speaker is very unlikely to produce
-    # two adjacent speaker labels with their own name).
+    # scenes usually have 4-6 recurring speakers; the seven-slot
+    # capacity holds the full cast of an ensemble scene while still
+    # excluding stale cross-scene speakers. Knowing who has spoken
+    # recently lets the predict layer (a) strongly boost recently-seen
+    # names at the next speaker label, and (b) penalize immediate
+    # self-repetition (a speaker is very unlikely to produce two
+    # adjacent speaker labels with their own name).
     recent_speakers: tuple[str, ...] = ()
 
     # A rolling float in [-1, +1] tracking the dark/heavy vs
