@@ -1084,11 +1084,16 @@ def predict(state: ModelState) -> list[float]:
         # "wh", "br", "sh" should NOT yet boost space — they want
         # letter extensions.
         if state.letter_run_len >= 2 and state.on_word_trie:
-            if (
-                state.word_buffer in COMPLETE_WORDS
-                or state.letter_run_len >= 4
-            ):
+            if state.word_buffer in COMPLETE_WORDS:
                 logits[VOCAB_INDEX[" "]] += 0.6
+            elif state.letter_run_len >= 5:
+                # Non-complete on-trie buffer that's gotten long (5+).
+                # Less confident but still plausible to end.
+                logits[VOCAB_INDEX[" "]] += 0.3
+            elif state.letter_run_len == 4:
+                # Length-4 on-trie non-complete: mid-word, still
+                # growing toward a longer word. Don't boost space.
+                pass
             else:
                 # On-trie short buffer (len 2–3) that is NOT itself a
                 # complete word: it's growing toward a longer word.
