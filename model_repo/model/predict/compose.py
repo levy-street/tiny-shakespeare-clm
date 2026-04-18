@@ -877,23 +877,28 @@ def predict(state: ModelState) -> list[float]:
     # 4+ is practically never. Kicks in at 3+ to gently steer away,
     # stronger at 4+.
     if (
-        state.vowels_since_consonant >= 3
+        state.vowels_since_consonant >= 2
         and state.word_buffer
         and state.speaker_label_state == 0
     ):
         v = state.vowels_since_consonant
-        if v == 3:
-            vpen = 1.0
-            cbump = 0.4
-            tbump = 0.4
+        if v == 2:
+            # Pre-emptive: discourage a 3rd consecutive vowel.
+            vpen = 0.85
+            cbump = 0.30
+            tbump = 0.20
+        elif v == 3:
+            vpen = 1.5
+            cbump = 0.5
+            tbump = 0.6
         elif v == 4:
-            vpen = 2.2
-            cbump = 1.0
-            tbump = 1.2
+            vpen = 2.6
+            cbump = 1.1
+            tbump = 1.3
         else:
-            vpen = 3.2
-            cbump = 1.8
-            tbump = 1.8
+            vpen = 3.6
+            cbump = 1.9
+            tbump = 1.9
         for ch in "aeiou":
             if ch in VOCAB_INDEX:
                 logits[VOCAB_INDEX[ch]] -= vpen
