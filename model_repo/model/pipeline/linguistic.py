@@ -200,6 +200,16 @@ def update_linguistic(state: ModelState, token_id: int) -> ModelState:
     else:
         speaker_label_saw_lower = False
 
+    # Capture the speaker label at the moment the ":" closes it
+    # (sp was 2, sp_next is 3). state.speaker_buffer still holds the
+    # full label name (uppercased) right now; it will be reset below
+    # because sp_next is 3. We snapshot here so downstream stages can
+    # remember who is speaking. Also strip trailing spaces.
+    if state.speaker_label_state == 2 and sp_next == 3:
+        last_speaker_label = state.speaker_buffer.strip()
+    else:
+        last_speaker_label = state.last_speaker_label
+
     return state.model_copy(
         update={
             "prev_char": state.last_char,
@@ -226,5 +236,6 @@ def update_linguistic(state: ModelState, token_id: int) -> ModelState:
             "prev_completed_word": prev_completed_word,
             "prev_line_length": prev_line_length,
             "prev_prev_line_length": prev_prev_line_length,
+            "last_speaker_label": last_speaker_label,
         }
     )

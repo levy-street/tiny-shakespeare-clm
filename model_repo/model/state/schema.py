@@ -293,6 +293,22 @@ class ModelState(BaseModel):
     vocative_expectation: bool = False
 
     # --- Tier 3: tonal texture ---
+    # --- Tier 2/3: speaker memory across turns ---
+    # Uppercase canonical label of the currently speaking character,
+    # captured at the moment the speaker label closes with ":". Holds
+    # steady throughout the dialogue body of that turn. Reset to "" at
+    # initialization. Updated by the linguistic stage exactly at the
+    # 2->3 speaker-label FSM transition (when the ":" arrives).
+    last_speaker_label: str = ""
+    # Tuple of up to 4 most-recently-seen distinct speaker labels,
+    # most-recent first. The current speaker is element [0]. Shakespeare
+    # scenes usually have 2-4 recurring speakers; knowing who has
+    # spoken recently lets the predict layer (a) strongly boost
+    # recently-seen names at the next speaker label, and (b) penalize
+    # immediate self-repetition (a speaker is very unlikely to produce
+    # two adjacent speaker labels with their own name).
+    recent_speakers: tuple[str, ...] = ()
+
     # A rolling float in [-1, +1] tracking the dark/heavy vs
     # light/hopeful tonal texture of the emerging text. Shakespeare's
     # scenes have strong tonal coherence — once "blood" and "death"

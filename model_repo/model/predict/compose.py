@@ -42,6 +42,7 @@ from .next_word import next_word_bias
 from .phrase_bigram import phrase_bigram_bias
 from .pos_next import pos_next_bias
 from .slot_next import slot_start_bias
+from .speaker_recency import speaker_recency_bias
 from .speaker_trie import speaker_trie_bias
 from .start4gram import start4gram_bias
 from .tonal import tonal_start_bias
@@ -183,6 +184,14 @@ def predict(state: ModelState) -> list[float]:
         if st is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += st[i]
+
+    # Layer 3d1: speaker recency bias — tilt the speaker trie toward
+    # characters recently in-scene, and penalize immediate self-repeat.
+    if state.speaker_buffer and state.recent_speakers:
+        sr = speaker_recency_bias(state.speaker_buffer, state.recent_speakers)
+        if sr is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += sr[i]
 
     # Layer 4: start-of-word bias (after space or single newline).
     if last_cls == SPACE or (
