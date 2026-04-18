@@ -575,3 +575,26 @@ class ModelState(BaseModel):
     # counting the same cluster.
     red_flag_cluster_fired: bool = False
     red_flag_vowel_fired: bool = False
+
+    # --- Tier 2: enjambment / line-end punctuation class ---
+    # Classification of the final non-newline character of the
+    # previous line (the char immediately before its closing \n).
+    #   0 = no previous non-empty line yet (start of text / blank gap)
+    #   1 = hard punctuation (. ! ?)             — clean sentence close
+    #   2 = soft punctuation (, ; :)             — mid-clause pause / label
+    #   3 = letter (a-z, A-Z)                    — enjambment: word cut by
+    #                                              a prose-wrap; next line
+    #                                              likely continues lowercase
+    #   4 = other (apostrophe, dash, digit, ...)  — treat as continuation
+    #
+    # Captured by update_linguistic at the moment a \n lands and
+    # chars_since_newline > 0. Held steady across blank lines.
+    #
+    # Motivation: the existing line-start logic boosts capital letters
+    # on any prev_line_length in [1, 80], but Shakespeare's PROSE lines
+    # wrap mid-phrase and the continuation line starts LOWERCASE
+    # ("considering\nhow honour would..."). Without this distinction,
+    # the model invents phantom new sentences at every prose wrap.
+    # This field lets the predict layer condition the capital-boost
+    # on whether the prev line ended cleanly vs. was enjambed.
+    prev_line_final_class: int = 0

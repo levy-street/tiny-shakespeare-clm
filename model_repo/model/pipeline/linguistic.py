@@ -82,9 +82,22 @@ def update_linguistic(state: ModelState, token_id: int) -> ModelState:
     if is_newline and state.chars_since_newline > 0:
         prev_line_length = state.chars_since_newline
         prev_prev_line_length = state.prev_line_length
+        # Capture the line-final character class: the char immediately
+        # before this newline (which was the current last_char). Maps
+        # into our own 4-way bucket for enjambment detection.
+        _final_cls = state.last_char_class
+        if _final_cls == PUNCT_END:
+            prev_line_final_class = 1
+        elif _final_cls == PUNCT_MID:
+            prev_line_final_class = 2
+        elif _final_cls in (UPPER, LOWER_VOWEL, LOWER_CONS):
+            prev_line_final_class = 3
+        else:
+            prev_line_final_class = 4
     else:
         prev_line_length = state.prev_line_length
         prev_prev_line_length = state.prev_prev_line_length
+        prev_line_final_class = state.prev_line_final_class
     chars_since_newline = 0 if is_newline else state.chars_since_newline + 1
     chars_since_space = 0 if (is_space or is_newline) else state.chars_since_space + 1
     chars_since_sentence_end = (
@@ -236,6 +249,7 @@ def update_linguistic(state: ModelState, token_id: int) -> ModelState:
             "prev_completed_word": prev_completed_word,
             "prev_line_length": prev_line_length,
             "prev_prev_line_length": prev_prev_line_length,
+            "prev_line_final_class": prev_line_final_class,
             "last_speaker_label": last_speaker_label,
         }
     )

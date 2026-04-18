@@ -612,13 +612,30 @@ def predict(state: ModelState) -> list[float]:
             and not is_sentence_start
             and 1 <= state.prev_line_length <= 80
         )
-        if on_verse_line_start:
+        # Enjambment: prev line wrapped with a letter (mid-word/mid-phrase)
+        # and was prose-length (>= 50 chars). Here the next line almost
+        # always begins LOWERCASE — a continuation of the same clause,
+        # e.g. "considering\nhow honour would become".
+        is_enjambed = (
+            on_verse_line_start
+            and state.prev_line_final_class == 3
+            and state.prev_line_length >= 50
+        )
+        if on_verse_line_start and not is_enjambed:
             for ch in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
                 if ch in VOCAB_INDEX:
                     logits[VOCAB_INDEX[ch]] += 3.0
             for ch in "abcdefghijklmnopqrstuvwxyz":
                 if ch in VOCAB_INDEX:
                     logits[VOCAB_INDEX[ch]] -= 1.2
+        elif is_enjambed:
+            # Invert: favor lowercase continuation, penalize capitals.
+            for ch in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
+                if ch in VOCAB_INDEX:
+                    logits[VOCAB_INDEX[ch]] -= 1.2
+            for ch in "abcdefghijklmnopqrstuvwxyz":
+                if ch in VOCAB_INDEX:
+                    logits[VOCAB_INDEX[ch]] += 0.6
 
         # Post-speaker-label newline: prev_line_length is small (the
         # speaker label itself) and the line ended with ":". Dialogue
@@ -657,7 +674,7 @@ def predict(state: ModelState) -> list[float]:
         # Additionally, at BOTH sentence-start and verse-line-start,
         # bias specific common starting capitals: T, A, W, I, O, B, H,
         # S, M, N, F, C, L, P, G, D, R, Y. Skip speaker-label context.
-        if (is_sentence_start or on_verse_line_start) and state.speaker_label_state == 0:
+        if (is_sentence_start or (on_verse_line_start and not is_enjambed)) and state.speaker_label_state == 0:
             line_start_caps = {
                 "T": 1.2,  # The, That, This, To, Thou, Then, There, Though, Tell
                 "A": 1.0,  # And, A, As, At, All, Art, After, Above
