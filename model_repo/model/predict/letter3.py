@@ -375,7 +375,7 @@ _L3: dict[str, dict[str, float]] = {
 
 
 # Global scale to tune layer strength without hand-editing every entry.
-_GLOBAL_SCALE = 0.0
+_GLOBAL_SCALE = 0.27
 
 
 def _build_bias_vectors() -> dict[str, list[float]]:

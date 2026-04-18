@@ -89,12 +89,14 @@ def predict(state: ModelState) -> list[float]:
             for i in range(VOCAB_SIZE):
                 logits[i] += tg[i]
 
-    # Layer 3b2: letter-trigram bias (last 3 letters → next).
-    if state.word_buffer:
+    # Layer 3b2: letter-trigram bias (last 3 letters → next). Apply
+    # only off-trie, where the word_trie doesn't already give signal.
+    if state.word_buffer and not state.on_word_trie:
         l3 = letter3_bias(state.word_buffer)
         if l3 is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += l3[i]
+
 
     # Layer 3b3: word-start bigram bias — at letter_run_len == 1, the
     # second letter is heavily conditioned on the first (word-start
@@ -161,6 +163,7 @@ def predict(state: ModelState) -> list[float]:
         if wt is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += wt[i]
+
 
     # Layer 3c2: archaic mid-word disambiguation — when buffer matches
     # a prefix shared by archaic and modern words, lean toward the
