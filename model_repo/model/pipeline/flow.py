@@ -207,7 +207,7 @@ def update_flow(state: ModelState, token_id: int) -> ModelState:
     elif lc == "?":
         emo = min(1.0, emo + 0.30)
     if state.just_finished_word:
-        emo *= 0.95  # per-word decay
+        emo *= 0.97  # per-word decay (slow: emotion lingers)
         w = state.last_completed_word
         if w in _EMO_WORDS_STRONG:
             emo = min(1.0, emo + 0.35)
