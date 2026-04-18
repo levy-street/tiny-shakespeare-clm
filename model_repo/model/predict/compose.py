@@ -202,6 +202,18 @@ def predict(state: ModelState) -> list[float]:
         if st is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += st[i]
+        elif (
+            state.speaker_label_state == 2
+            and len(state.speaker_buffer) >= 3
+        ):
+            # Off-trie drift inside a speaker label. We've extended past
+            # any known speaker prefix. Very gentle close-bias only;
+            # some real Shakespeare labels (minor characters, proper
+            # nouns) aren't in our speaker trie, so we don't penalize
+            # letters — we just nudge ":" up slightly.
+            drift = min(len(state.speaker_buffer) - 2, 4)
+            if ":" in VOCAB_INDEX:
+                logits[VOCAB_INDEX[":"]] += 0.15 * drift
 
     # Layer 3d1: speaker recency bias — tilt the speaker trie toward
     # characters recently in-scene, and penalize immediate self-repeat.
