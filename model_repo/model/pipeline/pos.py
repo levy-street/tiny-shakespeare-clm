@@ -301,6 +301,40 @@ _CONTENT_TAGS = frozenset({
 })
 _CONTENT_WORDS_CAP = 8
 
+# POS tags that are *transparent* to recent_pos_backbone — they pass
+# through without being pushed into the tuple. These are closed-class
+# "glue" words that rarely change the content-level syntactic picture:
+# function words, light verbs are NOT transparent (they matter); but
+# interjections, conjunctions, negations, WH words, pronouns,
+# articles, possessives are.
+_BACKBONE_TRANSPARENT = frozenset({
+    POS_INTERJECTION,
+    POS_CONJUNCTION,
+    POS_NEGATION,
+    POS_WH,
+    POS_ARTICLE,
+    POS_POSSESSIVE,
+    POS_PRONOUN,
+})
+_BACKBONE_CAP = 4
+
+# Main-verb POS tags for verb-chain tracking. These are open-class
+# verbs — chains of two in a row are ungrammatical. AUX/MODAL are
+# transparent to this counter (legitimate aux+verb chains).
+_MAIN_VERB_TAGS = frozenset({
+    POS_VERB,
+    POS_VERB_ING,
+    POS_VERB_ED,
+})
+# Tags that are transparent to verb_chain_len (don't count, don't reset).
+# Adverbs and negations sit between verbs ("Go not there", "runs swiftly").
+_VERB_CHAIN_TRANSPARENT = frozenset({
+    POS_ADVERB,
+    POS_NEGATION,
+    POS_AUX_VERB,
+    POS_MODAL,
+})
+
 
 def update_pos(state: ModelState, token_id: int) -> ModelState:
     # Only recompute when a word just completed; otherwise hold steady.
@@ -327,11 +361,41 @@ def update_pos(state: ModelState, token_id: int) -> ModelState:
     else:
         new_content = state.content_words
 
-    # Shift current → prev.
+    # Update content-backbone POS tuple (filtered by transparent set).
+    if new_tag in _BACKBONE_TRANSPARENT:
+        new_backbone = state.recent_pos_backbone
+    else:
+        # Skip repeated identical heads to avoid noun-repetition flooding.
+        if state.recent_pos_backbone and state.recent_pos_backbone[0] == new_tag:
+            # Still rotate — same POS back-to-back is meaningful
+            # (e.g. two nouns = compound/apposition).
+            new_backbone = (new_tag,) + state.recent_pos_backbone
+        else:
+            new_backbone = (new_tag,) + state.recent_pos_backbone
+        if len(new_backbone) > _BACKBONE_CAP:
+            new_backbone = new_backbone[:_BACKBONE_CAP]
+
+    # Update verb-chain length.
+    if new_tag in _MAIN_VERB_TAGS:
+        new_vcl = state.verb_chain_len + 1
+        # Cap to prevent unbounded growth across transparent glue.
+        if new_vcl > 5:
+            new_vcl = 5
+    elif new_tag in _VERB_CHAIN_TRANSPARENT:
+        # Transparent — preserve current count.
+        new_vcl = state.verb_chain_len
+    else:
+        # Non-verb content / function-word: reset.
+        new_vcl = 0
+
+    # Shift current → prev, prev → prev_prev.
     return state.model_copy(
         update={
+            "prev_prev_word_pos": state.prev_word_pos,
             "prev_word_pos": state.last_word_pos,
             "last_word_pos": new_tag,
             "content_words": new_content,
+            "recent_pos_backbone": new_backbone,
+            "verb_chain_len": new_vcl,
         }
     )

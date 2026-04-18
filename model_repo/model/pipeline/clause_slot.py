@@ -71,17 +71,31 @@ def update_clause_slot(state: ModelState, token_id: int) -> ModelState:
     wsv = state.words_since_verb
 
     # Sentence-ending punctuation resets to FRESH and zeroes the
-    # words-since-verb counter (fresh clause begins after).
+    # words-since-verb counter (fresh clause begins after). Also
+    # clears verb_chain_len and the content backbone so the next
+    # sentence starts with no residual verb/constraint pressure.
     if ch in ".?!":
         return state.model_copy(
-            update={"clause_slot": SLOT_FRESH, "words_since_verb": 0}
+            update={
+                "clause_slot": SLOT_FRESH,
+                "words_since_verb": 0,
+                "verb_chain_len": 0,
+                "recent_pos_backbone": (),
+            }
         )
 
     # Clausal break resets slot; keep wsv running (a sub-clause
-    # hasn't started yet).
+    # hasn't started yet). Also reset verb_chain_len since a new
+    # clause means a new verb slot — a verb after a comma/semicolon
+    # is fine (cf. "he stood, raised his hand").
     if ch in ",;:" and state.speaker_label_state == 0:
+        updates = {}
         if slot != SLOT_FRESH:
-            return state.model_copy(update={"clause_slot": SLOT_FRESH})
+            updates["clause_slot"] = SLOT_FRESH
+        if state.verb_chain_len != 0:
+            updates["verb_chain_len"] = 0
+        if updates:
+            return state.model_copy(update=updates)
         return state
 
     # When a word just completed, progress the slot machine and

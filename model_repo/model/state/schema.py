@@ -958,3 +958,53 @@ class ModelState(BaseModel):
     # and flip the ":" bias from boost to penalty as the run grows —
     # pushing the model to escape the phantom label via newline.
     speaker_label_offtrie_run: int = 0
+
+    # --- Tier 2: recent POS trigram (content-word history) ---
+    # Rolling tuple of the last up-to-4 POS tags of completed words,
+    # most-recent first. Unlike `last_word_pos` / `prev_word_pos` /
+    # `prev_prev_word_pos` (which are positional, shift each word
+    # regardless of POS type), this tuple is optionally *filtered*:
+    # entries of class "transparent" (INTERJECTION, CONJUNCTION,
+    # NEGATION, WH, ARTICLE, POSSESSIVE, PRONOUN) are skipped so the
+    # tuple stores the *content backbone* (verbs, nouns, adjectives,
+    # adverbs, aux, modal, preposition). This gives predict a
+    # content-trigram view of the recent syntactic skeleton, which
+    # the flat last/prev/prev_prev fields can't express once a
+    # function word intervenes.
+    #
+    # Example:
+    #   input text: "I do not know the way"
+    #   flat sequence: PRON, AUX, NEG, VERB, ART, NOUN
+    #   filtered:                      AUX, VERB, NOUN
+    # Now at next word, the recent_pos_backbone lets a predict layer
+    # know the local backbone is (NOUN, VERB, AUX) — providing a
+    # content-sensitive next-POS prior over "what continuation makes
+    # sense here".
+    #
+    # Cap at 4 entries (sufficient for a tight content-window lookback).
+    # Resets to () on sentence-end punctuation and on speaker-turn change.
+    recent_pos_backbone: tuple[int, ...] = ()
+
+    # Third POS slot — completes the trigram context last/prev/prev_prev.
+    # Allows predict layers to see a true three-word POS lookback
+    # (shifted at every word completion, not filtered). Complements
+    # recent_pos_backbone (which filters function words) by giving a
+    # strict positional trigram.
+    prev_prev_word_pos: int = 0
+
+    # Count of consecutive verb-class words (VERB, VERB_ING, VERB_ED)
+    # completed in a row, treating AUX_VERB, MODAL, ADVERB, and
+    # NEGATION as *transparent* (they don't reset but don't count).
+    # A value >= 1 means the previous main-verb position is filled;
+    # >=2 is a chain like "Sail roar" — very rarely grammatical.
+    # Reset by any non-verb non-transparent content word (NOUN,
+    # PROPER_NOUN, PRONOUN, ADJECTIVE, ARTICLE, POSSESSIVE,
+    # PREPOSITION, CONJUNCTION, INTERJECTION, WH, NUMBER) and by
+    # sentence-end punctuation and speaker-turn boundary.
+    #
+    # Consumed by predict/verb_chain.py at word-start: when the
+    # counter is already >=1, penalize first letters of common main
+    # verbs to prevent ungrammatical verb-after-verb-after-verb
+    # chains. AUX/MODAL starters are not penalized (legitimate
+    # "had gone", "would have seen" chains).
+    verb_chain_len: int = 0

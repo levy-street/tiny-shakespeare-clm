@@ -79,6 +79,7 @@ from .trie_recovery import trie_recovery_bias
 from .word_end_bigram import word_end_bigram_bias
 from .referent import referent_start_bias
 from .verb_agreement import verb_agreement_bias, verb_agreement_start_bias
+from .verb_chain import verb_chain_bias
 from .clause_depth import clause_depth_close_bias
 from .double_cons_start import double_consonant_penalty
 from .red_flags import red_flags_close_bias
@@ -558,6 +559,21 @@ def predict(state: ModelState) -> list[float]:
             if vas is not None:
                 for i in range(VOCAB_SIZE):
                     logits[i] += vas[i]
+
+            # Layer 4b2a: verb-chain suppression. If a main verb just
+            # filled the current slot, penalize first letters of main
+            # verbs to prevent verb-after-verb-after-verb chains like
+            # "Sail roar endanger" that never occur in real Shakespeare.
+            # AUX/MODAL are transparent to verb_chain_len so legitimate
+            # "had gone", "would speak", etc. are unaffected.
+            vc = verb_chain_bias(
+                state.verb_chain_len,
+                state.clause_slot,
+                state.speaker_label_state,
+            )
+            if vc is not None:
+                for i in range(VOCAB_SIZE):
+                    logits[i] += vc[i]
 
 
         # Layer 4b1: word-repetition bias. Shakespeare's emotional
