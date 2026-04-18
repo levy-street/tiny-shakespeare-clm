@@ -57,6 +57,7 @@ from .startword import START_BIAS
 from .formula import formula_midword_bias, formula_start_bias
 from .imagery import imagery_start_bias
 from .topic import content_repeat_bias, topic_bias, topic_midword_bias
+from .adjacent_repeat import adjacent_repeat_bias
 from .trie_recovery import trie_recovery_bias
 from .trigram import trigram_bias
 from .vocative import VOCATIVE_START_BIAS
@@ -236,6 +237,21 @@ def predict(state: ModelState) -> list[float]:
         if tr is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += tr[i]
+
+    # Layer 3c1-adj: adjacent-word-repeat blocker. "of of", "the the",
+    # "and and" never happen. Narrow rule; fires at word-start, mid-
+    # word on matching prefix, and at terminator if buffer equals
+    # last_completed_word exactly.
+    ar = adjacent_repeat_bias(
+        state.word_buffer,
+        state.last_completed_word,
+        state.letter_run_len,
+        state.speaker_label_state,
+        state.consecutive_newlines,
+    )
+    if ar is not None:
+        for i in range(VOCAB_SIZE):
+            logits[i] += ar[i]
 
     # Layer 3c1b: formulaic-phrase mid-word bias. When we're positioned
     # inside a known multi-word formula and the current buffer is a
