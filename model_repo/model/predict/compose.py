@@ -66,6 +66,7 @@ from .topic import content_repeat_bias, topic_bias, topic_midword_bias
 from .addressee import addressee_midword_bias, addressee_start_bias
 from .adjacent_repeat import adjacent_repeat_bias
 from .trie_recovery import trie_recovery_bias
+from .word_end_bigram import word_end_bigram_bias
 from .referent import referent_start_bias
 from .verb_agreement import verb_agreement_bias, verb_agreement_start_bias
 from .clause_depth import clause_depth_close_bias
@@ -249,6 +250,22 @@ def predict(state: ModelState) -> list[float]:
         if tr is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += tr[i]
+        # Word-end bigram plausibility: look at the last 2 letters of
+        # the off-trie buffer and decide whether the suffix looks like
+        # a real English word ending (boost " ") or clearly mid-word
+        # (penalize " "). Complements trie_recovery's drift signal
+        # with a fine-grained suffix-shape check.
+        web = word_end_bigram_bias(
+            state.word_buffer,
+            state.letter_run_len,
+            state.on_word_trie,
+            state.letters_off_trie,
+            state.speaker_label_state,
+        )
+        if web is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += web[i]
+
         # Phonotactic red-flag closure: when word_shape has counted
         # 2+ phonotactic warnings in the current word (persistent
         # across letter steps), boost terminators to force close.
