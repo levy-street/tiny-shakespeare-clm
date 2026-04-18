@@ -91,6 +91,22 @@ def predict(state: ModelState) -> list[float]:
             for i in range(VOCAB_SIZE):
                 logits[i] += bi[i]
 
+    # Layer 3a: mid-word uppercase penalty. English / Shakespeare text
+    # virtually never has uppercase letters in the interior of a word
+    # — capitals appear only at word-start (sentence/line start, proper
+    # nouns) or throughout a speaker-label. After a lowercase letter
+    # outside speaker-label territory, strongly penalize all uppercase.
+    # The word_trie and startword biases already vote for the right
+    # case at start positions; this closes the loop at continuation.
+    if (
+        last_cls in (LOWER_VOWEL, LOWER_CONS)
+        and state.speaker_label_state == 0
+        and state.letter_run_len >= 1
+    ):
+        for ch in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
+            if ch in VOCAB_INDEX:
+                logits[VOCAB_INDEX[ch]] -= 6.0
+
     # Layer 3b: trigram digraph biases (last two letters).
     if state.last_char and state.prev_char:
         tg = trigram_bias(state.prev_char, state.last_char)
@@ -353,6 +369,7 @@ def predict(state: ModelState) -> list[float]:
                 if pn is not None:
                     for i in range(VOCAB_SIZE):
                         logits[i] += pn[i]
+
 
         # Layer 4b1: word-repetition bias. Shakespeare's emotional
         # climaxes chain identical words with comma separators
