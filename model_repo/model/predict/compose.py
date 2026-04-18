@@ -1175,10 +1175,10 @@ def predict(state: ModelState) -> list[float]:
                 # Lowercase "o" standalone is rare (except apostrophized
                 # "o'er" / "o'clock" forms which have ' instead of space).
                 # Weaker penalty than "i" but still bias toward extending.
-                logits[VOCAB_INDEX[" "]] -= 2.0
+                logits[VOCAB_INDEX[" "]] -= 5.0
                 for ch in ",.;:\n!?":
                     if ch in VOCAB_INDEX:
-                        logits[VOCAB_INDEX[ch]] -= 1.2
+                        logits[VOCAB_INDEX[ch]] -= 3.0
             else:
                 logits[VOCAB_INDEX[" "]] += 3.6
 
