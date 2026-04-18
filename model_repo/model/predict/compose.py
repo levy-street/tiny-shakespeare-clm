@@ -1145,8 +1145,8 @@ def predict(state: ModelState) -> list[float]:
                 logits[VOCAB_INDEX[" "]] -= 2.0
             elif state.letter_run_len == 4:
                 # Length-4 on-trie non-complete: mid-word, still
-                # growing toward a longer word. Don't boost space.
-                pass
+                # growing toward a longer word. Penalize space.
+                logits[VOCAB_INDEX[" "]] -= 2.0
             else:
                 # On-trie short buffer (len 2–3) that is NOT itself a
                 # complete word: it's growing toward a longer word.
