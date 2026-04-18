@@ -387,6 +387,28 @@ class ModelState(BaseModel):
     # at the next line-start.
     recent_line_starters: tuple[str, ...] = ()
 
+    # --- Tier 2: word-trie drift recovery ---
+    # Tracks whether the current word-in-progress has, at any point
+    # during its growth, equaled a member of COMPLETE_WORDS — i.e.
+    # at some earlier letter position we could have emitted a space
+    # and produced a real word. Reset to False at word boundary.
+    #
+    # Motivation: samples reveal that a sizable fraction of emitted
+    # "words" are letter-garbage ("oonshul", "naitagomo", "ristotb").
+    # These happen because the word_trie keeps extending on-trie even
+    # past complete words, and once the buffer drifts off-trie the
+    # letter-n-gram bias keeps emitting plausible-sounding letters
+    # indefinitely. There's no back-pressure that says "you had a
+    # valid word three letters ago — stop now".
+    has_seen_complete: bool = False
+    # Number of letters emitted since the current word_buffer was
+    # last a member of COMPLETE_WORDS. 0 when wb itself is complete,
+    # or when no complete prefix has been reached yet in this word.
+    # Growing value signals we've drifted past a viable stop point;
+    # consumed by `predict/trie_recovery.py` to escalate terminator
+    # bias as drift grows.
+    letters_past_complete: int = 0
+
     # --- Tier 2: formulaic-phrase progress ---
     # Current node ID in a precomputed trie of common multi-word
     # Shakespeare formulas ("I pray thee", "good my lord", "by my

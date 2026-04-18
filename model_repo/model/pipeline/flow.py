@@ -15,7 +15,7 @@ continuations.
 from __future__ import annotations
 
 from ..state import ModelState
-from ..predict.word_trie import is_on_trie
+from ..predict.word_trie import COMPLETE_WORDS, is_on_trie
 
 # Short closed-class words whose follow-up is almost always a
 # content word (noun / verb / adjective), not another function word.
@@ -281,6 +281,8 @@ def update_flow(state: ModelState, token_id: int) -> ModelState:
         consonants_since_vowel = 0
         vowels_in_word = 0
         vowels_since_consonant = 0
+        has_seen_complete = False
+        letters_past_complete = 0
     else:
         last_ch = state.last_char
         is_letter = len(last_ch) == 1 and (
@@ -305,6 +307,25 @@ def update_flow(state: ModelState, token_id: int) -> ModelState:
             consonants_since_vowel = state.consonants_since_vowel
             vowels_in_word = state.vowels_in_word
             vowels_since_consonant = state.vowels_since_consonant
+
+        # Word-trie drift recovery tracking.
+        # wb is the buffer including the just-added letter (or apostrophe).
+        # If wb itself is a complete known word, we're AT a viable stop
+        # right now — reset the drift counter and mark has_seen_complete.
+        # Otherwise, if we've previously seen a complete form in this
+        # word, increment the drift counter (only on real letters; non-
+        # letters don't extend the word). If we've never seen a complete
+        # form, the counter stays 0 and predict won't fire.
+        wb_is_complete = wb in COMPLETE_WORDS
+        if wb_is_complete:
+            has_seen_complete = True
+            letters_past_complete = 0
+        else:
+            has_seen_complete = state.has_seen_complete
+            if has_seen_complete and is_letter:
+                letters_past_complete = state.letters_past_complete + 1
+            else:
+                letters_past_complete = state.letters_past_complete
 
     # Verse-mode rolling score. Update only when a line has just
     # completed (newline emitted that terminated a non-blank line).
@@ -426,6 +447,8 @@ def update_flow(state: ModelState, token_id: int) -> ModelState:
             "after_function_word": after_function_word,
             "in_prose_line": in_prose_line,
             "letters_off_trie": letters_off_trie,
+            "has_seen_complete": has_seen_complete,
+            "letters_past_complete": letters_past_complete,
             "consonants_since_vowel": consonants_since_vowel,
             "vowels_in_word": vowels_in_word,
             "vowels_since_consonant": vowels_since_consonant,

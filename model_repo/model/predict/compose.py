@@ -55,6 +55,7 @@ from .startword import START_BIAS
 from .formula import formula_midword_bias, formula_start_bias
 from .imagery import imagery_start_bias
 from .topic import content_repeat_bias, topic_bias, topic_midword_bias
+from .trie_recovery import trie_recovery_bias
 from .trigram import trigram_bias
 from .vocative import VOCATIVE_START_BIAS
 from .unigram import UNIGRAM_LOGPROBS
@@ -197,6 +198,26 @@ def predict(state: ModelState) -> list[float]:
         if crb is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += crb[i]
+
+    # Layer 3c1a: trie-drift recovery. When the buffer has drifted
+    # OFF the word-trie AND had a complete-word prefix earlier in
+    # this word, escalate bias toward word-terminators and word-
+    # ending letters. Fires only off-trie so long legitimate words
+    # like "therefore" (on-trie throughout) are untouched.
+    if (
+        state.word_buffer
+        and not state.on_word_trie
+        and state.speaker_label_state == 0
+        and (state.letters_past_complete >= 1 or state.letters_off_trie >= 2)
+    ):
+        tr = trie_recovery_bias(
+            state.has_seen_complete,
+            state.letters_past_complete,
+            state.letters_off_trie,
+        )
+        if tr is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += tr[i]
 
     # Layer 3c1b: formulaic-phrase mid-word bias. When we're positioned
     # inside a known multi-word formula and the current buffer is a
