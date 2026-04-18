@@ -22,6 +22,7 @@ from .clause import update_clause
 from .clause_slot import update_clause_slot
 from .verb_agreement import update_verb_agreement
 from .np_head import update_np_head
+from .transitivity import update_transitivity
 from .counters import update_basic_counters
 from .flow import update_flow
 from .formula import update_formula
@@ -52,6 +53,7 @@ PIPELINE: list[Stage] = [
     update_clause_slot,     # Tier 2: syntactic-slot state machine
     update_verb_agreement,  # Tier 2: subject-verb agreement expectation
     update_np_head,         # Tier 2: NP-head expectation (np_open, np_wait_words)
+    update_transitivity,    # Tier 2: verb transitivity / object-expectation
     update_vocative,        # Tier 2: vocative-expectation flag
     update_addressee,       # Tier 2/3: vocative-noun memory
     update_speaker_memory,  # Tier 2/3: recent-speakers rolling window

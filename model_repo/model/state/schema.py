@@ -782,6 +782,48 @@ class ModelState(BaseModel):
     # Used to weaken the bias as the referent stales.
     referent_staleness: int = 0
 
+    # --- Tier 2: verb transitivity / object-expectation ---
+    # After a transitive main verb, Shakespeare almost always supplies
+    # a direct object — a noun phrase (article/possessive + optional
+    # modifiers + head noun) or a clausal complement. The existing
+    # clause_slot FSM collapses this into HAS_VERB → POST_OBJ on ANY
+    # next word, which is far too coarse: after "I fear", the model
+    # treats "nait" (gibberish) the same as "the storm". A real
+    # verb-transitivity axis says: after "fear", we expect a determiner
+    # or noun starter — NOT a preposition, conjunction, or bare verb.
+    #
+    # Values:
+    #   0 VT_NONE          — no active object expectation
+    #   1 VT_DO_EXPECTED   — transitive/ditransitive verb just completed;
+    #                        a direct object (NP) is the expected next
+    #                        constituent. Example: "love", "kill", "see",
+    #                        "take", "make", "give", "bring", "find".
+    #   2 VT_COMP_EXPECTED — linking/copula verb just completed; a
+    #                        predicative complement (adjective or NP) is
+    #                        expected. Example: "is", "art", "was",
+    #                        "seem", "become". Overlaps with VT_DO but
+    #                        biases toward adjectives more than determiners.
+    #
+    # Set by update_transitivity (new stage after np_head) when a
+    # verb POS completes AND the word is in the transitive/linking
+    # class. Reset to VT_NONE on:
+    #   - NOUN / PROPER_NOUN / PRONOUN completion (object resolved),
+    #   - sentence-end punctuation,
+    #   - comma/semicolon/colon (clausal break),
+    #   - CONJUNCTION (parallel clause coordination),
+    #   - speaker-turn boundary,
+    #   - vt_wait_words >= 4 (expectation staled out).
+    #
+    # Consumed by predict/transitivity.py at word-start to strongly
+    # boost determiner/noun starter letters (t, m, h, a, y, o, s)
+    # and penalize preposition/conjunction/aux starter letters that
+    # would defer the object indefinitely.
+    verb_transitivity: int = 0
+    # Words elapsed since verb_transitivity last became non-NONE. 0 on
+    # the transition-setting word. Grows through adjectives/numbers/
+    # articles/possessives as we build the NP. Caps at 5.
+    vt_wait_words: int = 0
+
     # --- Tier 2: speaker-label off-trie run-length ---
     # Count of consecutive letters added to `speaker_buffer` (while the
     # speaker-label FSM is in state 1 or 2) that took the buffer OFF

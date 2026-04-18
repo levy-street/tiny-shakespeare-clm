@@ -67,6 +67,7 @@ from .imagery import imagery_start_bias
 from .topic import content_repeat_bias, topic_bias, topic_midword_bias
 from .addressee import addressee_midword_bias, addressee_start_bias
 from .adjacent_repeat import adjacent_repeat_bias
+from .transitivity import transitivity_start_bias
 from .trie_recovery import trie_recovery_bias
 from .word_end_bigram import word_end_bigram_bias
 from .referent import referent_start_bias
@@ -654,6 +655,24 @@ def predict(state: ModelState) -> list[float]:
             if rpb is not None:
                 for i in range(VOCAB_SIZE):
                     logits[i] += rpb[i]
+
+        # Layer 4b4c-trans: verb-transitivity word-start bias. When a
+        # transitive or linking verb just completed, strongly push the
+        # next word's first letter toward determiner/possessive/noun
+        # starters (for VT_DO_EXPECTED) or adjective starters (for
+        # VT_COMP_EXPECTED). Complements np_open (which only sees
+        # article/possessive/preposition openers) by catching the
+        # more-common V+NP pattern where the determiner itself is the
+        # expected next word.
+        if state.speaker_label_state == 0:
+            trb = transitivity_start_bias(
+                state.verb_transitivity,
+                state.vt_wait_words,
+                state.speaker_label_state,
+            )
+            if trb is not None:
+                for i in range(VOCAB_SIZE):
+                    logits[i] += trb[i]
 
         # Layer 4b2-par: parallel-structure bias after a coordinating
         # conjunction. When last_completed_word is "and"/"or"/"nor"/
