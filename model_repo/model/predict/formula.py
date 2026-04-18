@@ -26,8 +26,8 @@ from .formula_trie import expected_next_words
 
 # Strength of the first-letter bias. Grows with formula depth (deeper
 # nodes are more discriminating).
-_START_BASE_BUMP = 1.8
-_MIDWORD_BASE_BUMP = 2.6
+_START_BASE_BUMP = 1.2
+_MIDWORD_BASE_BUMP = 1.7
 
 
 def formula_start_bias(
