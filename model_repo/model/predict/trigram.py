@@ -327,7 +327,7 @@ _T: dict[str, dict[str, float]] = {
 }
 
 
-_GLOBAL_SCALE = 0.3
+_GLOBAL_SCALE = 0.2
 
 
 def _build_bias_vectors() -> dict[str, list[float]]:
