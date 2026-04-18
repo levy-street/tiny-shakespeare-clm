@@ -48,6 +48,7 @@ from .next_word import next_word_bias
 from .np_head import np_head_start_bias
 from .ornament import ornament_start_bias
 from .parallel import parallel_start_bias
+from .proper_noun import proper_noun_start_bias
 from .phrase_bigram import phrase_bigram_bias
 from .phrase_trigram import phrase_trigram_bias
 from .pos_next import pos_next_bias
@@ -554,6 +555,22 @@ def predict(state: ModelState) -> list[float]:
     ):
         for i in range(VOCAB_SIZE):
             logits[i] += START_BIAS[i]
+
+        # Layer 4-PN: proper-noun slot bias. At mid-sentence word-
+        # starts, penalize phantom capitals when no title / vocative
+        # / quote-lead signal has raised the PN slot; boost capitals
+        # when a proper-name context is established.
+        pnb = proper_noun_start_bias(
+            state.proper_noun_slot,
+            state.speaker_label_state,
+            state.sentence_start_pending,
+            state.chars_since_sentence_end,
+            state.words_in_sentence,
+            state.consecutive_newlines,
+        )
+        if pnb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += pnb[i]
 
         # Layer 4-LIST: list-parallelism first-letter bias. When we're
         # in a comma-separated list, bias toward (a) the same first

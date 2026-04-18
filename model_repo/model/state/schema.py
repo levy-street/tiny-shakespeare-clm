@@ -1165,3 +1165,22 @@ class ModelState(BaseModel):
     #                 i (indeed/I), k (know), t (truly/the/that).
     #   - sentence-end: in doubt mode boost "?"; in assertion mode boost "!"/"."
     doubt_register: float = 0.0
+
+    # --- Tier 2: proper-noun slot ---
+    # Encodes how strongly a capitalized proper noun is expected at
+    # the next word-start:
+    #   0 PN_NONE   — no signal.
+    #   1 PN_MILD   — after a vocative-lead adjective/possessive
+    #                 ("my", "thy", "good", "dear", "sweet", "fair",
+    #                  "noble", "brave") or "O"/"Oh".
+    #   2 PN_STRONG — after a title noun ("lord", "sir", "king",
+    #                  "queen", "lady", "saint", ...) or a vocative-
+    #                  delimiter punctuation (",", ";", ":").
+    #   3 PN_QUOTE  — after a reported-speech lead ("said", "quoth",
+    #                  "cried", ...). Direct-quote capital follows.
+    # One-shot: cleared on the first letter of the next word, on
+    # sentence-end punctuation, and on speaker-turn boundary.
+    # Consumed by predict.proper_noun at word-start:
+    #   PN_NONE mid-sentence → gentle penalty on A-Z (phantom-cap
+    #   guard); PN_STRONG/QUOTE → mild boost on capital starts.
+    proper_noun_slot: int = 0
