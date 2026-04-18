@@ -82,11 +82,14 @@ _ARCHAIC_DECAY = 0.985  # per completed word
 # Emotional-intensity markers.
 _EMO_WORDS_STRONG: frozenset[str] = frozenset({
     "o", "oh", "alas", "alack", "fie", "ah", "ay", "woe",
-    "ha", "hey", "ho", "aha", "out",
+    "ha", "hey", "ho", "aha", "out", "die", "dead", "slain",
+    "murder", "treason", "villain", "monster", "traitor",
 })
 _EMO_WORDS_MILD: frozenset[str] = frozenset({
     "god", "heaven", "love", "death", "dear", "pray", "sweet",
     "heart", "tears", "poor", "cruel", "fair", "hark",
+    "blood", "grave", "curse", "hate", "rage", "hell",
+    "bitter", "fear", "grief", "horror", "fury", "devil",
 })
 # Modern-only markers that gently pull density down (explicitly
 # *not* archaic — we saw a modern form that suggests the register
