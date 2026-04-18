@@ -167,8 +167,11 @@ def predict(state: ModelState) -> list[float]:
     if state.word_buffer:
         wt = word_trie_bias(state.word_buffer)
         if wt is not None:
+            # Scale slightly up at longer prefixes — fewer completions
+            # remain, so the bias is more discriminating.
+            wt_scale = 1.0 + 0.02 * min(state.letter_run_len, 5)
             for i in range(VOCAB_SIZE):
-                logits[i] += wt[i]
+                logits[i] += wt[i] * wt_scale
 
     # Layer 3c1: topic-midword bias — when content_words indicate an
     # active topical cluster (DARK/LIGHT/ROYAL), tilt mid-word letter
