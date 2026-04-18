@@ -100,23 +100,23 @@ def trie_recovery_bias(
         gib_scale = 0.0
     elif n == 3:
         term_boost = 0.0
-        end_letter_scale = 0.0
+        end_letter_scale = 0.7
         gib_scale = 0.20
     elif n == 4:
         term_boost = 0.0
-        end_letter_scale = 0.0
+        end_letter_scale = 1.0
         gib_scale = 0.40
     elif n == 5:
         term_boost = 0.0
-        end_letter_scale = 0.0
+        end_letter_scale = 1.4
         gib_scale = 0.65
     elif n == 6:
         term_boost = 0.0
-        end_letter_scale = 0.0
+        end_letter_scale = 1.7
         gib_scale = 0.90
     else:
         term_boost = 0.0
-        end_letter_scale = 0.0
+        end_letter_scale = 2.1
         gib_scale = 1.25
 
     term_boost *= damp
