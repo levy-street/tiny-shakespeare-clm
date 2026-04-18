@@ -72,6 +72,7 @@ from .word_end_bigram import word_end_bigram_bias
 from .referent import referent_start_bias
 from .verb_agreement import verb_agreement_bias, verb_agreement_start_bias
 from .clause_depth import clause_depth_close_bias
+from .double_cons_start import double_consonant_penalty
 from .red_flags import red_flags_close_bias
 from .trigram import trigram_bias
 from .vocative import VOCATIVE_START_BIAS
@@ -159,6 +160,28 @@ def predict(state: ModelState) -> list[float]:
         if sb is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += sb[i]
+        # Double-consonant word-start penalty: "f" → "ff", "r" → "rr",
+        # etc. are all implausible English word-starts. Suppresses
+        # gibberish like "frr-", "tt-", "ss-".
+        dc = double_consonant_penalty(state.last_char)
+        if dc is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += dc[i]
+
+    # Extend double-consonant check to mid-cluster positions. Doubling
+    # the last consonant inside a consonant cluster is almost always
+    # gibberish ("frr", "stt", "prr", "strr"). Skip when previous letter
+    # was a vowel — "let"→"tt" (letter), "app"→"pp" (apple) are common.
+    if (
+        state.last_char
+        and state.speaker_label_state not in (2,)
+        and state.consonants_since_vowel >= 2
+        and state.word_buffer
+    ):
+        dc = double_consonant_penalty(state.last_char)
+        if dc is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += dc[i]
 
     # Layer 3b4: word-start trigram bias — at letter_run_len == 2, the
     # third letter is conditioned on the first two letters of the fresh
