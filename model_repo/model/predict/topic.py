@@ -346,6 +346,19 @@ def content_repeat_bias(
         return None
     vec = [0.0] * VOCAB_SIZE
     hit = False
+    # Longer buffer = more specific match = stronger boost
+    # (2 chars = 1.00x, 3 = 1.25x, 4 = 1.45x, 5+ = 1.6x).
+    blen = len(buffer)
+    if blen <= 2:
+        len_scale = 1.00
+    elif blen == 3:
+        len_scale = 1.90
+    elif blen == 4:
+        len_scale = 2.70
+    elif blen == 5:
+        len_scale = 3.30
+    else:
+        len_scale = 3.70
     for i, w in enumerate(content_words[:4]):
         if (
             len(w) > len(buffer)
@@ -354,7 +367,7 @@ def content_repeat_bias(
             nxt = w[len(buffer)]
             if nxt in VOCAB_INDEX:
                 # Decay per-slot; most-recent is strongest.
-                weight = (2.20, 1.05, 0.50, 0.22)[i]
+                weight = (2.20, 1.05, 0.50, 0.22)[i] * len_scale
                 vec[VOCAB_INDEX[nxt]] += weight
                 hit = True
     if not hit:
