@@ -219,12 +219,94 @@ _TOPIC_STARTERS: dict[int, dict[str, float]] = {
 # Scale of the starter bias applied to the dominant cluster. The top
 # cluster's activation (clipped to [0, 4]) is normalized by 4.0 and
 # then multiplied by this scale to determine final weight magnitude.
-_TOP_SCALE = 0.35
+_TOP_SCALE = 0.30
 
 # Minimum activation in top cluster to fire.
 _MIN_TOP = 0.80
 # Minimum margin (top - second) to fire.
-_MIN_MARGIN = 0.40
+_MIN_MARGIN = 0.35
+
+
+# Mid-word letter biases per topic. These are common letter
+# continuations in words of each cluster. Applied at mid-word positions
+# only when the buffer is off-trie (on-trie the word_trie itself
+# handles continuation) and when the top cluster is clearly dominant.
+# Weights are gentler than the start-bias.
+_TOPIC_MIDWORD: dict[int, dict[str, float]] = {
+    # war — sword, slain, battle, blood: heavy on -rd, -dd, -tt, -ain
+    TOPIC_WAR: {"o": 0.10, "r": 0.08, "l": 0.06, "d": 0.06, "a": 0.06},
+    # love — kiss, sweet, heart, dear, fair: heavy on vowels, -rt, -ee
+    TOPIC_LOVE: {"e": 0.10, "a": 0.08, "r": 0.06, "t": 0.06, "i": 0.04},
+    # death — dying, grave, tomb, dead, corpse: heavy on -d, -ave
+    TOPIC_DEATH: {"e": 0.08, "a": 0.06, "d": 0.06, "i": 0.04, "r": 0.04},
+    # royalty — king, crown, throne: heavy on -ng, -wn, -ne
+    TOPIC_ROYALTY: {"i": 0.08, "o": 0.08, "n": 0.06, "r": 0.04, "a": 0.04},
+    # nature — stars, storm, sea, sky, sun: varied vowels + -n endings
+    TOPIC_NATURE: {"o": 0.08, "a": 0.08, "r": 0.06, "n": 0.04, "e": 0.06},
+    # body — hand, head, heart, eye: short words
+    TOPIC_BODY: {"a": 0.08, "e": 0.08, "n": 0.04, "r": 0.04, "d": 0.04},
+    # faith — soul, heaven, sacred, pray, spirit: -l, -en, -ay
+    TOPIC_FAITH: {"a": 0.08, "e": 0.08, "i": 0.04, "r": 0.04, "n": 0.04},
+    # fortune — fate, doom, chance, time, hour: -e/-te/-oo-
+    TOPIC_FORTUNE: {"a": 0.08, "e": 0.06, "o": 0.06, "u": 0.04, "t": 0.04},
+}
+
+
+def scene_topic_midword_bias(
+    scene_topics: tuple[float, ...],
+    speaker_label_state: int,
+    letter_run_len: int,
+    letters_off_trie: int,
+    on_word_trie: bool,
+) -> list[float] | None:
+    """Return a mid-word letter bias when a topic is dominant and we
+    are off the word_trie (so the trie itself isn't guiding us).
+    """
+    if speaker_label_state != 0:
+        return None
+    if letter_run_len < 2:
+        return None
+    if on_word_trie:
+        # Trust the trie when on-trie.
+        return None
+    if letters_off_trie < 1:
+        return None
+    if not scene_topics:
+        return None
+
+    top_val = -1.0
+    top_idx = -1
+    second_val = -1.0
+    for i, v in enumerate(scene_topics):
+        if v > top_val:
+            second_val = top_val
+            top_val = v
+            top_idx = i
+        elif v > second_val:
+            second_val = v
+
+    # Mid-word uses a looser threshold than start bias — even a modestly
+    # active topic should subtly shape off-trie continuations.
+    if top_idx < 0 or top_val < 0.40:
+        return None
+    if (top_val - second_val) < 0.20:
+        return None
+
+    weights = _TOPIC_MIDWORD.get(top_idx)
+    if weights is None:
+        return None
+    norm = min(top_val, 4.0) / 4.0
+    # Escalate with letters_off_trie (the deeper we are off-trie, the
+    # more we want to pull toward topic-plausible continuations).
+    escalate = min(letters_off_trie / 3.0, 1.0) * 0.5 + 0.5
+    scale = norm * escalate * 0.35
+
+    vec = [0.0] * VOCAB_SIZE
+    for ch, w in weights.items():
+        idx = VOCAB_INDEX.get(ch)
+        if idx is not None:
+            vec[idx] += w * scale
+    return vec
 
 
 def scene_topic_start_bias(

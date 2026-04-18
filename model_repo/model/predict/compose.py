@@ -67,7 +67,7 @@ from .startword import START_BIAS
 from .formula import formula_midword_bias, formula_start_bias
 from .iambic import iambic_word_start_bias
 from .imagery import imagery_start_bias
-from .scene_topic import scene_topic_start_bias
+from .scene_topic import scene_topic_midword_bias, scene_topic_start_bias
 from .invocation import (
     invocation_sentence_end_bias,
     invocation_sentence_start_bias,
@@ -295,6 +295,19 @@ def predict(state: ModelState) -> list[float]:
         if tmw is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += tmw[i]
+        # Scene-topic mid-word bias: when a scene_topics cluster is
+        # dominant and we've drifted off-trie, nudge letter choice
+        # toward topic-characteristic continuation letters.
+        stm = scene_topic_midword_bias(
+            state.scene_topics,
+            state.speaker_label_state,
+            state.letter_run_len,
+            state.letters_off_trie,
+            state.on_word_trie,
+        )
+        if stm is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += stm[i]
         # Content-word repetition: direct prefix-match boost for recent
         # content words (motif repetition). Runs alongside topic-midword
         # which is distribution-averaged; this is sharper.
