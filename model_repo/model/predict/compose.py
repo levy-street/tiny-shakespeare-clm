@@ -1167,10 +1167,10 @@ def predict(state: ModelState) -> list[float]:
                 # Lowercase "i" standalone is ungrammatical. Penalize
                 # space (and any terminator) so we extend to a longer
                 # word.
-                logits[VOCAB_INDEX[" "]] -= 3.0
+                logits[VOCAB_INDEX[" "]] -= 5.5
                 for ch in ",.;:\n!?":
                     if ch in VOCAB_INDEX:
-                        logits[VOCAB_INDEX[ch]] -= 2.0
+                        logits[VOCAB_INDEX[ch]] -= 3.0
             else:
                 logits[VOCAB_INDEX[" "]] += 3.6
 
