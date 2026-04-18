@@ -66,6 +66,7 @@ from .topic import content_repeat_bias, topic_bias, topic_midword_bias
 from .addressee import addressee_midword_bias, addressee_start_bias
 from .adjacent_repeat import adjacent_repeat_bias
 from .trie_recovery import trie_recovery_bias
+from .verb_agreement import verb_agreement_bias
 from .clause_depth import clause_depth_close_bias
 from .red_flags import red_flags_close_bias
 from .trigram import trigram_bias
@@ -258,6 +259,21 @@ def predict(state: ModelState) -> list[float]:
         if rf is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += rf[i]
+
+    # Layer 3c2: subject-verb agreement morphology bias. When a
+    # subject has been identified (clause_slot == HAS_SUBJ), the
+    # upcoming verb's suffix is morphologically constrained — "thou
+    # X-est / X-st", "he/she X-eth / X-s". Fires mid/end-of-word.
+    va = verb_agreement_bias(
+        state.verb_agreement,
+        state.clause_slot,
+        state.speaker_label_state,
+        state.word_buffer,
+        state.letter_run_len,
+    )
+    if va is not None:
+        for i in range(VOCAB_SIZE):
+            logits[i] += va[i]
 
     # Layer 3c1-addr: addressee-memory mid-word bias. When vocative
     # expectation is active AND the current buffer is a prefix of the

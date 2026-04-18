@@ -683,3 +683,39 @@ class ModelState(BaseModel):
     # This field lets the predict layer condition the capital-boost
     # on whether the prev line ended cleanly vs. was enjambed.
     prev_line_final_class: int = 0
+
+    # --- Tier 2: subject-verb agreement expectation ---
+    # Once a subject has been identified in the current clause, the
+    # expected morphology of the upcoming main verb is largely fixed
+    # in Early Modern English. This field tells the predict layer
+    # what morphology to reward when clause_slot == HAS_SUBJ and the
+    # next word is likely a verb.
+    #
+    #   0  VA_NONE       — no current subject-agreement expectation
+    #                      (e.g. clause is FRESH, or subject is missing)
+    #   1  VA_THOU       — 2nd person singular archaic subject
+    #                      ("thou", "thee" in marked positions).
+    #                      Upcoming verb tends to end in "-st" or
+    #                      "-est" ("thou art", "thou hast", "thou
+    #                      knowest", "thou speakest", "thou didst").
+    #   2  VA_THIRD_SG   — 3rd person singular: "he", "she", "it",
+    #                      "who", any proper noun, or any ordinary
+    #                      singular noun-phrase subject. Verb ends
+    #                      in "-s", "-es" (modern) or "-th", "-eth"
+    #                      (archaic: "hath", "doth", "saith", "hath",
+    #                      "loveth"). Auxiliaries "is", "was", "has",
+    #                      "had", "does" fit.
+    #   3  VA_FIRST_SG   — "I". Verb is base form or with archaic
+    #                      "-e" (I am, I do, I see, I prithee).
+    #   4  VA_PLURAL     — "we", "they", "you", "ye" or a plural
+    #                      noun-phrase. Verb is base form ("we are",
+    #                      "they do", "you know", "we love").
+    #   5  VA_IMPERATIVE — clause opened with a bare verb (after
+    #                      O/Alas/Ah/Come/Go/See/Hear/Speak — no
+    #                      preceding subject). Verb is base form.
+    #
+    # Set by update_verb_agreement (runs after update_clause_slot) at
+    # the word completion that fills the subject slot. Reset to
+    # VA_NONE on sentence-end punctuation or on a CONJUNCTION that
+    # resets the clause.
+    verb_agreement: int = 0
