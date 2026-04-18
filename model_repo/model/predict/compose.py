@@ -128,6 +128,7 @@ def predict(state: ModelState) -> list[float]:
 
 
 
+
     # Layer 3b3: word-start bigram bias — at letter_run_len == 1, the
     # second letter is heavily conditioned on the first (word-start
     # distributions differ from mid-word). Applies only when speaker
@@ -1137,11 +1138,11 @@ def predict(state: ModelState) -> list[float]:
         # letter extensions.
         if state.letter_run_len >= 2 and state.on_word_trie:
             if state.word_buffer in COMPLETE_WORDS:
-                logits[VOCAB_INDEX[" "]] += 0.6
+                logits[VOCAB_INDEX[" "]] += 0.35
             elif state.letter_run_len >= 5:
                 # Non-complete on-trie buffer that's gotten long (5+).
                 # Less confident but still plausible to end.
-                logits[VOCAB_INDEX[" "]] += 0.3
+                logits[VOCAB_INDEX[" "]] -= 2.0
             elif state.letter_run_len == 4:
                 # Length-4 on-trie non-complete: mid-word, still
                 # growing toward a longer word. Don't boost space.
