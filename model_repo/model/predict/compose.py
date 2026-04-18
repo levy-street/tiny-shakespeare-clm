@@ -1171,6 +1171,14 @@ def predict(state: ModelState) -> list[float]:
                 for ch in ",.;:\n!?":
                     if ch in VOCAB_INDEX:
                         logits[VOCAB_INDEX[ch]] -= 3.0
+            elif state.last_char == "o":
+                # Lowercase "o" standalone is rare (except apostrophized
+                # "o'er" / "o'clock" forms which have ' instead of space).
+                # Weaker penalty than "i" but still bias toward extending.
+                logits[VOCAB_INDEX[" "]] -= 2.0
+                for ch in ",.;:\n!?":
+                    if ch in VOCAB_INDEX:
+                        logits[VOCAB_INDEX[ch]] -= 1.2
             else:
                 logits[VOCAB_INDEX[" "]] += 3.6
 
