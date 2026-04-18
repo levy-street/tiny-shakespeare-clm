@@ -439,6 +439,37 @@ def update_flow(state: ModelState, token_id: int) -> ModelState:
     if state.consecutive_newlines >= 2 and lc == "\n":
         addressing_register *= 0.35
 
+    # Cadence: staccato (-) ↔ flowing (+). Bumped at word completion
+    # by the completed word's length, and at clausal punctuation.
+    # Captures the *texture* of delivery: tight short bursts vs.
+    # sweeping long phrases. Distinct from chars_since_comma (which
+    # measures distance); cadence tracks the *feel* of the recent text.
+    cadence = state.cadence
+    if state.just_finished_word:
+        cadence *= 0.95  # decay toward neutral each word
+        w = state.last_completed_word
+        if w:
+            L = len(w)
+            if L <= 3:
+                # Short word: staccato pull. Exclude single-letter
+                # "words" which are often noise or bare "I"/"O".
+                if L >= 2:
+                    cadence = max(-1.0, cadence - 0.08)
+            elif L >= 10:
+                cadence = min(1.0, cadence + 0.20)  # +0.12 + 0.08
+            elif L >= 7:
+                cadence = min(1.0, cadence + 0.12)
+    # Clausal punctuation bump: commas / semicolons are the defining
+    # marker of staccato rhythm. Applies on the exact token.
+    if lc == "," or lc == ";":
+        cadence = max(-1.0, cadence - 0.14)
+    # Sentence-end: gentle decay toward neutral — the clause closed.
+    if lc in ".!?":
+        cadence *= 0.75
+    # Fresh speaker: damp carryover (each speaker has their own cadence).
+    if state.consecutive_newlines >= 2 and lc == "\n":
+        cadence *= 0.4
+
     return state.model_copy(
         update={
             "on_word_trie": on_trie,
@@ -458,5 +489,6 @@ def update_flow(state: ModelState, token_id: int) -> ModelState:
             "tonal_weight": tonal_weight,
             "imagery_density": imagery_density,
             "addressing_register": addressing_register,
+            "cadence": cadence,
         }
     )

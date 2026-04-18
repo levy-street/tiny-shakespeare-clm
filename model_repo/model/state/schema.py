@@ -522,3 +522,26 @@ class ModelState(BaseModel):
     # completions — giving a real multi-word lookahead that the
     # two-word phrase_bigram cannot see.
     formula_node: int = 0
+
+    # --- Tier 3: cadence (staccato ↔ flowing) ---
+    # Rolling float in [-1, +1] tracking whether the recent text has
+    # been *staccato* (-1; short words, many commas/semicolons, tight
+    # punctuation — "Stay, villain, hold!") or *flowing* (+1; long
+    # words, long clauses, enjambed lines — "The multitudinous seas
+    # incarnadine"). This is a genuine texture/feel axis, distinct
+    # from cadence-adjacent structural fields (chars_since_comma
+    # measures *distance*, not *feel*).
+    #
+    # Bumps per completed word + per clausal punctuation:
+    #   short word (≤ 3 letters):       -0.08 (staccato pull)
+    #   long word (≥ 7 letters):        +0.12 (flowing pull)
+    #   very long word (≥ 10 letters):  +0.08 extra
+    #   clausal comma/semicolon:        -0.14 (staccato pull)
+    #   sentence-end punctuation:        mild neutral decay
+    # Decays toward 0 at 0.95 per completed word.
+    # Speaker turn reset: multiply by 0.4 (carryover dampened).
+    #
+    # Consumed by predict.cadence: at word-end positions, modulate
+    # the comma/space balance (staccato → commas, flowing → space).
+    # Small magnitude bias, scaled by |cadence|.
+    cadence: float = 0.0

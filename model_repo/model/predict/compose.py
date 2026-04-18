@@ -37,6 +37,7 @@ from .address import address_midword_bias, address_start_bias
 from .anaphora import anaphora_midword_bias, anaphora_start_bias
 from .archaic import archaic_midword_bias, archaic_start_bias
 from .bigram import bigram_bias
+from .cadence import cadence_wordend_bias
 from .context import CTX_BIAS_VECTORS, context_key
 from .letter3 import letter3_bias
 from .letter4 import letter4_bias
@@ -1139,6 +1140,13 @@ def predict(state: ModelState) -> list[float]:
         if state.letter_run_len >= 2 and state.on_word_trie:
             if state.word_buffer in COMPLETE_WORDS:
                 logits[VOCAB_INDEX[" "]] += 0.35
+                # Cadence-texture bias at a genuine word-end. Staccato
+                # register boosts commas/semicolons; flowing register
+                # boosts space. Scaled by |cadence|.
+                cb = cadence_wordend_bias(state.cadence)
+                if cb is not None:
+                    for i in range(VOCAB_SIZE):
+                        logits[i] += cb[i]
             elif state.letter_run_len >= 5:
                 # Non-complete on-trie buffer that's gotten long (5+).
                 # Less confident but still plausible to end.
