@@ -621,15 +621,14 @@ def predict(state: ModelState) -> list[float]:
             ratio_period, ratio_q, ratio_excl = 1.0, 0.3, 0.3
 
         # Emotional-intensity modulation: when emo is high, shift
-        # end-punct mass toward "!" (and slightly away from "."). This
-        # is proportional to emo so modern/neutral registers are
-        # unaffected. Applied as a soft ratio tilt.
+        # end-punct mass from "." toward "!". Proportional to emo so
+        # modern/neutral registers are unaffected. Applied as a soft
+        # ratio tilt within the calibrated total-mass budget.
         emo = state.emotional_intensity
         if emo > 0.0 and st_type != 2:  # don't override interrogatives
-            # Move up to 40% of the period mass to "!" at max emo.
-            shift = min(0.4 * emo, 0.4)
-            ratio_excl += ratio_period * shift
-            ratio_period *= (1.0 - shift)
+            shift_p = min(0.95 * emo, 0.95)
+            ratio_excl += ratio_period * shift_p
+            ratio_period *= (1.0 - shift_p)
 
         # Overdue sentence end: at word-end on-trie, boost sentence-end
         # punctuation so the model actually closes sentences.
