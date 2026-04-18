@@ -184,9 +184,16 @@ def update_linguistic(state: ModelState, token_id: int) -> ModelState:
     if wb == "" and state.word_buffer:
         last_completed_word = state.word_buffer
         prev_completed_word = state.last_completed_word
+        prev_prev_completed_word = state.prev_completed_word
+        # Rolling 5-deep window, most-recent first.
+        recent_completed_words = (
+            (state.word_buffer,) + state.recent_completed_words
+        )[:5]
     else:
         last_completed_word = state.last_completed_word
         prev_completed_word = state.prev_completed_word
+        prev_prev_completed_word = state.prev_prev_completed_word
+        recent_completed_words = state.recent_completed_words
 
     # speaker_buffer: active inside a speaker label (state 1/2), reset
     # when the label ends or we leave speaker-label territory. The buffer
@@ -247,6 +254,8 @@ def update_linguistic(state: ModelState, token_id: int) -> ModelState:
             "speaker_buffer": sb,
             "last_completed_word": last_completed_word,
             "prev_completed_word": prev_completed_word,
+            "prev_prev_completed_word": prev_prev_completed_word,
+            "recent_completed_words": recent_completed_words,
             "prev_line_length": prev_line_length,
             "prev_prev_line_length": prev_prev_line_length,
             "prev_line_final_class": prev_line_final_class,

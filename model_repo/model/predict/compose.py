@@ -48,6 +48,7 @@ from .np_head import np_head_start_bias
 from .ornament import ornament_start_bias
 from .parallel import parallel_start_bias
 from .phrase_bigram import phrase_bigram_bias
+from .phrase_trigram import phrase_trigram_bias
 from .pos_next import pos_next_bias
 from .repetition import repetition_start_bias
 from .rhyme import rhyme_midword_bias
@@ -700,6 +701,26 @@ def predict(state: ModelState) -> list[float]:
             if pb is not None:
                 for i in range(VOCAB_SIZE):
                     logits[i] += pb[i]
+
+        # Layer 4b2-tri: phrase trigram — given the THREE most recent
+        # completed words, bias next-word first-letter for known 4-word
+        # formulas ("I pray thee tell", "to be or not", "or not to be",
+        # "by my troth I", "now is the winter", "in the name of", ...).
+        # Strictly more specific than phrase_bigram — fires rarely
+        # but with high confidence when it does.
+        if (
+            state.prev_prev_completed_word
+            and state.prev_completed_word
+            and state.last_completed_word
+        ):
+            pt = phrase_trigram_bias(
+                state.prev_prev_completed_word,
+                state.prev_completed_word,
+                state.last_completed_word,
+            )
+            if pt is not None:
+                for i in range(VOCAB_SIZE):
+                    logits[i] += pt[i]
 
         # Layer 4c: at a sentence start (post ". ", post "? ", post "! "
         # or post a double-newline blank line), strongly boost capital

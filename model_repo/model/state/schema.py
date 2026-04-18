@@ -124,6 +124,20 @@ class ModelState(BaseModel):
     # "by my troth", "good my lord", "I have been", etc.). Set at word
     # completion, holds steady between completions.
     prev_completed_word: str = ""
+    # The word before prev_completed_word. Gives the predict layer a
+    # true 3-word lookback — enabling phrase-trigram biases keyed on
+    # (w3, w2, w1) -> first-letter of next word. Without this the
+    # model can only see 2 words back, which misses common Shakespeare
+    # 4-grams like "I pray thee tell", "to be or not", "my good lord
+    # I". Updated at every word completion (3-slot shift).
+    prev_prev_completed_word: str = ""
+    # Rolling tuple of the last up-to-5 completed words, most-recent
+    # first. Generalizes prev/last/prev_prev to any-length lookback.
+    # Future layers can index to look at 4 or 5 words back (e.g.
+    # detecting "of X of Y" parallelism, or identifying completion
+    # targets of long formulaic sequences). Reset fields reset this
+    # to () where appropriate (e.g., speaker-turn boundary).
+    recent_completed_words: tuple[str, ...] = ()
     # Up to 4 most-recently-completed *content* words (NOUN, VERB,
     # VERB_ING, VERB_ED, ADJECTIVE, ADVERB, PROPER_NOUN, or UNKNOWN),
     # most-recent first. Function words (articles, pronouns, aux,
