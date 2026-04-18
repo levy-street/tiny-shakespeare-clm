@@ -824,6 +824,39 @@ class ModelState(BaseModel):
     # articles/possessives as we build the NP. Caps at 5.
     vt_wait_words: int = 0
 
+    # --- Tier 3: sonority level (phonetic texture) ---
+    # Rolling [-1, +1] float tracking the phonetic texture of the
+    # recent text, updated on every letter emission. Positive =
+    # melodic/sonorant (vowels, liquids l/m/n/r, approximants w/y);
+    # negative = percussive (hard stops k/t/p/g/b/d, sibilants z/x/j/q).
+    # This is a flow-level *feel* axis — Shakespeare's lyric passages
+    # ("When shall we three meet again / In thunder, lightning, or
+    # in rain?") cluster sonorant phonemes, while violent/urgent
+    # passages ("Strike! Kill! Drag!") cluster stops.
+    #
+    # Distinct from cadence (staccato/flowing tempo) and imagery
+    # (sensory lexicon) — sonority is about *sound*, the actual
+    # phonetic color of the letters being emitted. Bleeds through
+    # word boundaries; tends to be self-reinforcing (once a
+    # passage is melodic, writers keep the melody).
+    #
+    # Bumps per emitted letter:
+    #   vowels (a/e/i/o/u):       +0.035
+    #   liquids (l/m/n/r):        +0.020
+    #   approximants (w/y):       +0.015
+    #   voiceless fricatives:     +0.005 (f/h/s)
+    #   voiced consonants:        -0.010 (v/c)
+    #   hard stops (k/t/p):       -0.025
+    #   voiced stops (g/b/d):     -0.018
+    #   rare harsh (j/q/x/z):     -0.035
+    # Decay of 0.985 per letter (multiplicative) applied after bump.
+    # On non-letter characters: decay 0.97 (faster fade between words).
+    # On speaker-turn boundary: *0.30.
+    #
+    # Consumed by predict/sonority.py at mid-word positions to nudge
+    # the next letter toward in-register phonemes.
+    sonority_level: float = 0.0
+
     # --- Tier 3: invocation mode (rhetorical / declamatory texture) ---
     # Rolling [0, 1] float tracking whether the current speaker is in
     # *invocation mode* — the grand, oratorical, apostrophe-driven
@@ -861,6 +894,50 @@ class ModelState(BaseModel):
     #   - in-invocation word starts: boost vocative-lead letters
     #     (m=my, t=thy, g=good/gentle, s=sweet/sacred, n=noble, d=dear)
     invocation_mode: float = 0.0
+
+    # --- Tier 2: word-form expectation (morphological slot) ---
+    # When an auxiliary, modal, preposition, or quantifier just
+    # completed, the NEXT content word is grammatically constrained in
+    # form. This field gives the predict layer a morphology-aware
+    # prior beyond what POS tags alone capture:
+    #
+    #   0 WFE_NONE        — no form expectation
+    #   1 WFE_INFINITIVE  — bare verb expected. Triggered by:
+    #                        to, shall, shalt, will, wilt, must, may,
+    #                        mayst, might, can, canst, could, couldst,
+    #                        would, wouldst, should, shouldst, let,
+    #                        do, dost, does, did, didst.
+    #                        Preferred: base verbs (be, go, see, take,
+    #                        know, make, come, hear, speak, think, have,
+    #                        find, live, die, fall, rise, bear).
+    #   2 WFE_PAST_PART   — past participle expected. Triggered by:
+    #                        have, has, had, having, hath, hast.
+    #                        Preferred: -n/-en endings (seen, slain,
+    #                        taken, given, gone, known, done, borne,
+    #                        worn, torn, drawn, thrown, broken, spoken,
+    #                        stolen) and -ed/-d ("loved, feared, killed").
+    #   3 WFE_ING_OR_PP   — ambiguous progressive/passive context after
+    #                        is/am/are/was/were/be/been/being. Either
+    #                        -ing present participle ("is going, was
+    #                        sleeping") or past participle ("is slain,
+    #                        was taken"). Weaker bias, favoring both.
+    #   4 WFE_NOMINAL     — NP head expected after "of" (strongest of
+    #                        prepositions: "of love/death/war/honour").
+    #   5 WFE_COMPARATIVE — after more/less → adjective/adverb expected.
+    #   6 WFE_SUPERLATIVE — after most → adjective expected.
+    #
+    # Reset rules:
+    #   - Resolved on VERB/VERB_ED/VERB_ING/NOUN/ADJECTIVE completion
+    #     when the completion matches the expected form.
+    #   - Escalate wait on ADVERB/NEGATION/ARTICLE/POSSESSIVE/ADJECTIVE
+    #     (pre-modifiers allowed).
+    #   - Full reset on sentence-end, clausal break, speaker-turn,
+    #     conjunction, or wait >= 4 without resolution.
+    #
+    # This is a morphology-aware parallel to transitivity/clause_slot —
+    # those track syntactic position; this tracks morphological form.
+    word_form_expectation: int = 0
+    wfe_wait_words: int = 0
 
     # --- Tier 2: speaker-label off-trie run-length ---
     # Count of consecutive letters added to `speaker_buffer` (while the

@@ -52,6 +52,7 @@ from .phrase_trigram import phrase_trigram_bias
 from .pos_next import pos_next_bias
 from .repetition import repetition_start_bias
 from .rhyme import rhyme_midword_bias
+from .sonority import sonority_midword_bias
 from .slot_next import slot_start_bias
 from .speaker_recency import speaker_recency_bias
 from .speaker_trie import speaker_trie_bias
@@ -73,6 +74,7 @@ from .topic import content_repeat_bias, topic_bias, topic_midword_bias
 from .addressee import addressee_midword_bias, addressee_start_bias
 from .adjacent_repeat import adjacent_repeat_bias
 from .transitivity import transitivity_midword_bias, transitivity_start_bias
+from .word_form import word_form_start_bias
 from .trie_recovery import trie_recovery_bias
 from .word_end_bigram import word_end_bigram_bias
 from .referent import referent_start_bias
@@ -143,6 +145,12 @@ def predict(state: ModelState) -> list[float]:
         if l3 is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += l3[i]
+
+    # (Layer 3b2c: sonority-texture bias — disabled; letter-n-gram
+    # priors already capture phonotactic regularities better than a
+    # smoothed sonority field can tilt them. The sonority_level field
+    # is still maintained as state for possible use at word-start
+    # positions where n-gram signal is weaker.)
 
 
 
@@ -711,6 +719,23 @@ def predict(state: ModelState) -> list[float]:
             if trb is not None:
                 for i in range(VOCAB_SIZE):
                     logits[i] += trb[i]
+
+        # Layer 4b4c-wfe: word-form expectation. After an infinitive-
+        # marker / modal, a perfect-auxiliary, a copula, "of", "more/
+        # less", or "most", the morphological form of the next word
+        # is constrained. Boost first letters most common for words
+        # of the expected form. This is a morphology-aware prior
+        # orthogonal to transitivity (object-slot) and np_open
+        # (NP-head slot).
+        if state.speaker_label_state == 0:
+            wfb = word_form_start_bias(
+                state.word_form_expectation,
+                state.wfe_wait_words,
+                state.speaker_label_state,
+            )
+            if wfb is not None:
+                for i in range(VOCAB_SIZE):
+                    logits[i] += wfb[i]
 
         # Layer 4b2-par: parallel-structure bias after a coordinating
         # conjunction. When last_completed_word is "and"/"or"/"nor"/

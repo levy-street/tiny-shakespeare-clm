@@ -281,6 +281,29 @@ _INVOC_VOCATIVE_BUMP = 0.10
 _INVOC_EXCLAIM_BUMP = 0.25
 _INVOC_DECAY = 0.92
 
+# --- Sonority level (phonetic texture) ---
+# Per-letter bumps categorized by phonetic class. Vowels and liquids
+# push positive (melodic); hard stops and harsh consonants push negative
+# (percussive).
+_SONORITY_VOWEL = 0.035
+_SONORITY_LIQUID = 0.020  # l m n r
+_SONORITY_APPROX = 0.015  # w y
+_SONORITY_FRIC_VL = 0.005  # f h s (voiceless fricatives)
+_SONORITY_VOICED_C = -0.010  # v c
+_SONORITY_HARD_STOP = -0.025  # k t p
+_SONORITY_VOICED_STOP = -0.018  # g b d
+_SONORITY_RARE_HARSH = -0.035  # j q x z
+_SONORITY_DECAY_LETTER = 0.985
+_SONORITY_DECAY_NONLETTER = 0.97
+
+_LIQUIDS = frozenset("lmnrLMNR")
+_APPROX = frozenset("wyWY")
+_FRIC_VL = frozenset("fhsFHS")
+_VOICED_C = frozenset("vcVC")
+_HARD_STOP = frozenset("ktpKTP")
+_VOICED_STOP = frozenset("gbdGBD")
+_RARE_HARSH = frozenset("jqxzJQXZ")
+
 
 def update_flow(state: ModelState, token_id: int) -> ModelState:
     # Linguistic updates have already run; use the post-update state.
@@ -506,6 +529,38 @@ def update_flow(state: ModelState, token_id: int) -> ModelState:
     if state.consecutive_newlines >= 2 and lc == "\n":
         cadence *= 0.4
 
+    # Sonority level: rolling [-1, +1] phonetic texture. Updated on
+    # every character emission. Decays faster on non-letters.
+    sonority_level = state.sonority_level
+    if len(lc) == 1:
+        if ("a" <= lc <= "z") or ("A" <= lc <= "Z"):
+            sonority_level *= _SONORITY_DECAY_LETTER
+            if lc in _VOWELS_SET:
+                sonority_level += _SONORITY_VOWEL
+            elif lc in _LIQUIDS:
+                sonority_level += _SONORITY_LIQUID
+            elif lc in _APPROX:
+                sonority_level += _SONORITY_APPROX
+            elif lc in _FRIC_VL:
+                sonority_level += _SONORITY_FRIC_VL
+            elif lc in _VOICED_C:
+                sonority_level += _SONORITY_VOICED_C
+            elif lc in _HARD_STOP:
+                sonority_level += _SONORITY_HARD_STOP
+            elif lc in _VOICED_STOP:
+                sonority_level += _SONORITY_VOICED_STOP
+            elif lc in _RARE_HARSH:
+                sonority_level += _SONORITY_RARE_HARSH
+            # Clamp.
+            if sonority_level > 1.0:
+                sonority_level = 1.0
+            elif sonority_level < -1.0:
+                sonority_level = -1.0
+        else:
+            sonority_level *= _SONORITY_DECAY_NONLETTER
+    if state.consecutive_newlines >= 2 and lc == "\n":
+        sonority_level *= 0.30
+
     # Invocation mode: rolling [0, 1] tracking rhetorical/declamatory
     # voice. Bumped by invocation openers at sentence start, WH
     # rhetorical openers, "!" at sentence end, and vocatives when
@@ -578,5 +633,6 @@ def update_flow(state: ModelState, token_id: int) -> ModelState:
             "cadence": cadence,
             "ornament_density": ornament_density,
             "invocation_mode": invocation_mode,
+            "sonority_level": sonority_level,
         }
     )
