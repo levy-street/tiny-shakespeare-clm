@@ -473,6 +473,37 @@ class ModelState(BaseModel):
     # evidence that future vocatives in this turn will be that noun.
     turn_vocative_count: int = 0
 
+    # --- Tier 2/3: dialogue-turn progress ---
+    # Position within the current speaker's turn (between consecutive
+    # speaker labels). Shakespeare's turns have internal structure the
+    # model currently can't see:
+    #   - First sentence of a turn is the OPENER. Common starters:
+    #     interjections (O, Alas, Why, Nay, Ay, Well), vocatives
+    #     ("My lord,..."), or direct questions. Later sentences rarely
+    #     open the same way.
+    #   - First word of the first line often carries a high density
+    #     of turn-opener patterns.
+    #   - Long verse turns (~10+ lines) often wind down with a rhyming
+    #     couplet.
+    #
+    # These fields track a positional axis the model is blind to today.
+    # `last_speaker_label` says WHO is speaking; these say HOW FAR into
+    # that speaker's turn we are.
+    #
+    # Reset rule: all three reset to 0 when consecutive_newlines >= 2
+    # (a between-turn blank line — the canonical turn boundary).
+    # Updates:
+    #   - words_in_turn  += 1 at each just_finished_word outside a
+    #                        speaker-label (speaker_label_state == 0)
+    #   - sentences_in_turn += 1 at each sentence-end punct outside
+    #                            a speaker-label
+    #   - lines_in_turn  += 1 at each \n whose consecutive_newlines==1
+    #                        outside a speaker-label (a body newline,
+    #                        not the turn-boundary \n)
+    words_in_turn: int = 0
+    sentences_in_turn: int = 0
+    lines_in_turn: int = 0
+
     # --- Tier 2: formulaic-phrase progress ---
     # Current node ID in a precomputed trie of common multi-word
     # Shakespeare formulas ("I pray thee", "good my lord", "by my

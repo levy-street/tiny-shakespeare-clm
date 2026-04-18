@@ -50,6 +50,7 @@ from .speaker_recency import speaker_recency_bias
 from .speaker_trie import speaker_trie_bias
 from .start4gram import start4gram_bias
 from .tonal import tonal_start_bias
+from .turn_opener import TURN_OPENER_START_BIAS
 from .start5gram import start5gram_bias
 from .startbigram import startbigram_bias
 from .starttrigram import starttrigram_bias
@@ -665,6 +666,22 @@ def predict(state: ModelState) -> list[float]:
             for ch, b in line_start_caps.items():
                 if ch in VOCAB_INDEX:
                     logits[VOCAB_INDEX[ch]] += b
+
+        # Layer 4b6: turn-opener bias. At the very first word of a
+        # speaker's turn (words_in_turn == 0 AND sentences_in_turn == 0),
+        # tilt first-letter choice toward letters that disproportionately
+        # open Shakespearean turns (O/Alas/Nay/Why/My/Pray/Good/...). This
+        # fires on top of the generic sentence-start / line-start capital
+        # boosts and reshapes WITHIN the capitals. Guarded to a genuine
+        # word-start position outside speaker-label territory.
+        if (
+            state.speaker_label_state == 0
+            and state.words_in_turn == 0
+            and state.sentences_in_turn == 0
+            and state.lines_in_turn <= 1
+        ):
+            for i in range(VOCAB_SIZE):
+                logits[i] += TURN_OPENER_START_BIAS[i]
 
     # Layer 4d: verb-agreement bias based on subject pronoun.
     # When the clause's subject is "thou", Shakespearean agreement

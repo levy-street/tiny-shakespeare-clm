@@ -29,6 +29,7 @@ from .repetition import update_repetition
 from .rhyme import update_rhyme
 from .sentence import update_sentence
 from .speaker_memory import update_speaker_memory
+from .turn import update_turn_progress
 from .vocative import update_vocative
 
 Stage = Callable[[ModelState, int], ModelState]
@@ -45,6 +46,7 @@ PIPELINE: list[Stage] = [
     update_vocative,        # Tier 2: vocative-expectation flag
     update_addressee,       # Tier 2/3: vocative-noun memory
     update_speaker_memory,  # Tier 2/3: recent-speakers rolling window
+    update_turn_progress,   # Tier 2/3: words/sentences/lines in current turn
     update_anaphora,        # Tier 2: line-starter anaphora tracking
     update_rhyme,           # Tier 2/3: line-tail rhyme memory
     update_prosody,         # Tier 3: syllable / cadence tracking
