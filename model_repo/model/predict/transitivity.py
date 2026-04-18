@@ -224,6 +224,68 @@ def transitivity_midword_bias(
             # our
             if "r" in VOCAB_INDEX:
                 vec[VOCAB_INDEX["r"]] += 0.45
+        elif buf == "mi":
+            # mine
+            if "n" in VOCAB_INDEX:
+                vec[VOCAB_INDEX["n"]] += 0.40
+        elif buf == "al":
+            # all
+            if "l" in VOCAB_INDEX:
+                vec[VOCAB_INDEX["l"]] += 0.45
+    elif letter_run_len == 3:
+        # Three-letter prefixes resolve to specific determiners.
+        if buf == "the":
+            # the standalone
+            if " " in VOCAB_INDEX:
+                vec[VOCAB_INDEX[" "]] += 0.35
+        elif buf == "thi":
+            # this
+            if "s" in VOCAB_INDEX:
+                vec[VOCAB_INDEX["s"]] += 0.40
+        elif buf == "tha":
+            # that
+            if "t" in VOCAB_INDEX:
+                vec[VOCAB_INDEX["t"]] += 0.40
+        elif buf == "tho":
+            # thou/those
+            if "u" in VOCAB_INDEX:
+                vec[VOCAB_INDEX["u"]] += 0.30
+            if "s" in VOCAB_INDEX:
+                vec[VOCAB_INDEX["s"]] += 0.22
+        elif buf == "thy":
+            # thy standalone
+            if " " in VOCAB_INDEX:
+                vec[VOCAB_INDEX[" "]] += 0.35
+        elif buf == "his":
+            # his standalone
+            if " " in VOCAB_INDEX:
+                vec[VOCAB_INDEX[" "]] += 0.35
+        elif buf == "her":
+            # her standalone (typical as possessive)
+            if " " in VOCAB_INDEX:
+                vec[VOCAB_INDEX[" "]] += 0.30
+        elif buf == "him":
+            # him standalone
+            if " " in VOCAB_INDEX:
+                vec[VOCAB_INDEX[" "]] += 0.30
+        elif buf == "min":
+            # mine
+            if "e" in VOCAB_INDEX:
+                vec[VOCAB_INDEX["e"]] += 0.45
+        elif buf == "our":
+            # our standalone
+            if " " in VOCAB_INDEX:
+                vec[VOCAB_INDEX[" "]] += 0.30
+        elif buf == "you":
+            # you/your
+            if "r" in VOCAB_INDEX:
+                vec[VOCAB_INDEX["r"]] += 0.22
+            if " " in VOCAB_INDEX:
+                vec[VOCAB_INDEX[" "]] += 0.22
+        elif buf == "all":
+            # all standalone
+            if " " in VOCAB_INDEX:
+                vec[VOCAB_INDEX[" "]] += 0.30
 
     if all(x == 0.0 for x in vec):
         return None
