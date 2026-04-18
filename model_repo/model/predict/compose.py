@@ -1068,6 +1068,27 @@ def predict(state: ModelState) -> list[float]:
                 or state.letter_run_len >= 4
             ):
                 logits[VOCAB_INDEX[" "]] += 0.6
+            else:
+                # On-trie short buffer (len 2–3) that is NOT itself a
+                # complete word: it's growing toward a longer word.
+                # Penalize premature word-terminators. Catches
+                # "ti/dou/tram"-style early-space mistakes.
+                scale = 2.2 if state.letter_run_len == 2 else 1.5
+                logits[VOCAB_INDEX[" "]] -= 2.4 * scale
+                if "," in VOCAB_INDEX:
+                    logits[VOCAB_INDEX[","]] -= 1.7 * scale
+                if "." in VOCAB_INDEX:
+                    logits[VOCAB_INDEX["."]] -= 1.7 * scale
+                if ";" in VOCAB_INDEX:
+                    logits[VOCAB_INDEX[";"]] -= 1.2 * scale
+                if "\n" in VOCAB_INDEX:
+                    logits[VOCAB_INDEX["\n"]] -= 1.2 * scale
+                if "!" in VOCAB_INDEX:
+                    logits[VOCAB_INDEX["!"]] -= 1.2 * scale
+                if "?" in VOCAB_INDEX:
+                    logits[VOCAB_INDEX["?"]] -= 1.2 * scale
+                if ":" in VOCAB_INDEX:
+                    logits[VOCAB_INDEX[":"]] -= 0.8 * scale
         # For single-letter complete words (a/I/O), space is even more
         # certain — they almost always end right there.
         elif (
