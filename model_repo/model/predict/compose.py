@@ -866,6 +866,8 @@ def predict(state: ModelState) -> list[float]:
             elif csn >= 22:
                 logits[VOCAB_INDEX["\n"]] += 1.2
 
+
+
         # Sentence-type-dependent end-punct ratios. Summed ratios stay
         # near the original (1.0 + 0.3 + 0.3 = 1.6) so total end-punct
         # mass stays calibrated; we reshuffle within the budget.
