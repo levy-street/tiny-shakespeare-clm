@@ -987,9 +987,17 @@ def predict(state: ModelState) -> list[float]:
                 logits[VOCAB_INDEX[";"]] += 2.0
 
         # At word-end-on-trie, space is the most likely next char.
-        # Boost it to reflect natural word-break frequency.
+        # Boost it to reflect natural word-break frequency. But only
+        # when the buffer is either a complete word OR long enough to
+        # be plausibly complete (4+ chars). Short prefixes like "th",
+        # "wh", "br", "sh" should NOT yet boost space — they want
+        # letter extensions.
         if state.letter_run_len >= 2 and state.on_word_trie:
-            logits[VOCAB_INDEX[" "]] += 0.6
+            if (
+                state.word_buffer in COMPLETE_WORDS
+                or state.letter_run_len >= 4
+            ):
+                logits[VOCAB_INDEX[" "]] += 0.6
         # For single-letter complete words (a/I/O), space is even more
         # certain — they almost always end right there.
         elif (
