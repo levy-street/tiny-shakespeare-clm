@@ -26,6 +26,7 @@ from .linguistic import update_linguistic
 from .pos import update_pos
 from .prosody import update_prosody
 from .repetition import update_repetition
+from .word_shape import update_word_shape
 from .rhyme import update_rhyme
 from .sentence import update_sentence
 from .speaker_memory import update_speaker_memory
@@ -50,6 +51,7 @@ PIPELINE: list[Stage] = [
     update_anaphora,        # Tier 2: line-starter anaphora tracking
     update_rhyme,           # Tier 2/3: line-tail rhyme memory
     update_prosody,         # Tier 3: syllable / cadence tracking
+    update_word_shape,      # Tier 2: per-word phonotactic red-flag counter
     update_flow,            # Tier 3: flow / mood / cadence
 ]
 

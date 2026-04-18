@@ -63,6 +63,7 @@ from .topic import content_repeat_bias, topic_bias, topic_midword_bias
 from .addressee import addressee_midword_bias, addressee_start_bias
 from .adjacent_repeat import adjacent_repeat_bias
 from .trie_recovery import trie_recovery_bias
+from .red_flags import red_flags_close_bias
 from .trigram import trigram_bias
 from .vocative import VOCATIVE_START_BIAS
 from .unigram import UNIGRAM_LOGPROBS
@@ -242,6 +243,17 @@ def predict(state: ModelState) -> list[float]:
         if tr is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += tr[i]
+        # Phonotactic red-flag closure: when word_shape has counted
+        # 2+ phonotactic warnings in the current word (persistent
+        # across letter steps), boost terminators to force close.
+        rf = red_flags_close_bias(
+            state.word_red_flags,
+            state.letter_run_len,
+            state.speaker_label_state,
+        )
+        if rf is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += rf[i]
 
     # Layer 3c1-addr: addressee-memory mid-word bias. When vocative
     # expectation is active AND the current buffer is a prefix of the

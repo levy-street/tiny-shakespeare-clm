@@ -545,3 +545,33 @@ class ModelState(BaseModel):
     # the comma/space balance (staccato → commas, flowing → space).
     # Small magnitude bias, scaled by |cadence|.
     cadence: float = 0.0
+
+    # --- Tier 2: per-word phonotactic red-flag accumulator ---
+    # Count of phonotactic "red flags" observed in the current word
+    # buffer so far. A red flag is a non-English-like substructure
+    # that a legit word would very rarely contain:
+    #   - a consonant-cluster reaching 4+ (ccccccc)
+    #   - a vowel-sequence reaching 3+ (eee, uou — except well-known
+    #     triphthongs)
+    #   - a rare letter (j/q/x/z) at mid-word position (position > 0)
+    #     that isn't part of an attested digraph (qu)
+    #   - an off-trie letter emission after the buffer had already
+    #     reached a valid complete word
+    # Each flag fires once per event boundary, so a single word with
+    # "cccc + vvv" accumulates 2 flags.
+    #
+    # Reset to 0 at word boundary (any non-letter character).
+    #
+    # Motivation: existing fields track state-at-latest-letter
+    # (consonants_since_vowel, vowels_since_consonant, letters_off_trie).
+    # These reset as the word normalizes. A word that had "rntr"
+    # followed by a vowel then continues doesn't remember that it
+    # started weird. The red-flag counter persists across the word,
+    # letting predict know "this word has already failed phonotactics
+    # twice, aggressively push it to close now."
+    word_red_flags: int = 0
+    # Bookkeeping: was the previous consonants_since_vowel >= 4
+    # (to detect the moment the cluster maxes out)? Prevents double-
+    # counting the same cluster.
+    red_flag_cluster_fired: bool = False
+    red_flag_vowel_fired: bool = False
