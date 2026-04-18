@@ -387,6 +387,18 @@ class ModelState(BaseModel):
     # at the next line-start.
     recent_line_starters: tuple[str, ...] = ()
 
+    # --- Tier 2: short-range word-repetition memory ---
+    # Tuple of up to 6 completed-word lowercased forms, most-recent
+    # first, since the last strong boundary. Reset on sentence-ending
+    # punctuation (. ? !) and on speaker-turn change
+    # (consecutive_newlines >= 2). Used at the next word-start to
+    # suppress echo-loop pathology: samples frequently drift into
+    # "there there there" / "hear hear hear" because mid-word
+    # content-repeat bias pulls toward a word that was already said.
+    # This field lets the predict layer apply a growing first-letter
+    # penalty for words that have already been emitted in this clause.
+    recent_clause_words: tuple[str, ...] = ()
+
     # --- Tier 2: word-trie drift recovery ---
     # Tracks whether the current word-in-progress has, at any point
     # during its growth, equaled a member of COMPLETE_WORDS — i.e.

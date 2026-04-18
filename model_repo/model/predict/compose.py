@@ -43,6 +43,7 @@ from .letter4 import letter4_bias
 from .next_word import next_word_bias
 from .phrase_bigram import phrase_bigram_bias
 from .pos_next import pos_next_bias
+from .repetition import repetition_start_bias
 from .slot_next import slot_start_bias
 from .speaker_recency import speaker_recency_bias
 from .speaker_trie import speaker_trie_bias
@@ -455,6 +456,15 @@ def predict(state: ModelState) -> list[float]:
             if tpc is not None:
                 for i in range(VOCAB_SIZE):
                     logits[i] += tpc[i]
+
+        # Layer 4b4b: anti-repetition — penalize first letters of
+        # non-exempt words that have already appeared in this clause.
+        # Breaks echo-loop pathology ("there there there").
+        if state.speaker_label_state == 0 and state.recent_clause_words:
+            rpb = repetition_start_bias(state.recent_clause_words)
+            if rpb is not None:
+                for i in range(VOCAB_SIZE):
+                    logits[i] += rpb[i]
 
         # Layer 4b2: phrase bigram — given the previous TWO completed
         # words, bias next word's first letter for known 3-word formulas.

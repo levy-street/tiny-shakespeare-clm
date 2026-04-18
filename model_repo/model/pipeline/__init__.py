@@ -24,6 +24,7 @@ from .formula import update_formula
 from .linguistic import update_linguistic
 from .pos import update_pos
 from .prosody import update_prosody
+from .repetition import update_repetition
 from .sentence import update_sentence
 from .speaker_memory import update_speaker_memory
 from .vocative import update_vocative
@@ -34,6 +35,7 @@ PIPELINE: list[Stage] = [
     update_basic_counters,  # Tier 1: base bookkeeping
     update_linguistic,      # Tier 2: linguistic structure
     update_pos,             # Tier 2: POS tag of last completed word
+    update_repetition,      # Tier 2: short-range word-repetition memory
     update_formula,         # Tier 2: formulaic-phrase trie position
     update_sentence,        # Tier 2/3: sentence-type FSM
     update_clause,          # Tier 2: clause-structure (clauses, subj pronoun)
