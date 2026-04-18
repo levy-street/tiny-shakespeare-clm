@@ -639,7 +639,9 @@ def predict(state: ModelState) -> list[float]:
         # At end-of-word position (letter_run >= 2 AND on_word_trie)
         # on progressively longer lines, newline becomes more likely as
         # the word's terminator. Training verse wraps ~30-50 chars;
-        # prose ~60-80.
+        # prose ~60-80. verse_score in [-3, 3]: positive = verse passage
+        # (shorter lines, earlier newline); negative = prose (longer lines,
+        # later newline). Adjust the per-bucket bumps accordingly.
         if (
             (state.letter_run_len >= 2 and state.on_word_trie)
             or (state.letter_run_len == 1
