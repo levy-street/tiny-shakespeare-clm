@@ -282,3 +282,12 @@ class ModelState(BaseModel):
     # function words and content without reaching a verb — a strong
     # syntactic signal that a verb is overdue.
     words_since_verb: int = 0
+
+    # True when the last completed word was a vocative-prefix adjective
+    # (good, sweet, gentle, fair, dear, poor, noble) AND the previous
+    # word was also a possessive-like word ("my", "thy", "good") OR a
+    # sentence break. Signals that a vocative noun (lord, sir, madam,
+    # lady, friend, master) is imminent. Reset on any clause break,
+    # verb, or non-adjective word. This captures a distinctive
+    # Shakespearean construction: ", my dear lord," / ", good sir,".
+    vocative_expectation: bool = False

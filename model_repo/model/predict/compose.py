@@ -49,6 +49,7 @@ from .startbigram import startbigram_bias
 from .starttrigram import starttrigram_bias
 from .startword import START_BIAS
 from .trigram import trigram_bias
+from .vocative import VOCATIVE_START_BIAS
 from .unigram import UNIGRAM_LOGPROBS
 from .word_trie import COMPLETE_WORDS, FORCE_END_BIAS, is_on_trie, word_trie_bias
 
@@ -216,6 +217,14 @@ def predict(state: ModelState) -> list[float]:
                 up = w[0].upper()
                 if up != w[0] and up in VOCAB_INDEX:
                     logits[VOCAB_INDEX[up]] += 1.4
+
+        # Layer 4b1b: vocative-noun first-letter bias when the state
+        # machine has detected a vocative-construction lead-in (e.g.
+        # "my dear ___" / "O sweet ___"). Only active at word-start
+        # outside speaker-label territory.
+        if state.vocative_expectation and state.speaker_label_state == 0:
+            for i in range(VOCAB_SIZE):
+                logits[i] += VOCATIVE_START_BIAS[i]
 
         # Layer 4b2: phrase bigram — given the previous TWO completed
         # words, bias next word's first letter for known 3-word formulas.

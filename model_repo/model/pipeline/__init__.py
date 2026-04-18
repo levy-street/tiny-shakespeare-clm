@@ -23,6 +23,7 @@ from .linguistic import update_linguistic
 from .pos import update_pos
 from .prosody import update_prosody
 from .sentence import update_sentence
+from .vocative import update_vocative
 
 Stage = Callable[[ModelState, int], ModelState]
 
@@ -33,6 +34,7 @@ PIPELINE: list[Stage] = [
     update_sentence,        # Tier 2/3: sentence-type FSM
     update_clause,          # Tier 2: clause-structure (clauses, subj pronoun)
     update_clause_slot,     # Tier 2: syntactic-slot state machine
+    update_vocative,        # Tier 2: vocative-expectation flag
     update_prosody,         # Tier 3: syllable / cadence tracking
     update_flow,            # Tier 3: flow / mood / cadence
 ]
