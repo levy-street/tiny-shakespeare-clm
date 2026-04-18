@@ -977,7 +977,8 @@ def predict(state: ModelState) -> list[float]:
         # (shorter lines, earlier newline); negative = prose (longer lines,
         # later newline). Adjust the per-bucket bumps accordingly.
         if (
-            (state.letter_run_len >= 2 and state.on_word_trie)
+            (state.letter_run_len >= 2 and state.on_word_trie
+                and state.word_buffer in COMPLETE_WORDS)
             or (state.letter_run_len == 1
                 and state.word_buffer in COMPLETE_WORDS)
         ):
@@ -1038,7 +1039,8 @@ def predict(state: ModelState) -> list[float]:
         # POST_OBJ=3) modulates this: a clause that hasn't yet seen
         # its verb is syntactically unfinished and shouldn't close.
         if (
-            (state.letter_run_len >= 2 and state.on_word_trie)
+            (state.letter_run_len >= 2 and state.on_word_trie
+                and state.word_buffer in COMPLETE_WORDS)
             or (state.letter_run_len == 1
                 and state.word_buffer in COMPLETE_WORDS)
         ):
