@@ -355,3 +355,22 @@ class ModelState(BaseModel):
     # Consumed by predict.imagery.word_start_bias at word-starts
     # outside speaker labels.
     imagery_density: float = 0.0
+
+    # --- Tier 2: formulaic-phrase progress ---
+    # Current node ID in a precomputed trie of common multi-word
+    # Shakespeare formulas ("I pray thee", "good my lord", "by my
+    # troth", "thou shalt not", "I do beseech thee", etc.). 0 = root
+    # (not currently inside any recognized formula match).
+    #
+    # Updated at word completion by pipeline/formula.py:
+    #   - if the completed word advances the current node in the trie,
+    #     descend deeper;
+    #   - else if it starts a fresh formula at root, jump there;
+    #   - else reset to 0.
+    # Also resets on sentence-end punctuation and speaker-turn changes.
+    #
+    # Consumed by predict/formula.py to bias the first letter (and mid-
+    # word continuation letter) of the next word toward expected
+    # completions — giving a real multi-word lookahead that the
+    # two-word phrase_bigram cannot see.
+    formula_node: int = 0

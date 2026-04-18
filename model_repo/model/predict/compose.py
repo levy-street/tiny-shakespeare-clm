@@ -50,6 +50,7 @@ from .start5gram import start5gram_bias
 from .startbigram import startbigram_bias
 from .starttrigram import starttrigram_bias
 from .startword import START_BIAS
+from .formula import formula_midword_bias, formula_start_bias
 from .imagery import imagery_start_bias
 from .topic import content_repeat_bias, topic_bias, topic_midword_bias
 from .trigram import trigram_bias
@@ -191,6 +192,20 @@ def predict(state: ModelState) -> list[float]:
         if crb is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += crb[i]
+
+    # Layer 3c1b: formulaic-phrase mid-word bias. When we're positioned
+    # inside a known multi-word formula and the current buffer is a
+    # prefix of an expected next word, bias toward the continuation
+    # letter. This gives multi-word lookahead that phrase_bigram can't.
+    if (
+        state.word_buffer
+        and state.formula_node != 0
+        and state.speaker_label_state == 0
+    ):
+        fmw = formula_midword_bias(state.formula_node, state.word_buffer)
+        if fmw is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += fmw[i]
 
 
     # Layer 3c2: archaic mid-word disambiguation — when buffer matches
@@ -345,6 +360,16 @@ def predict(state: ModelState) -> list[float]:
             if ib is not None:
                 for i in range(VOCAB_SIZE):
                     logits[i] += ib[i]
+
+        # Layer 4b3c: formulaic-phrase word-start bias. When we're
+        # inside a known multi-word formula, boost first letters of
+        # expected next words. This is a real multi-word lookahead
+        # that sits above phrase_bigram's two-word window.
+        if state.speaker_label_state == 0 and state.formula_node != 0:
+            fsb = formula_start_bias(state.formula_node)
+            if fsb is not None:
+                for i in range(VOCAB_SIZE):
+                    logits[i] += fsb[i]
 
         # Layer 4b4: topic bias — at word-start outside speaker labels,
         # use the rolling content_words tuple (last 4 content words) to

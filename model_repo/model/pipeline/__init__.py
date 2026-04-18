@@ -19,6 +19,7 @@ from .clause import update_clause
 from .clause_slot import update_clause_slot
 from .counters import update_basic_counters
 from .flow import update_flow
+from .formula import update_formula
 from .linguistic import update_linguistic
 from .pos import update_pos
 from .prosody import update_prosody
@@ -32,6 +33,7 @@ PIPELINE: list[Stage] = [
     update_basic_counters,  # Tier 1: base bookkeeping
     update_linguistic,      # Tier 2: linguistic structure
     update_pos,             # Tier 2: POS tag of last completed word
+    update_formula,         # Tier 2: formulaic-phrase trie position
     update_sentence,        # Tier 2/3: sentence-type FSM
     update_clause,          # Tier 2: clause-structure (clauses, subj pronoun)
     update_clause_slot,     # Tier 2: syntactic-slot state machine
