@@ -576,6 +576,32 @@ class ModelState(BaseModel):
     red_flag_cluster_fired: bool = False
     red_flag_vowel_fired: bool = False
 
+    # --- Tier 2: clause nesting depth (subordinators) ---
+    # Count of subordinating-conjunction openings since the last
+    # sentence-end punctuation. Each "that"/"which"/"who"/"when"/
+    # "where"/"while"/"if"/"though"/"because"/"since"/"as"/"unless"
+    # at a plausible clause-opening position increments this counter.
+    # Reset to 0 on sentence-end (. ? !) and on speaker-turn boundary.
+    # Capped at 3 for downstream stability.
+    #
+    # Motivation: `clauses_in_sentence` counts ALL clausal breaks
+    # (commas, semicolons, colons) but doesn't distinguish:
+    #   1. a list-like parallel clause ("A, B, and C")
+    #   2. a subordinate-clause nesting ("I know that which thou hast
+    #      said when he whose name...")
+    # A model with no handle on depth wanders indefinitely through
+    # subordinate clauses without knowing when to return to the
+    # main clause. This field captures true nesting depth so the
+    # predict layer can escalate sentence-end pressure when we're
+    # 2-3 subordinators deep.
+    clause_depth: int = 0
+    # Number of completed words since the most recent subordinator
+    # that incremented clause_depth. Reset to 0 on subordinator,
+    # sentence-end, and speaker-turn. Grows as we linger deep in
+    # a subordinate clause — a long words_in_subordinate at depth
+    # 2+ is a strong signal that sentence-close is overdue.
+    words_in_subordinate: int = 0
+
     # --- Tier 2: enjambment / line-end punctuation class ---
     # Classification of the final non-newline character of the
     # previous line (the char immediately before its closing \n).

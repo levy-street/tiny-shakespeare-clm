@@ -63,6 +63,7 @@ from .topic import content_repeat_bias, topic_bias, topic_midword_bias
 from .addressee import addressee_midword_bias, addressee_start_bias
 from .adjacent_repeat import adjacent_repeat_bias
 from .trie_recovery import trie_recovery_bias
+from .clause_depth import clause_depth_close_bias
 from .red_flags import red_flags_close_bias
 from .trigram import trigram_bias
 from .vocative import VOCATIVE_START_BIAS
@@ -1162,6 +1163,24 @@ def predict(state: ModelState) -> list[float]:
                 logits[VOCAB_INDEX[","]] += 3.0
             if ";" in VOCAB_INDEX:
                 logits[VOCAB_INDEX[";"]] += 1.3
+
+        # Clause-depth close pressure: when we're nested inside a
+        # subordinator clause and it's been running for several words,
+        # push toward comma/semicolon (and at depth 2+, sentence-end).
+        # Fires at word-end-on-trie; gated internally by speaker label
+        # and word completeness.
+        cd = clause_depth_close_bias(
+            state.clause_depth,
+            state.words_in_subordinate,
+            state.letter_run_len,
+            state.on_word_trie,
+            state.word_buffer,
+            state.speaker_label_state,
+            COMPLETE_WORDS,
+        )
+        if cd is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += cd[i]
 
         # At word-end-on-trie, space is the most likely next char.
         # Boost it to reflect natural word-break frequency. But only
