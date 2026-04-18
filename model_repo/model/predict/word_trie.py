@@ -2704,6 +2704,114 @@ _WORDS: tuple[str, ...] = (
     "zone",
 )
 
+# Supplemental Shakespeare-era vocabulary that the base list missed.
+# All from prior knowledge of Shakespeare's typical lexicon — no corpus
+# statistics involved. These surface forms appear in natural scenes and
+# previously went off-trie, hurting both BPC and sample quality.
+_WORDS_SUPPLEMENT: tuple[str, ...] = (
+    # Abstract / moral nouns (extremely common in Shakespeare)
+    "conscience", "consciences", "penitence", "penitent", "penitents",
+    "repentance", "patience", "patient", "audience", "providence",
+    "ignorance", "obedience", "violence", "silence", "sentence",
+    "sentences", "reverence", "experience", "insolence",
+    "eloquence", "consequence", "preference", "presence", "absence",
+    "innocence", "innocent", "innocents", "accident", "accidents",
+    "incident", "incidents",
+    "remembrance", "resemblance", "resemble", "resembles", "resembled",
+    "ignorant", "ignorantly", "insatiate", "insatiable",
+    "ingratitude", "gratitude", "attitude", "solitude", "fortitude",
+    "multitude", "multitudes", "magnitude", "latitude", "altitude",
+    # Concrete nouns / body / place
+    "trifle", "trifles", "trifled", "trifling",
+    "lineament", "lineaments", "feature", "features",
+    "tempest", "tempests", "thunder", "thunders", "thundered",
+    "lightning", "lightnings", "shadow", "shadows", "sunset", "sunrise",
+    "chamber", "chambers", "parlour", "window", "windows",
+    "chapel", "chapels", "palace", "palaces", "castle", "castles",
+    "dungeon", "dungeons", "prison", "prisons", "prisoner", "prisoners",
+    "crown", "crowns", "crowned", "sceptre", "sceptres",
+    "garment", "garments", "mantle", "mantles", "cloak", "cloaks",
+    "banner", "banners",
+    # Verbs / archaic verbs
+    "arraign", "arraigned", "arraigns", "arraigning",
+    "absolve", "absolved", "absolves", "absolving",
+    "beseech", "beseeches", "beseeched", "beseeching",
+    "bequeath", "bequeathed", "bequeaths",
+    "behoof", "behoves", "behove", "behold", "beholds", "beheld",
+    "bethink", "bethinks", "bethought",
+    "belie", "belied", "belies", "belying",
+    "bewail", "bewailed", "bewails", "bewailing",
+    "beware", "bewares",
+    "banish", "banished", "banishes", "banishing", "banishment",
+    "embrace", "embraced", "embraces", "embracing",
+    "perchance", "peradventure",
+    # Adjectives / qualities
+    "hollowly", "wondrous", "wondrously", "piteous", "piteously",
+    "grievous", "grievously", "tedious", "tediously",
+    "odious", "odiously", "envious", "enviously",
+    "virtuous", "virtuously", "valorous", "valiantly", "valiant",
+    "courageous", "courageously", "curious", "curiously",
+    "amorous", "amorously", "glorious", "gloriously",
+    "marvellous", "marvellously", "hideous", "hideously",
+    "mutually", "mutual", "mutuality",
+    "offenceful", "offenceless", "dutiful", "dutifully",
+    "lawful", "lawfully", "lawless",
+    "spiteful", "spitefully",
+    # Adverbs
+    "straightway", "straightaway", "withal", "therewithal",
+    "thereof", "thereto", "thereby", "therewith", "thereafter",
+    "whereof", "whereto", "whereby", "wherewith", "whereupon",
+    "howsoever", "whatsoever", "whosoever", "wheresoever",
+    "wherever", "whenever", "whoever", "whatever",
+    "aforetime", "erewhile", "heretofore",
+    # Conjunctions / rhetoric
+    "notwithstanding", "albeit", "howbeit", "nevertheless",
+    "moreover", "furthermore", "likewise", "therefore",
+    # Contractions / common old spellings
+    "o'clock", "a'nights", "a'days",
+    # Misc Shakespeare flavour
+    "quoth", "marry", "faith", "troth", "betroth", "betrothed",
+    "espouse", "espoused", "espouses", "espousal", "espousals",
+    "espial", "espied", "espy", "espies",
+    "greediness", "giddiness", "readiness", "weariness", "heaviness",
+    "bitterness", "kindness", "wickedness", "willingness",
+    "sleepiness", "darkness", "sweetness", "goodness", "madness",
+    "sickness", "tenderness", "wilderness", "barrenness",
+    "enforcement", "embarrassment", "abasement", "astonishment",
+    "acknowledgment", "announcement", "appointment", "arrangement",
+    "commandment", "commandments", "commitment", "confinement",
+    "government", "governments", "ornament", "parliament",
+    "predicament", "statement", "temperament",
+    # Plurals of already-in-trie bases the plural rule skipped
+    "eyes", "hands", "feet", "ears", "hearts", "minds", "souls",
+    "thoughts", "deeds", "words", "names", "lives", "wives",
+    "kings", "queens", "princes", "princesses", "lords", "ladies",
+    "friends", "enemies", "knights", "fools", "stars", "skies",
+    "tears", "fears", "hopes", "dreams", "cares", "griefs",
+    "prayers", "curses", "blessings", "joys", "wounds", "swords",
+    "daggers", "arrows", "bows", "shields", "crowns", "scepters",
+    "angels", "devils", "saints", "spirits", "ghosts",
+    # Proper names of additional characters/places
+    "aumerle", "bagot", "blunt", "bushy", "carlisle", "gloucester",
+    "hotspur", "lancaster", "mortimer", "northumberland", "percy",
+    "plantagenet", "richard", "richmond", "salisbury", "warwick",
+    "westmoreland", "york", "yorkshire",
+    "denmark", "fortinbras", "laertes", "ophelia", "polonius",
+    "horatio", "rosencrantz", "guildenstern",
+    "malvolio", "antonio", "bassanio", "shylock", "portia",
+    "falstaff", "hal", "henry", "harry",
+    "lear", "cordelia", "goneril", "regan", "edmund", "edgar",
+    "desdemona", "othello", "iago", "cassio",
+    "duncan", "macbeth", "banquo", "fleance",
+    "romeo", "juliet", "mercutio", "benvolio", "tybalt",
+    "capulet", "montague", "friar",
+    "puck", "titania", "bottom", "hermia",
+    # Exclamations
+    "welladay", "welaway", "heyday",
+)
+_WORDS = _WORDS + _WORDS_SUPPLEMENT
+
+
 # Build a trie: prefix -> {next_char: count}
 # A "count" is a small integer used to derive bias magnitude.
 _TRIE: dict[str, dict[str, int]] = {}

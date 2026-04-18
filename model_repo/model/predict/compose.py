@@ -100,6 +100,7 @@ def predict(state: ModelState) -> list[float]:
 
 
 
+
     # Layer 3b3: word-start bigram bias — at letter_run_len == 1, the
     # second letter is heavily conditioned on the first (word-start
     # distributions differ from mid-word). Applies only when speaker
@@ -708,6 +709,7 @@ def predict(state: ModelState) -> list[float]:
                 logits[VOCAB_INDEX["\n"]] += 2.5
             elif csn >= 22:
                 logits[VOCAB_INDEX["\n"]] += 1.2
+
         # Sentence-type-dependent end-punct ratios. Summed ratios stay
         # near the original (1.0 + 0.3 + 0.3 = 1.6) so total end-punct
         # mass stays calibrated; we reshuffle within the budget.
