@@ -1553,7 +1553,7 @@ def predict(state: ModelState) -> list[float]:
                 # complete word: it's growing toward a longer word.
                 # Penalize premature word-terminators. Catches
                 # "ti/dou/tram"-style early-space mistakes.
-                scale = 2.5 if state.letter_run_len == 2 else 1.7
+                scale = 1.3 if state.letter_run_len == 2 else 1.0
                 logits[VOCAB_INDEX[" "]] -= 2.4 * scale
                 if "," in VOCAB_INDEX:
                     logits[VOCAB_INDEX[","]] -= 1.7 * scale
