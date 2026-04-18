@@ -264,7 +264,7 @@ def _build_bias_vectors() -> dict[str, list[float]]:
 START4GRAM_BIAS: dict[str, list[float]] = _build_bias_vectors()
 
 
-_GLOBAL_SCALE = 0.9
+_GLOBAL_SCALE = 1.3
 
 
 def start4gram_bias(first_three: str) -> list[float] | None:
