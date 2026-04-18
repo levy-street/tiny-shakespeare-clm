@@ -328,6 +328,40 @@ _MIDWORD_GAIN = 0.35
 _MIDWORD_MAX_SCALE = 0.60
 
 
+def content_repeat_bias(
+    buffer: str, content_words: tuple[str, ...]
+) -> list[float] | None:
+    """At mid-word position, if the current buffer is a strict prefix of
+    a word in the recent content_words window, boost the letter that
+    would continue buffer toward that word. Captures Shakespeare's
+    motif-repetition texture ("Never, never, never, never, never";
+    "Blood will have blood"; lexical echoes within a scene).
+
+    Applies equally to all 4 slots with decaying weight — the most-
+    recent slot contributes most. Returns None if no match.
+    """
+    if not buffer or not content_words:
+        return None
+    if len(buffer) < 2:
+        return None
+    vec = [0.0] * VOCAB_SIZE
+    hit = False
+    for i, w in enumerate(content_words[:4]):
+        if (
+            len(w) > len(buffer)
+            and w.startswith(buffer)
+        ):
+            nxt = w[len(buffer)]
+            if nxt in VOCAB_INDEX:
+                # Decay per-slot; most-recent is strongest.
+                weight = (0.55, 0.38, 0.24, 0.15)[i]
+                vec[VOCAB_INDEX[nxt]] += weight
+                hit = True
+    if not hit:
+        return None
+    return vec
+
+
 def topic_midword_bias(
     buffer: str, content_words: tuple[str, ...]
 ) -> list[float] | None:

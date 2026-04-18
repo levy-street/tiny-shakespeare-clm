@@ -50,7 +50,7 @@ from .start5gram import start5gram_bias
 from .startbigram import startbigram_bias
 from .starttrigram import starttrigram_bias
 from .startword import START_BIAS
-from .topic import topic_bias, topic_midword_bias
+from .topic import content_repeat_bias, topic_bias, topic_midword_bias
 from .trigram import trigram_bias
 from .vocative import VOCATIVE_START_BIAS
 from .unigram import UNIGRAM_LOGPROBS
@@ -183,6 +183,13 @@ def predict(state: ModelState) -> list[float]:
         if tmw is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += tmw[i]
+        # Content-word repetition: direct prefix-match boost for recent
+        # content words (motif repetition). Runs alongside topic-midword
+        # which is distribution-averaged; this is sharper.
+        crb = content_repeat_bias(state.word_buffer, state.content_words)
+        if crb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += crb[i]
 
 
     # Layer 3c2: archaic mid-word disambiguation — when buffer matches
