@@ -1116,9 +1116,9 @@ def predict(state: ModelState) -> list[float]:
             else:              # HAS_SUBJ / FRESH
                 slot_mul = 0.85
             if "," in VOCAB_INDEX:
-                logits[VOCAB_INDEX[","]] += 5.5 * slot_mul
+                logits[VOCAB_INDEX[","]] += 4.5 * slot_mul
             if ";" in VOCAB_INDEX:
-                logits[VOCAB_INDEX[";"]] += 2.5 * slot_mul
+                logits[VOCAB_INDEX[";"]] += 1.9 * slot_mul
         # Also off-trie with a longer min-length: archaic/proper words
         # can certainly be followed by ",".
         elif (
