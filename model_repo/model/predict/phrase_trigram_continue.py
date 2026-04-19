@@ -548,6 +548,211 @@ _EXPECT: dict[tuple[str, str, str], tuple[tuple[str, int], ...]] = {
     ("mark", "you", ","): (
         ("sir", 2), ("my", 2), ("now", 2),
     ),
+    # --- More 3-word contexts ---
+    ("i", "am", "a"): (
+        ("man", 3), ("gentleman", 2), ("soldier", 2), ("fool", 2),
+        ("woman", 2), ("true", 2), ("poor", 2),
+    ),
+    ("i", "am", "the"): (
+        ("king", 2), ("duke", 2), ("man", 2), ("son", 2), ("father", 2),
+    ),
+    ("i", "am", "thy"): (
+        ("father", 3), ("friend", 2), ("son", 2), ("master", 2),
+    ),
+    ("i", "am", "no"): (
+        ("coward", 2), ("traitor", 2), ("woman", 2), ("fool", 2),
+        ("more", 2),
+    ),
+    ("i", "am", "not"): (
+        ("a", 3), ("the", 2), ("afraid", 2), ("so", 2), ("mad", 2),
+        ("yet", 2), ("well", 2), ("angry", 2), ("merry", 2),
+    ),
+    ("i", "am", "so"): (
+        ("glad", 2), ("sorry", 2), ("much", 2), ("weary", 2), ("afraid", 2),
+    ),
+    ("i", "will", "not"): (
+        ("go", 2), ("do", 2), ("be", 2), ("speak", 2), ("stay", 2),
+        ("have", 2), ("hear", 2), ("leave", 2), ("trust", 2),
+    ),
+    ("i", "shall", "not"): (
+        ("go", 2), ("do", 2), ("be", 2), ("speak", 2), ("live", 2),
+        ("have", 2),
+    ),
+    ("i", "do", "not"): (
+        ("know", 3), ("think", 2), ("doubt", 2), ("love", 2), ("care", 2),
+        ("mean", 2), ("fear", 2), ("see", 2), ("hear", 2),
+    ),
+    ("i", "would", "not"): (
+        ("have", 2), ("be", 2), ("do", 2), ("for", 2), ("speak", 2),
+        ("hear", 2),
+    ),
+    ("i", "must", "not"): (
+        ("be", 2), ("go", 2), ("speak", 2), ("have", 2), ("stay", 2),
+    ),
+    ("i", "pray", "thee"): (
+        (",", 3), (".", 2), ("tell", 2), ("speak", 2), ("go", 2),
+        ("stay", 2), ("come", 2), ("let", 2), ("good", 2),
+    ),
+    ("i", "pray", "you"): (
+        (",", 3), (".", 2), ("tell", 2), ("speak", 2), ("go", 2),
+        ("stay", 2), ("let", 2), ("sir", 2), ("good", 2),
+    ),
+    ("i", "beseech", "you"): (
+        (",", 3), (".", 2), ("sir", 2), ("my", 2), ("let", 2),
+    ),
+    ("i", "beseech", "thee"): (
+        (",", 2), (".", 2), ("let", 2),
+    ),
+    ("i", "prithee", ","): (
+        ("speak", 2), ("tell", 2), ("peace", 2), ("come", 2), ("go", 2),
+        ("stay", 2), ("good", 2), ("now", 2),
+    ),
+    # Good/sweet/dear + possessive + noun
+    ("good", "my", "lord"): (
+        (",", 3), (".", 2), ("!", 2),
+    ),
+    ("sweet", "my", "lord"): (
+        (",", 2), (".", 2),
+    ),
+    ("my", "good", "lord"): (
+        (",", 3), (".", 2), ("!", 2),
+    ),
+    ("my", "dear", "lord"): (
+        (",", 2), (".", 2),
+    ),
+    ("my", "noble", "lord"): (
+        (",", 2), (".", 2),
+    ),
+    ("my", "gracious", "lord"): (
+        (",", 2), (".", 2),
+    ),
+    # Thou/thee archaic frames
+    ("thou", "art", "a"): (
+        ("fool", 2), ("villain", 2), ("man", 2), ("traitor", 2),
+        ("knave", 2), ("rascal", 2), ("coward", 2),
+    ),
+    ("thou", "art", "my"): (
+        ("friend", 2), ("father", 2), ("love", 2), ("son", 2),
+    ),
+    ("thou", "art", "not"): (
+        ("a", 2), ("the", 2), ("so", 2), ("my", 2),
+    ),
+    ("thou", "hast", "a"): (
+        ("good", 2), ("friend", 2), ("fair", 2), ("brave", 2),
+    ),
+    ("thou", "hast", "no"): (
+        ("more", 2), ("cause", 2), ("friend", 2),
+    ),
+    ("thou", "hast", "done"): (
+        ("me", 2), ("well", 2), (",", 2),
+    ),
+    ("thou", "dost", "not"): (
+        ("know", 2), ("love", 2), ("speak", 2),
+    ),
+    ("thou", "shalt", "not"): (
+        ("go", 2), ("speak", 2), ("live", 2), ("die", 2), ("have", 2),
+        ("be", 2),
+    ),
+    ("thou", "wilt", "not"): (
+        ("go", 2), ("speak", 2), ("be", 2), ("hear", 2),
+    ),
+    # Vocative expansions
+    ("o", "my", "lord"): (
+        (",", 3), (".", 2), ("!", 2),
+    ),
+    ("o", "my", "love"): (
+        (",", 2), (".", 2), ("!", 2),
+    ),
+    ("o", "my", "soul"): (
+        (",", 2), ("!", 2),
+    ),
+    ("o", "my", "heart"): (
+        ("!", 2), (",", 2),
+    ),
+    ("o", "my", "god"): (
+        ("!", 2), (",", 2),
+    ),
+    ("o", "my", "friend"): (
+        (",", 2), ("!", 2),
+    ),
+    ("o", "thou", "most"): (
+        ("noble", 2), ("blessed", 2), ("wretched", 2), ("holy", 2),
+    ),
+    # Auxiliary patterns
+    ("he", "is", "a"): (
+        ("man", 2), ("good", 2), ("villain", 2), ("coward", 2),
+        ("gentleman", 2),
+    ),
+    ("he", "is", "not"): (
+        ("a", 2), ("the", 2), ("so", 2), ("yet", 2), ("here", 2),
+    ),
+    ("she", "is", "a"): (
+        ("woman", 2), ("maid", 2), ("good", 2), ("fair", 2),
+    ),
+    ("she", "is", "not"): (
+        ("a", 2), ("the", 2), ("so", 2), ("yet", 2),
+    ),
+    ("it", "is", "a"): (
+        ("good", 2), ("pretty", 2), ("thing", 2), ("matter", 2), ("man", 2),
+        ("goodly", 2),
+    ),
+    ("it", "is", "not"): (
+        ("so", 2), ("a", 2), ("the", 2), ("yet", 2), ("in", 2), ("for", 2),
+    ),
+    ("it", "is", "the"): (
+        ("king", 2), ("duke", 2), ("lord", 2), ("day", 2), ("night", 2),
+        ("cause", 2), ("time", 2),
+    ),
+    ("there", "is", "a"): (
+        ("man", 2), ("thing", 2), ("letter", 2), ("noble", 2),
+    ),
+    ("there", "is", "no"): (
+        ("more", 2), ("man", 2), ("help", 2), ("matter", 2), ("fear", 2),
+        ("cause", 2),
+    ),
+    # "as you / as i" frames
+    ("as", "you", "are"): (
+        ("a", 2), ("my", 2), ("the", 2), ("so", 2),
+    ),
+    ("as", "i", "have"): (
+        ("said", 2), ("seen", 2), ("been", 2), ("done", 2), ("heard", 2),
+    ),
+    ("as", "i", "do"): (
+        (",", 2), ("live", 2), ("love", 2),
+    ),
+    # Dialogue openings
+    ("come", ",", "come"): (
+        (",", 2), (".", 2), ("sir", 2),
+    ),
+    ("peace", ",", "peace"): (
+        ("!", 2), (",", 2),
+    ),
+    ("ay", ",", "ay"): (
+        ("!", 2), (",", 2), (".", 2),
+    ),
+    ("no", ",", "no"): (
+        ("!", 2), (",", 2), (".", 2),
+    ),
+    ("well", ",", "well"): (
+        (",", 2), (".", 2),
+    ),
+    # Speaker-address follow-ons
+    ("my", "lord", ","): (
+        ("i", 2), ("the", 2), ("what", 2), ("your", 2),
+    ),
+    ("my", "liege", ","): (
+        ("i", 2), ("the", 2),
+    ),
+    ("good", "sir", ","): (
+        ("i", 2), ("pray", 2), ("let", 2), ("what", 2),
+    ),
+    # "I'll" / "thou'lt" frames
+    ("i", "'ll", "be"): (
+        (" ", 2), ("a", 2), ("the", 2), ("with", 2), ("gone", 2),
+    ),
+    ("i", "'ll", "go"): (
+        (" ", 2), ("with", 2), ("to", 2),
+    ),
 }
 
 
