@@ -59,6 +59,7 @@ from .suffix_completion import suffix_completion_bias
 from .verb_word_trie import verb_word_trie_bias
 from .object_word_trie import object_word_trie_bias
 from .post_obj_word_trie import post_obj_word_trie_bias
+from .subject_word_trie import subject_word_trie_bias
 from .slot_next import slot_start_bias
 from .speaker_recency import speaker_recency_bias
 from .speaker_trie import speaker_trie_bias
@@ -454,6 +455,29 @@ def predict(state: ModelState) -> list[float]:
         if pwt is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += pwt[i]
+
+    # Layer 3c1-subj: subject / clause-opener word-trie bias. Fourth
+    # corner of the clause-FSM-aware predict family. Fires at
+    # clause_slot == FRESH (shortly after a sentence / clausal break)
+    # and biases toward subject pronouns, determiners opening subject
+    # NPs, wh-words, interjections, temporal/conditional openers, and
+    # short negations.
+    if (
+        state.word_buffer
+        and state.speaker_label_state == 0
+        and state.clause_slot == 0
+        and state.chars_since_sentence_end <= 20
+    ):
+        swt = subject_word_trie_bias(
+            state.word_buffer,
+            state.letter_run_len,
+            state.clause_slot,
+            state.speaker_label_state,
+            state.chars_since_sentence_end,
+        )
+        if swt is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += swt[i]
 
     # Layer 3c1-trans: transitivity mid-word bias. When an object is
     # expected AND the current buffer is a short determiner-prefix
