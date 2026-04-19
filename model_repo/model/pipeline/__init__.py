@@ -47,6 +47,7 @@ from .negation import update_negation
 from .pos import update_pos
 from .proper_noun import update_proper_noun
 from .proper_noun_memory import update_proper_noun_memory
+from .question_answer import update_question_answer
 from .caesura import update_caesura
 from .prosody import update_prosody
 from .referent import update_referent
@@ -88,6 +89,7 @@ PIPELINE: list[Stage] = [
     update_antithesis,      # Tier 2/3: antithesis / rhetorical-contrast state
     update_repetition,      # Tier 2: short-range word-repetition memory
     update_formula,         # Tier 2: formulaic-phrase trie position
+    update_question_answer, # Tier 3: cross-turn WH-class answer expectation
     update_sentence,        # Tier 2/3: sentence-type FSM
     update_clause,          # Tier 2: clause-structure (clauses, subj pronoun)
     update_clause_slot,     # Tier 2: syntactic-slot state machine

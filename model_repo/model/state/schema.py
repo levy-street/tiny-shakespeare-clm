@@ -2199,6 +2199,33 @@ class ModelState(BaseModel):
     # by 1 per consonant. Does not increment on apostrophe.
     buffer_consonant_run: int = 0
 
+    # --- Discourse tier: expected_answer_type ---------------------------
+    # Cross-turn discourse link. When the previous turn ended with a
+    # question whose first sentence-opener was a WH-word, the *next*
+    # turn's opening word is tightly constrained to answer-type
+    # vocabulary. E.g., "Where art thou?" → "Here", "In the garden";
+    # "Why dost thou weep?" → "Because", "For", "Since"; "Art thou
+    # well?" → "Ay", "No", "Indeed". This field carries the expected
+    # answer class across the turn boundary so the predict layer can
+    # sharpen the opener.
+    #
+    # Values:
+    #   0 ANS_NONE        (no pending answer)
+    #   1 ANS_YESNO       (aux-led yes/no question: is/art/hast/dost/...)
+    #   2 ANS_WHAT        (what / wherein)
+    #   3 ANS_WHERE       (where / whither / whence)
+    #   4 ANS_WHEN        (when)
+    #   5 ANS_WHY         (why / wherefore)
+    #   6 ANS_HOW         (how)
+    #   7 ANS_WHO         (who / whom / whose)
+    #   8 ANS_WHICH       (which / what + [noun])
+    #
+    # Set on `?` emission at end of sentence (pipeline/question_answer
+    # detects the WH-class from curr_sentence_first_word); carried
+    # across the double-newline turn boundary; cleared on the first
+    # word-completion of the response turn.
+    pending_question_type: int = 0
+
     # --- Flow tier: oath_mode -------------------------------------------
     # [0, 1] rolling field capturing solemn-oath texture. Bumps on oath
     # openers ("swear", "swore", "sworn", "oath", "pledge", "vow",

@@ -97,6 +97,7 @@ from .start4gram import start4gram_bias
 from .tonal import tonal_start_bias
 from .turn_opener import TURN_OPENER_START_BIAS
 from .answer_opener import answer_opener_start_bias
+from .answer_expectation import answer_expectation_start_bias
 from .dialogue_opener import dialogue_adjacency_bias, dialogue_pacing_bias
 from .start5gram import start5gram_bias
 from .startbigram import startbigram_bias
@@ -2147,6 +2148,23 @@ def predict(state: ModelState) -> list[float]:
         if aob is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += aob[i]
+
+        # Layer 4b6bb: WH-class-specific answer expectation. When the
+        # pipeline identified the prior turn's closing "?" as a
+        # specific WH-class (where / why / how / ...), this bias
+        # targets the new turn's first letter with a class-specific
+        # table that is tighter than the generic answer_opener one.
+        aeb = answer_expectation_start_bias(
+            state.pending_question_type,
+            state.words_in_turn,
+            state.sentences_in_turn,
+            state.speaker_label_state,
+            state.letter_run_len,
+            state.word_buffer,
+        )
+        if aeb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += aeb[i]
 
         # Layer 4b6c: dialogue-adjacency amplifier.  Additive with
         # answer_opener; contributes stichomythia / long-prior-turn /
