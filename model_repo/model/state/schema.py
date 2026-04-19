@@ -553,6 +553,36 @@ class ModelState(BaseModel):
     # passages or at the first line of a turn.
     verse_line_run: int = 0
 
+    # --- Tier 3: enjambment / line-flow texture ---
+    # Rolling [0, 1] float — higher = the recent verse lines have been
+    # ENJAMBED (ran over to the next line without terminal punctuation);
+    # lower = the recent lines have been END-STOPPED (closed with
+    # ., ?, !, :, ;, or , before the newline).
+    #
+    # Shakespeare's verse texture shifts between sections of
+    # end-stopped closed-couplet rhythm ("And this our life exempt
+    # from public haunt / Finds tongues in trees, ...") and sections
+    # of enjambed speech-like flow ("Now is the winter of our
+    # discontent / Made glorious summer by this sun of York"). The
+    # current line's expected ending depends heavily on which
+    # texture is active.
+    #
+    # Updated on newline closing a non-empty, non-speaker-label line:
+    #   If the char immediately before the \n was a letter / y-vowel
+    #     → line was enjambed; pull density up by ENJAMBMENT_UP.
+    #   Else (. , ; : ? ! - etc.) → line was end-stopped; pull density
+    #     down by ENJAMBMENT_DOWN.
+    # Reset to 0.5 on speaker-turn boundary (consecutive_newlines >= 2).
+    # Initializes to 0.5 (neutral) so downstream consumers can center-
+    # normalize without systematically biasing one direction before any
+    # verse lines have landed.
+    enjambment_density: float = 0.5
+    # Whether the LAST closed verse-plausible line was enjambed (True)
+    # or end-stopped (False). A 1-bit companion to the rolling density
+    # — the immediately preceding line is the strongest local anchor
+    # for the current line's expected closure. Reset on speaker-turn.
+    prev_line_enjambed: bool = False
+
     # --- Tier 2/3: addressee / vocative memory ---
     # The most recent vocative noun used (lowercased) to address the
     # interlocutor within the current speaker turn. Empty when none

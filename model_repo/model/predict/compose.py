@@ -39,6 +39,7 @@ from .anaphora import anaphora_midword_bias, anaphora_start_bias
 from .archaic import archaic_midword_bias, archaic_start_bias
 from .bigram import bigram_bias
 from .cadence import cadence_wordend_bias
+from .enjambment import enjambment_wordend_bias
 from .meter import pentameter_wordend_bias
 from .context import CTX_BIAS_VECTORS, context_key
 from .letter3 import letter3_bias
@@ -2280,6 +2281,19 @@ def predict(state: ModelState) -> list[float]:
                 if pb is not None:
                     for i in range(VOCAB_SIZE):
                         logits[i] += pb[i]
+                # Enjambment-density: recent lines enjambed → boost \n
+                # direct; end-stopped → boost terminal punct. Fires
+                # only in verse, inside the line-end zone.
+                eb = enjambment_wordend_bias(
+                    state.enjambment_density,
+                    state.verse_line_run,
+                    state.verse_score,
+                    state.speaker_label_state,
+                    state.chars_since_newline,
+                )
+                if eb is not None:
+                    for i in range(VOCAB_SIZE):
+                        logits[i] += eb[i]
             elif state.letter_run_len >= 5:
                 # Non-complete on-trie buffer that's gotten long (5+).
                 # Less confident but still plausible to end.
