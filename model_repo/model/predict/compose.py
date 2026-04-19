@@ -109,6 +109,7 @@ from .double_cons_start import double_consonant_penalty
 from .red_flags import red_flags_close_bias
 from .negation import negation_start_bias
 from .case_slot import case_slot_start_bias
+from .lament import lament_start_bias, lament_sentence_start_bias
 from .line_break_bias import line_break_newline_bias
 from .trigram import trigram_bias
 from .vocative import VOCATIVE_START_BIAS
@@ -1169,6 +1170,38 @@ def predict(state: ModelState) -> list[float]:
         if csb is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += csb[i]
+
+        # Layer 4b3c-lament: lament-register word-start bias. When the
+        # rolling grief texture (lament_register) is high (>= 0.35),
+        # boost first letters of the grief lexicon (woe/sorrow/grief/
+        # alas/tears/mourn/pity/heart/heavy/death/dread/lament). This
+        # is a Tier 3 flow axis — distinct from tonal_weight (valence)
+        # by targeting the *specific* lexicon of mourning rather than
+        # generic dark words. At sentence-start, additionally lift
+        # "O"/"A"/"W" (the apostrophe of grief: "O woe!", "Alas!",
+        # "Woe is me").
+        lsb = lament_start_bias(
+            state.lament_register,
+            state.speaker_label_state,
+        )
+        if lsb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += lsb[i]
+
+        # Sentence-first-letter extra boost for "O"/"A"/"W" capitals
+        # when lament is active.
+        if (
+            state.words_in_sentence == 0
+            and not state.word_buffer
+            and state.letter_run_len == 0
+        ):
+            lssb = lament_sentence_start_bias(
+                state.lament_register,
+                state.speaker_label_state,
+            )
+            if lssb is not None:
+                for i in range(VOCAB_SIZE):
+                    logits[i] += lssb[i]
 
         # Layer 4b3b2: 2nd-person addressing-register word-start bias.
         # When the register is established (|register| > 0.5), nudge

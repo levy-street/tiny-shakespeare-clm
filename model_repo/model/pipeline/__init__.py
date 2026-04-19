@@ -31,6 +31,7 @@ from .counters import update_basic_counters
 from .doubt import update_doubt
 from .flow import update_flow
 from .formula import update_formula
+from .lament import update_lament
 from .linguistic import update_linguistic
 from .list_structure import update_list_structure
 from .negation import update_negation
@@ -78,6 +79,7 @@ PIPELINE: list[Stage] = [
     update_referent,        # Tier 2: anaphoric referent gender tracking
     update_topic_tracker,   # Tier 3: scene-topic semantic cluster memory
     update_doubt,           # Tier 3: doubt/assertion register texture
+    update_lament,          # Tier 3: lament/grief texture register
     update_turn_progress,   # Tier 2/3: words/sentences/lines in current turn
     update_anaphora,        # Tier 2: line-starter anaphora tracking
     update_alliteration,    # Tier 2/3: within-line alliteration memory

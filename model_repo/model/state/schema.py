@@ -1497,3 +1497,49 @@ class ModelState(BaseModel):
     # Words elapsed since case_slot became non-NONE; 0 on trigger.
     # Capped at 5. Reset with case_slot.
     case_wait_words: int = 0
+
+    # --- Tier 3: lament register (grief / plaintive texture) ---
+    # A rolling [0, 1] float tracking whether the recent text is in
+    # lament mode — the specific moaning/mourning texture of grief
+    # passages ("Alas, poor Yorick!", "O my dear father!", "Woe is
+    # me, to have seen what I have seen"). This is distinct from
+    # other flow axes:
+    #   - tonal_weight (dark/light valence):   lament IS typically
+    #                                          dark, but tonal_weight
+    #                                          covers many dark things
+    #                                          (violence, disease, war)
+    #                                          that aren't lament.
+    #   - emotional_intensity (heat/outburst): lament is soft,
+    #                                          drawn-out grief — the
+    #                                          opposite of outburst heat.
+    #   - invocation_mode (declamatory):        grand rhetorical
+    #                                          declamation may be
+    #                                          lament-adjacent but
+    #                                          also includes praise/
+    #                                          exhortation.
+    #   - doubt_register:                       orthogonal axis.
+    #
+    # Bumps per completed word (additive, clipped to [0, 1]):
+    #   Lament-core     (+0.18 each):
+    #       alas, alack, woe, sorrow, grief, weep, wept, sigh, sighs,
+    #       tears, mourn, lament, pity, piteous, wretched, wretch,
+    #       forlorn, doleful, sorrowful, sad
+    #   Lament-halo     (+0.10 each):
+    #       heart, heavy, dead, death, dying, lost, loss, poor,
+    #       cursed, cursed, dread, pain
+    #   Anti-lament     (-0.15 each):
+    #       joy, mirth, merry, glad, laugh, laughed, smile, smiled,
+    #       happy, gay, sport, revel
+    #   Anti-lament-mild (-0.05 each):
+    #       strike, march, charge, fight, seize, slay (action verbs
+    #       — lament is contemplative, not kinetic)
+    # Sentence-end "!": -0.02 (lament tends to moan rather than shout)
+    # Decay: 0.92 per just_finished_word.
+    # Speaker turn: *0.35 (some carry-over; new character usually shifts
+    #                      register).
+    #
+    # Consumed by predict/lament.py at word-start: when register >=
+    # 0.35, boost grief-lexicon first letters (a, w, s, g, h, t, m,
+    # p, d, l) and modestly lift "O" at sentence-start (apostrophe
+    # of grief: "O woe!", "O grief!", "O heaven!").
+    lament_register: float = 0.0
