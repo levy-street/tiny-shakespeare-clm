@@ -133,6 +133,25 @@ def _log_softmax(logits: list[float]) -> list[float]:
     return [x - logz for x in logits]
 
 
+def _log_softmax_smoothed(logits: list[float], floor: float) -> list[float]:
+    """Log-softmax with a uniform-probability floor (label smoothing).
+
+    After normalization, blends with a uniform distribution:
+      p' = (1 - V*floor) * p + floor
+    ensuring every token has at least `floor` probability. Improves BPC
+    on tail/surprise tokens where layer biases would otherwise drive
+    the posterior to near-zero.
+    """
+    V = len(logits)
+    if floor <= 0.0:
+        return _log_softmax(logits)
+    m = max(logits)
+    exps = [math.exp(x - m) for x in logits]
+    z = sum(exps)
+    c = 1.0 - V * floor
+    return [math.log(c * (e / z) + floor) for e in exps]
+
+
 def predict(state: ModelState) -> list[float]:
     # Layer 1: unigram.
     logits = list(UNIGRAM_LOGPROBS)
@@ -2437,4 +2456,4 @@ def predict(state: ModelState) -> list[float]:
         T = 1.10
     if T != 1.0:
         logits = [x / T for x in logits]
-    return _log_softmax(logits)
+    return _log_softmax_smoothed(logits, 1.5e-4)
