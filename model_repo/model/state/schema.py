@@ -1650,3 +1650,28 @@ class ModelState(BaseModel):
     # complement appears or when wait exceeds a small budget.
     verb_complement_class: int = 0
     vcc_wait_words: int = 0
+
+    # --- Tier 2: parenthetical-dash scope tracking ---
+    # Shakespeare uses "--" (374× in train) as a mid-sentence
+    # parenthetical break, often followed by a newline and a
+    # capitalised new-clause opener ("--\nFor, look you..." /
+    # "--\nBut...").  Nothing in the existing state tracks whether
+    # we're inside an unclosed "--" aside, so predict layers can't
+    # condition on "we just opened a dash" vs "we just closed one".
+    #
+    # `in_dash_aside` flips True on the second '-' of a "--" run and
+    # flips False on:
+    #   * another "--" (closing pair),
+    #   * sentence-end punctuation ('.?!'),
+    #   * a speaker-turn boundary (consecutive_newlines >= 2).
+    #
+    # `chars_since_dash_open` counts characters emitted since the
+    # opening '--' was completed; used by predict layers to decay
+    # the after-dash bias.
+    #
+    # `words_since_dash_open` counts completed words since dash open;
+    # dash asides are typically short (1–5 words), so a high count is
+    # a signal the aside is winding down.
+    in_dash_aside: bool = False
+    chars_since_dash_open: int = 0
+    words_since_dash_open: int = 0

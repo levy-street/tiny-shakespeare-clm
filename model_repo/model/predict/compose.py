@@ -80,6 +80,7 @@ from .answer_opener import answer_opener_start_bias
 from .start5gram import start5gram_bias
 from .startbigram import startbigram_bias
 from .onset_cluster import onset_cluster_bias
+from .dash_aside import dash_aside_open_bias, dash_aside_close_bias
 from .starttrigram import starttrigram_bias
 from .startword import START_BIAS
 from .formula import formula_midword_bias, formula_start_bias
@@ -1868,6 +1869,29 @@ def predict(state: ModelState) -> list[float]:
     if lbb is not None:
         for i in range(VOCAB_SIZE):
             logits[i] += lbb[i]
+
+    # Parenthetical-dash aside bias: right after "--", strongly bias
+    # toward newline/space + discourse-opener caps. And after 3+ words
+    # inside an unclosed aside, boost "-" after space to set up "--"
+    # closure. Reads state.in_dash_aside (set by pipeline/dash_aside.py).
+    daob = dash_aside_open_bias(
+        state.in_dash_aside,
+        state.chars_since_dash_open,
+        state.speaker_label_state,
+    )
+    if daob is not None:
+        for i in range(VOCAB_SIZE):
+            logits[i] += daob[i]
+    dacb = dash_aside_close_bias(
+        state.in_dash_aside,
+        state.words_since_dash_open,
+        state.letter_run_len,
+        state.last_char,
+        state.speaker_label_state,
+    )
+    if dacb is not None:
+        for i in range(VOCAB_SIZE):
+            logits[i] += dacb[i]
 
 
     # After apostrophe, the bias depends on what preceded the apostrophe:

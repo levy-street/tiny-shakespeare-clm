@@ -29,6 +29,7 @@ from .verb_class import update_verb_class
 from .verb_complement import update_verb_complement
 from .word_form import update_word_form
 from .counters import update_basic_counters
+from .dash_aside import update_dash_aside
 from .doubt import update_doubt
 from .drift import update_drift
 from .flow import update_flow
@@ -58,6 +59,7 @@ Stage = Callable[[ModelState, int], ModelState]
 
 PIPELINE: list[Stage] = [
     update_basic_counters,  # Tier 1: base bookkeeping
+    update_dash_aside,      # Tier 2: parenthetical-dash scope tracking
     update_linguistic,      # Tier 2: linguistic structure
     update_drift,           # Tier 2/3: consecutive-off-trie word streak
     update_speaker_offtrie, # Tier 2: speaker-buffer off-trie run
