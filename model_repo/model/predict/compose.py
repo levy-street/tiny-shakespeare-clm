@@ -41,6 +41,7 @@ from .bigram import bigram_bias
 from .cadence import cadence_wordend_bias
 from .enjambment import enjambment_wordend_bias
 from .meter import pentameter_wordend_bias
+from .polysyllable import polysyllable_midword_bias
 from .context import CTX_BIAS_VECTORS, context_key
 from .letter3 import letter3_bias
 from .letter4 import letter4_bias
@@ -196,6 +197,22 @@ def predict(state: ModelState) -> list[float]:
         if wfm is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += wfm[i]
+
+    # Layer 3b2b-poly: polysyllable-density mid-word bias. When the
+    # recent passages have been polysyllabic, slightly discourage
+    # space in the letter_run_len [3, 6] decision zone — keep
+    # extending. When they've been monosyllabic, nudge space — close
+    # the word early. Rhythm modulator with small amplitude.
+    if state.word_buffer and 3 <= state.letter_run_len <= 6:
+        pmb = polysyllable_midword_bias(
+            state.polysyllable_density,
+            state.letter_run_len,
+            state.on_word_trie,
+            state.speaker_label_state,
+        )
+        if pmb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += pmb[i]
 
     # (Layer 3b2c: sonority-texture bias — disabled; letter-n-gram
     # priors already capture phonotactic regularities better than a

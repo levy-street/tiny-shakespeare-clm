@@ -48,6 +48,7 @@ from .subord import update_subord
 from .tenderness import update_tenderness
 from .word_shape import update_word_shape
 from .enjambment import update_enjambment
+from .polysyllable import update_polysyllable
 from .rhyme import update_rhyme
 from .sentence import update_sentence
 from .speaker_memory import update_speaker_memory
@@ -94,6 +95,7 @@ PIPELINE: list[Stage] = [
     update_alliteration,    # Tier 2/3: within-line alliteration memory
     update_rhyme,           # Tier 2/3: line-tail rhyme memory
     update_enjambment,      # Tier 3: enjambed vs. end-stopped line density
+    update_polysyllable,    # Tier 3: polysyllable density rolling memory
     update_prosody,         # Tier 3: syllable / cadence tracking
     update_caesura,         # Tier 3: mid-line pause (caesura) tracking
     update_word_shape,      # Tier 2: per-word phonotactic red-flag counter

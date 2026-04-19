@@ -583,6 +583,27 @@ class ModelState(BaseModel):
     # for the current line's expected closure. Reset on speaker-turn.
     prev_line_enjambed: bool = False
 
+    # --- Tier 3: polysyllable / word-length flow texture ---
+    # Rolling [0, 1] EMA of how "polysyllabic" the recent words have
+    # been. A polysyllabic word is estimated as one of:
+    #   * length >= 7 characters
+    #   * vowel count >= 3
+    # Updated at the moment a word closes (space/punct/newline after a
+    # letter run), outside speaker-label territory, skipping very short
+    # fragments (< 2 letters) which are mostly single-character
+    # fillers / fragments.
+    #
+    # Signal: Shakespeare shifts between plain-speech passages (mostly
+    # monosyllables — "To be or not to be") and Latinate/elaborate
+    # passages (polysyllabic — "philosophical", "providence",
+    # "multitudinous"). A predict consumer can lean into the current
+    # rhythm by nudging mid-word extension (letter vs space) based on
+    # where the density sits.
+    #
+    # Initialized at 0.5 so downstream consumers can center-normalize.
+    # Reset to 0.5 on speaker-turn boundary.
+    polysyllable_density: float = 0.5
+
     # --- Tier 2/3: addressee / vocative memory ---
     # The most recent vocative noun used (lowercased) to address the
     # interlocutor within the current speaker turn. Empty when none
