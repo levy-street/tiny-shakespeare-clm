@@ -763,6 +763,290 @@ _EXPECT: dict[tuple[str, str], tuple[tuple[str, int], ...]] = {
     ("good", "morrow"): (
         ("my", 3), ("to", 3), ("sir", 2), ("sweet", 2), ("and", 2),
     ),
+    # --- "and" conjunctions (very common) ---
+    ("and", "i"): (
+        ("will", 3), ("shall", 2), ("have", 2), ("do", 2), ("am", 3),
+        ("must", 2), ("know", 2), ("say", 2), ("think", 2), ("fear", 2),
+        ("pray", 2),
+    ),
+    ("and", "thou"): (
+        ("art", 3), ("shalt", 2), ("wilt", 2), ("hast", 2), ("dost", 2),
+        ("didst", 2),
+    ),
+    ("and", "he"): (
+        ("is", 3), ("was", 2), ("hath", 3), ("doth", 2), ("will", 2),
+        ("shall", 2), ("said", 2),
+    ),
+    ("and", "she"): (
+        ("is", 3), ("was", 2), ("hath", 3), ("doth", 2), ("will", 2),
+        ("shall", 2),
+    ),
+    ("and", "you"): (
+        ("shall", 2), ("will", 2), ("are", 3), ("have", 2), ("too", 2),
+        ("my", 2),
+    ),
+    ("and", "we"): (
+        ("will", 3), ("shall", 3), ("are", 2), ("have", 2), ("must", 2),
+    ),
+    ("and", "they"): (
+        ("are", 3), ("shall", 2), ("will", 2), ("have", 2), ("were", 2),
+    ),
+    ("and", "the"): (
+        ("king", 2), ("queen", 2), ("lord", 2), ("rest", 2), ("rest", 2),
+        ("world", 2), ("gods", 2), ("day", 2), ("night", 2), ("sun", 2),
+        ("moon", 2),
+    ),
+    ("and", "my"): (
+        ("lord", 3), ("love", 2), ("heart", 2), ("soul", 2), ("life", 2),
+        ("father", 2), ("mother", 2), ("friend", 2),
+    ),
+    ("and", "thy"): (
+        ("love", 2), ("heart", 2), ("soul", 2), ("name", 2), ("father", 2),
+    ),
+    ("and", "all"): (
+        ("the", 3), ("my", 2), ("his", 2), ("her", 2), ("thy", 2),
+        ("your", 2), ("our", 2), ("their", 2),
+    ),
+    ("and", "so"): (
+        ("i", 3), ("it", 2), ("he", 2), ("she", 2), ("we", 2), ("the", 2),
+        ("farewell", 2), ("you", 2),
+    ),
+    ("and", "yet"): (
+        ("i", 3), ("the", 2), ("he", 2), ("not", 2), ("it", 2), ("my", 2),
+    ),
+    # --- "am" ---
+    ("am", "not"): (
+        ("a", 3), ("the", 2), ("so", 3), ("yet", 2), ("afraid", 2),
+        ("such", 2), ("mad", 2), ("i", 2),
+    ),
+    ("am", "a"): (
+        ("man", 3), ("woman", 2), ("fool", 2), ("gentleman", 2),
+        ("stranger", 2), ("soldier", 2), ("true", 2),
+    ),
+    ("am", "the"): (
+        ("king", 2), ("queen", 2), ("man", 2), ("very", 2), ("same", 2),
+    ),
+    ("am", "thy"): (
+        ("father", 2), ("son", 2), ("friend", 2), ("servant", 2), ("lord", 2),
+    ),
+    ("am", "no"): (
+        ("more", 2), ("man", 2), ("traitor", 2), ("fool", 2), ("coward", 2),
+    ),
+    # --- "be" phrases (not just auxiliary) ---
+    ("be", "not"): (
+        ("so", 3), ("a", 2), ("too", 2), ("afraid", 2), ("angry", 2),
+        ("the", 2), ("my", 2),
+    ),
+    ("be", "the"): (
+        ("king", 2), ("man", 2), ("cause", 2), ("case", 2), ("death", 2),
+        ("first", 2), ("last", 2),
+    ),
+    ("be", "so"): (
+        (",", 3), (".", 2), ("bold", 2), ("kind", 2), ("good", 2),
+    ),
+    ("be", "a"): (
+        ("man", 3), ("villain", 2), ("king", 2), ("fool", 2), ("friend", 2),
+        ("traitor", 2), ("noble", 2),
+    ),
+    # --- "not" ---
+    ("not", "to"): (
+        ("be", 5), ("speak", 2), ("see", 2), ("do", 2), ("have", 2),
+        ("die", 2), ("go", 2), ("say", 2),
+    ),
+    ("not", "the"): (
+        ("king", 2), ("man", 2), ("lord", 2), ("thing", 2), ("less", 2),
+        ("world", 2), ("cause", 2),
+    ),
+    ("not", "a"): (
+        ("word", 3), ("man", 2), ("whit", 2), ("jot", 2), ("soul", 2),
+        ("drop", 2),
+    ),
+    # --- conjunctions/prepositions ---
+    ("or", "the"): (
+        ("king", 2), ("queen", 2), ("lord", 2), ("duke", 2), ("world", 2),
+    ),
+    ("or", "not"): (
+        ("to", 4), (",", 2), (".", 1),
+    ),
+    ("or", "i"): (
+        ("will", 2), ("shall", 2), ("have", 2), ("must", 2), ("am", 2),
+    ),
+    ("as", "i"): (
+        ("am", 3), ("have", 2), ("said", 2), ("did", 2), ("do", 2),
+        ("know", 2), ("think", 2),
+    ),
+    ("as", "thou"): (
+        ("art", 3), ("hast", 2), ("wilt", 2), ("shalt", 2), ("dost", 2),
+    ),
+    ("as", "the"): (
+        ("king", 2), ("queen", 2), ("sun", 2), ("lord", 2), ("world", 2),
+        ("day", 2), ("night", 2), ("time", 2),
+    ),
+    ("as", "a"): (
+        ("man", 2), ("friend", 2), ("king", 2), ("woman", 2), ("child", 2),
+        ("stranger", 2),
+    ),
+    ("as", "my"): (
+        ("lord", 2), ("soul", 2), ("heart", 2), ("life", 2), ("love", 2),
+        ("friend", 2),
+    ),
+    ("when", "i"): (
+        ("was", 3), ("am", 2), ("shall", 2), ("will", 2), ("have", 2),
+        ("had", 2), ("saw", 2),
+    ),
+    ("when", "thou"): (
+        ("art", 3), ("wast", 2), ("hast", 2), ("wilt", 2), ("shalt", 2),
+    ),
+    ("when", "he"): (
+        ("is", 2), ("was", 2), ("hath", 2), ("doth", 2), ("shall", 2),
+        ("comes", 2),
+    ),
+    ("when", "the"): (
+        ("king", 2), ("queen", 2), ("sun", 2), ("day", 2), ("night", 2),
+        ("world", 2),
+    ),
+    # --- "where" / "whence" / "whither" ---
+    ("where", "is"): (
+        ("the", 3), ("my", 2), ("he", 2), ("she", 2), ("thy", 2), ("your", 2),
+    ),
+    ("where", "art"): (
+        ("thou", 6),
+    ),
+    # --- "sweet"/"dear"/"fair"/"noble" adjectives + noun ---
+    ("sweet", "lord"): (
+        (",", 3), ("!", 2), (".", 2),
+    ),
+    ("dear", "lord"): (
+        (",", 3), ("!", 2), (".", 2),
+    ),
+    ("fair", "lady"): (
+        (",", 3), ("!", 2), (".", 2),
+    ),
+    ("fair", "maid"): (
+        (",", 2), ("!", 1), (".", 1),
+    ),
+    ("noble", "lord"): (
+        (",", 3), ("!", 2), (".", 2),
+    ),
+    ("noble", "prince"): (
+        (",", 3), ("!", 1), (".", 2),
+    ),
+    ("gentle", "lord"): (
+        (",", 3), ("!", 1), (".", 2),
+    ),
+    ("good", "friend"): (
+        (",", 3), ("!", 2), (".", 2),
+    ),
+    ("dear", "friend"): (
+        (",", 3), ("!", 2), (".", 2),
+    ),
+    ("old", "man"): (
+        (",", 3), (".", 2), ("!", 1),
+    ),
+    # --- "the" + common nouns (extras) ---
+    ("the", "day"): (
+        ("of", 2), ("is", 2), ("was", 2), ("shall", 2), ("and", 2),
+    ),
+    ("the", "night"): (
+        ("is", 2), ("of", 2), ("was", 2), ("and", 2), ("hath", 2),
+    ),
+    ("the", "gods"): (
+        ("of", 2), ("have", 2), ("hath", 1), ("and", 2), ("shall", 2),
+    ),
+    ("the", "man"): (
+        ("is", 2), ("that", 2), ("who", 2), ("hath", 2), ("of", 2),
+    ),
+    ("the", "cause"): (
+        ("of", 3), ("is", 2), ("why", 2), ("and", 2),
+    ),
+    ("the", "house"): (
+        ("of", 3), ("is", 2), ("and", 2), ("was", 2),
+    ),
+    ("the", "earth"): (
+        (",", 2), ("and", 2), ("is", 2), ("hath", 1), ("shall", 1),
+    ),
+    ("the", "heavens"): (
+        ("are", 2), (",", 2), ("and", 2), ("have", 2),
+    ),
+    # --- emotive openers / verbs ---
+    ("speak", "not"): (
+        (",", 2), ("of", 2), ("to", 2), ("a", 2), ("the", 2), ("so", 2),
+    ),
+    ("speak", "to"): (
+        ("me", 3), ("him", 2), ("her", 2), ("the", 2), ("my", 2),
+    ),
+    ("go", "to"): (
+        (",", 3), ("the", 2), ("my", 2), ("thy", 2), ("him", 2), ("her", 2),
+    ),
+    ("come", "to"): (
+        ("me", 3), ("the", 2), ("my", 2), ("thy", 2), ("him", 2), ("thee", 2),
+    ),
+    ("come", "hither"): (
+        (",", 4), (".", 2), ("!", 1),
+    ),
+    ("come", "forth"): (
+        (",", 3), (".", 2), ("!", 1),
+    ),
+    ("stand", "back"): (
+        (",", 3), (".", 2), ("!", 1),
+    ),
+    ("stand", "forth"): (
+        (",", 3), (".", 2),
+    ),
+    ("farewell", "my"): (
+        ("lord", 3), ("good", 2), ("sweet", 2), ("dear", 2), ("love", 2),
+        ("friend", 2), ("son", 2),
+    ),
+    ("farewell", "farewell"): (
+        (",", 3), ("!", 2), (".", 2),
+    ),
+    # --- questions ---
+    ("what", "hath"): (
+        ("he", 3), ("she", 2), ("thou", 2), ("the", 2), ("my", 2),
+        ("this", 2),
+    ),
+    ("what", "dost"): (
+        ("thou", 6),
+    ),
+    ("what", "say"): (
+        ("you", 4), ("thou", 3), ("i", 2),
+    ),
+    ("how", "now"): (
+        (",", 4), ("?", 2), ("!", 1),
+    ),
+    ("how", "do"): (
+        ("you", 3), ("thou", 2), ("i", 2),
+    ),
+    ("how", "dost"): (
+        ("thou", 6),
+    ),
+    # --- modals ---
+    ("thou", "mayst"): (
+        ("be", 2), ("have", 2), ("see", 2), ("do", 2), ("not", 2),
+    ),
+    ("thou", "couldst"): (
+        ("not", 2), ("have", 2), ("be", 2), ("see", 2),
+    ),
+    ("thou", "wert"): (
+        ("a", 2), ("the", 2), ("not", 2), ("but", 2), ("best", 2),
+    ),
+    # --- cannot / must not ---
+    ("must", "not"): (
+        ("be", 3), ("do", 2), ("go", 2), ("have", 2), ("speak", 2),
+    ),
+    ("can", "not"): (
+        ("be", 3), ("tell", 2), ("speak", 2), ("go", 2), ("do", 2),
+    ),
+    ("may", "not"): (
+        ("be", 3), ("have", 2), ("go", 2), ("do", 2),
+    ),
+    # --- "by" emphatic oaths (prev = "by") ---
+    ("by", "heaven"): (
+        (",", 3), ("!", 2), (".", 1),
+    ),
+    ("by", "god"): (
+        (",", 3), ("!", 2),
+    ),
 }
 
 
