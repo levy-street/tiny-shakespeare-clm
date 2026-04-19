@@ -34,6 +34,7 @@ from .linguistic import update_linguistic
 from .list_structure import update_list_structure
 from .pos import update_pos
 from .proper_noun import update_proper_noun
+from .caesura import update_caesura
 from .prosody import update_prosody
 from .referent import update_referent
 from .repetition import update_repetition
@@ -78,6 +79,7 @@ PIPELINE: list[Stage] = [
     update_alliteration,    # Tier 2/3: within-line alliteration memory
     update_rhyme,           # Tier 2/3: line-tail rhyme memory
     update_prosody,         # Tier 3: syllable / cadence tracking
+    update_caesura,         # Tier 3: mid-line pause (caesura) tracking
     update_word_shape,      # Tier 2: per-word phonotactic red-flag counter
     update_line_break,      # Tier 2: syntactic line-break propriety
     update_flow,            # Tier 3: flow / mood / cadence

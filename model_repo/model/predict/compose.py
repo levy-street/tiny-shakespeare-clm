@@ -63,6 +63,7 @@ from .object_word_trie import object_word_trie_bias
 from .post_obj_word_trie import post_obj_word_trie_bias
 from .subject_word_trie import subject_word_trie_bias
 from .subord import subord_midword_bias, subord_word_end_bias
+from .caesura import caesura_bias
 from .clause_rhythm import clause_rhythm_comma_bias
 from .dependent_clause import dependent_clause_bias
 from .offtrie_depart import offtrie_depart_bias
@@ -705,6 +706,29 @@ def predict(state: ModelState) -> list[float]:
         if dc is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += dc[i]
+
+    # Layer 3c2b-caesura: caesura-gap suppression. After a caesura
+    # fired in this line, suppress a second comma/semicolon at the
+    # exact same syllable (gap == 0 — "choppy" doubled break).
+    if state.speaker_label_state == 0 and state.has_caesura_this_line:
+        cb = caesura_bias(
+            state.has_caesura_this_line,
+            state.caesura_syllable,
+            state.syllables_in_line,
+            state.verse_score,
+            state.verse_line_run,
+            state.prev_line_syllables,
+            state.speaker_label_state,
+            state.consecutive_newlines,
+            state.chars_since_sentence_end,
+            state.letter_run_len,
+            state.on_word_trie,
+            state.word_buffer,
+            COMPLETE_WORDS,
+        )
+        if cb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += cb[i]
 
     # Layer 3c2c: rhyme-position mid-word bias. When we're in a verse
     # run and approaching line-end, nudge the next letter toward the

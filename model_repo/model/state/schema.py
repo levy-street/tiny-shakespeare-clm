@@ -264,6 +264,25 @@ class ModelState(BaseModel):
     # expected to be verse-length.
     prev_line_syllables: int = 0
 
+    # --- Tier 3: caesura (mid-line pause) tracking ---
+    # Syllable position (within the current line) at which the last
+    # mid-line punctuation break fired (comma, semicolon, colon not in
+    # speaker label, em-dash). -1 means no caesura has fired in the
+    # current line yet. Reset to -1 on newline.
+    #
+    # Why: Shakespeare's iambic pentameter typically has a caesura at
+    # syllable 4, 5, or 6 — the mid-line balance pause. Prose lacks a
+    # fixed caesura but still breaks on mid-clause punctuation. Tracking
+    # whether the current line has received its caesura, and where,
+    # lets the predict layer (a) push a comma/semicolon up at word-end
+    # when syllables_in_line is in the caesura-expected range AND no
+    # caesura has fired yet (in verse); and (b) suppress a second
+    # mid-line break right after a caesura just fired.
+    caesura_syllable: int = -1
+    # True iff the current line has already received a mid-line break.
+    # Reset to False on newline.
+    has_caesura_this_line: bool = False
+
     # --- Tier 2: clause-structure tracking ---
     # Count of clausal breaks (commas/semicolons/colons, excluding those
     # inside speaker labels) since the last sentence-end punctuation.
