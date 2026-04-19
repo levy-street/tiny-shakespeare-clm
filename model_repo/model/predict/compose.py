@@ -196,7 +196,7 @@ def predict(state: ModelState) -> list[float]:
         bi = bigram_bias(state.last_char)
         if bi is not None:
             for i in range(VOCAB_SIZE):
-                logits[i] += bi[i] * 1.2
+                logits[i] += bi[i] * 1.8
 
     # Layer 3a: mid-word uppercase penalty. English / Shakespeare text
     # virtually never has uppercase letters in the interior of a word
