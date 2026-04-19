@@ -1053,6 +1053,127 @@ _EXPECT: dict[str, tuple[tuple[str, int], ...]] = {
         ("they", 2), ("you", 2), ("which", 2), ("same", 2), ("was", 2),
         ("may", 2), ("shall", 2), ("will", 2), ("doth", 2), ("hath", 2),
     ),
+    # --- High-value pronouns / possessives ---
+    "it": (
+        ("is", 8), ("was", 5), ("shall", 4), ("will", 4), ("may", 3),
+        ("must", 3), ("cannot", 2), ("hath", 3), ("doth", 3), ("would", 3),
+        ("should", 2), ("could", 2), ("not", 3), ("seems", 2), ("be", 2),
+        ("a", 3), ("the", 3), ("so", 2), ("out", 2),
+    ),
+    "our": (
+        ("own", 3), ("lord", 3), ("king", 3), ("queen", 2), ("father", 2),
+        ("mother", 2), ("house", 2), ("land", 2), ("country", 2), ("love", 2),
+        ("hearts", 2), ("hands", 2), ("eyes", 2), ("good", 2), ("noble", 2),
+        ("royal", 2), ("friends", 2), ("enemies", 2), ("fathers", 2),
+        ("great", 2), ("dear", 2), ("sovereign", 2), ("cause", 2),
+        ("purpose", 2), ("honour", 2), ("court", 2),
+    ),
+    "their": (
+        ("own", 3), ("lord", 2), ("king", 2), ("love", 2), ("hearts", 2),
+        ("hands", 2), ("eyes", 2), ("heads", 2), ("swords", 2), ("fathers", 2),
+        ("mothers", 2), ("names", 2), ("lives", 2), ("souls", 2), ("blood", 2),
+        ("cause", 2), ("honour", 2),
+    ),
+    # --- Interjections / exclamatives ---
+    "alas": (
+        ("i", 3), ("poor", 3), ("the", 2), ("my", 3), ("thou", 2),
+        ("what", 2), ("how", 2), ("alas", 2),
+    ),
+    "ay": (
+        ("sir", 4), ("madam", 3), ("and", 3), ("my", 3), ("but", 3),
+        ("marry", 2), ("truly", 2), ("that", 2), ("so", 2),
+    ),
+    "nay": (
+        ("but", 3), ("good", 2), ("my", 3), ("sir", 2), ("then", 2),
+        ("i", 3), ("hear", 2), ("look", 2), ("stay", 2), ("come", 2),
+    ),
+    "o": (
+        ("my", 6), ("thou", 4), ("god", 3), ("lord", 3), ("heaven", 3),
+        ("heavens", 3), ("most", 3), ("sweet", 3), ("gentle", 2),
+        ("noble", 3), ("dear", 2), ("that", 2), ("how", 2), ("i", 2),
+    ),
+    # --- Archaic interrogatives ---
+    "wherefore": (
+        ("art", 4), ("dost", 3), ("is", 3), ("do", 2), ("does", 2),
+        ("should", 2), ("shall", 2), ("hast", 2), ("i", 2), ("then", 2),
+    ),
+    "whence": (
+        ("come", 4), ("comes", 3), ("camest", 2), ("art", 2), ("is", 2),
+    ),
+    "whither": (
+        ("goest", 3), ("go", 2), ("away", 2), ("now", 2),
+    ),
+    "hither": (
+        ("come", 3), ("and", 2), ("to", 2), ("sir", 2), ("from", 2),
+    ),
+    "thither": (
+        ("will", 2), ("shall", 2), ("go", 2), ("with", 2), ("and", 2),
+    ),
+    # --- Archaic auxiliaries / verbs ---
+    "beseech": (
+        ("you", 5), ("thee", 4), ("your", 3), ("thy", 2),
+    ),
+    "prithee": (
+        ("tell", 3), ("speak", 3), ("come", 2), ("stay", 2), ("peace", 2),
+        ("good", 2), ("go", 2), ("now", 2),
+    ),
+    "unto": (
+        ("the", 4), ("my", 3), ("thy", 3), ("his", 3), ("her", 2),
+        ("me", 3), ("thee", 3), ("him", 2), ("us", 2), ("them", 2),
+        ("you", 2),
+    ),
+    "into": (
+        ("the", 5), ("my", 3), ("his", 3), ("her", 2), ("thy", 2),
+        ("their", 2), ("a", 2), ("this", 2), ("that", 2),
+    ),
+    "save": (
+        ("you", 3), ("your", 2), ("the", 2), ("thee", 2), ("my", 2),
+    ),
+    # --- Determiners / pronouns (continued) ---
+    "whose": (
+        ("name", 2), ("heart", 2), ("soul", 2), ("father", 2), ("love", 2),
+        ("hand", 2), ("eyes", 2), ("death", 2), ("life", 2), ("fault", 2),
+        ("honour", 2), ("will", 2), ("words", 2), ("blood", 2),
+    ),
+    "whom": (
+        ("i", 4), ("we", 2), ("he", 2), ("she", 2), ("thou", 2),
+        ("the", 2), ("shall", 2), ("to", 2),
+    ),
+    # --- Sentence-internal connectives ---
+    "rather": (
+        ("than", 5), ("choose", 2), ("will", 2), ("would", 2),
+    ),
+    "lest": (
+        ("we", 2), ("he", 2), ("she", 2), ("i", 2), ("they", 2),
+        ("it", 2), ("the", 2), ("my", 2), ("his", 2), ("thy", 2),
+    ),
+    "else": (
+        ("would", 2), ("have", 2), ("shall", 2), ("i", 2), ("he", 2),
+    ),
+    "such": (
+        ("a", 4), ("as", 4), ("is", 2), ("men", 2), ("love", 2),
+        ("that", 2), ("things", 2), ("thoughts", 2), ("grief", 2),
+    ),
+    # --- Common content words (high-frequency prev words) ---
+    "great": (
+        ("king", 2), ("lord", 2), ("man", 2), ("love", 2), ("honour", 2),
+        ("heart", 2), ("power", 2), ("cause", 2), ("fortune", 2), ("grief", 2),
+        ("joy", 2), ("god", 2), ("soul", 2), ("pity", 2),
+    ),
+    "dear": (
+        ("lord", 3), ("friend", 3), ("lady", 2), ("son", 2), ("daughter", 2),
+        ("brother", 2), ("sir", 2), ("father", 2), ("mother", 2),
+    ),
+    "gentle": (
+        ("sir", 3), ("lord", 2), ("friend", 2), ("lady", 2), ("father", 2),
+        ("cousin", 2), ("brother", 2), ("queen", 2),
+    ),
+    "kind": (
+        ("sir", 2), ("lord", 2), ("friend", 2), ("and", 2), ("of", 2),
+    ),
+    "full": (
+        ("of", 5), ("well", 2), ("sore", 2), ("soon", 2), ("many", 2),
+    ),
 }
 
 
