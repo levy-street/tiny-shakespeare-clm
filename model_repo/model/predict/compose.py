@@ -89,6 +89,7 @@ from .start4gram import start4gram_bias
 from .tonal import tonal_start_bias
 from .turn_opener import TURN_OPENER_START_BIAS
 from .answer_opener import answer_opener_start_bias
+from .dialogue_opener import dialogue_adjacency_bias, dialogue_pacing_bias
 from .start5gram import start5gram_bias
 from .startbigram import startbigram_bias
 from .onset_cluster import onset_cluster_bias
@@ -1955,6 +1956,44 @@ def predict(state: ModelState) -> list[float]:
         if aob is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += aob[i]
+
+        # Layer 4b6c: dialogue-adjacency amplifier.  Additive with
+        # answer_opener; contributes stichomythia / long-prior-turn /
+        # declarative-continuation biases that answer_opener doesn't.
+        dab = dialogue_adjacency_bias(
+            state.prev_turn_final_punct,
+            state.prev_turn_word_count,
+            state.prev_turn_line_count,
+            state.speaker_label_state,
+            state.words_in_turn,
+            state.sentences_in_turn,
+            state.lines_in_turn,
+            state.letter_run_len,
+            len(state.word_buffer),
+            state.turns_closed,
+        )
+        if dab is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += dab[i]
+
+    # Layer 4b6d: dialogue pacing — stichomythia/monologue modulation
+    # of sentence-end-punct preference mid-turn.  Operates at a DIFFERENT
+    # gate than the opener: fires at just_finished_word inside any turn
+    # after at least one turn has closed.
+    dpb = dialogue_pacing_bias(
+        state.prev_turn_word_count,
+        state.prev_turn_line_count,
+        state.speaker_label_state,
+        state.words_in_turn,
+        state.sentences_in_turn,
+        state.lines_in_turn,
+        state.just_finished_word,
+        state.turns_closed,
+        state.last_char,
+    )
+    if dpb is not None:
+        for i in range(VOCAB_SIZE):
+            logits[i] += dpb[i]
 
     # Layer 4d: verb-agreement bias based on subject pronoun.
     # When the clause's subject is "thou", Shakespearean agreement

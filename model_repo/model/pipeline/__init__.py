@@ -32,6 +32,7 @@ from .word_form import update_word_form
 from .word_matches import update_word_matches
 from .counters import update_basic_counters
 from .dash_aside import update_dash_aside
+from .dialogue_adjacency import update_dialogue_adjacency
 from .doubt import update_doubt
 from .drift import update_drift
 from .flow import update_flow
@@ -107,6 +108,7 @@ PIPELINE: list[Stage] = [
     update_tenderness,      # Tier 3: tenderness/love texture register
     update_gravitas,        # Tier 3: gravitas/moral-weight texture register
     update_fury,            # Tier 3: fury/rage/curse texture register
+    update_dialogue_adjacency,  # Tier 2/3: snapshot prev-turn shape before turn counters reset
     update_turn_progress,   # Tier 2/3: words/sentences/lines in current turn
     update_turn_content,    # Tier 3: per-turn content-word echo cache
     update_anaphora,        # Tier 2: line-starter anaphora tracking

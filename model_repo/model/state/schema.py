@@ -730,6 +730,48 @@ class ModelState(BaseModel):
     turn_exclam_count: int = 0
     turn_question_count: int = 0
 
+    # --- Tier 2/3: dialogue adjacency memory ---
+    # A snapshot of the PREVIOUS (just-closed) turn's shape, preserved
+    # across the turn boundary so the current turn's opening can react
+    # to it. Existing turn_* fields are reset at each boundary; these
+    # carry over.
+    #
+    # Intuition: in Shakespeare, what a speaker opens with is strongly
+    # conditioned on what the PRIOR speaker just said. A question
+    # ("Is it so?") is answered by an opener like "Ay", "No", "Nay",
+    # "I am", "It is", "Marry", "'Tis", "Sir". An exclaim ("O gods!")
+    # is often echoed by another interjection ("Alas", "O", "Ha", "Fie").
+    # A short terse turn (stichomythia) invites another short retort.
+    # Same speaker twice in a row (prev_turn_speaker == current speaker)
+    # is unusual and signals a continuation / stage direction.
+    #
+    # Fields are snapshotted at the transition into consecutive_newlines
+    # == 2 (the first blank-newline that marks turn close), BEFORE
+    # update_turn_progress resets the in-turn counters. Implementation:
+    # update_dialogue_adjacency runs immediately before
+    # update_turn_progress in PIPELINE.
+    #
+    # current_turn_final_char: the last non-whitespace content character
+    # emitted inside the still-open turn. Updated continuously inside a
+    # turn body (speaker_label_state == 0 and last_char is neither space
+    # nor newline). Used to determine the turn's final punctuation at
+    # turn-close time.
+    current_turn_final_char: str = ""
+    # prev_turn_final_punct: one of "", ".", "?", "!", ",", ";", ":", "-"
+    # — the final non-whitespace char of the just-closed turn.
+    prev_turn_final_punct: str = ""
+    prev_turn_word_count: int = 0
+    prev_turn_sentence_count: int = 0
+    prev_turn_line_count: int = 0
+    prev_turn_exclam_count: int = 0
+    prev_turn_question_count: int = 0
+    # Whether the speaker of the prev turn is the same speaker as the
+    # turn about to open — compared against last_speaker_label at the
+    # moment a new turn's label closes. Unused for now but reserved.
+    prev_turn_speaker_label: str = ""
+    # Monotonic count of turns observed — useful for first-turn guards.
+    turns_closed: int = 0
+
     # --- Tier 3: turn content echo memory ---
     # A rolling cache of up to 10 content words (NOUN, VERB, VERB_ING,
     # VERB_ED, ADJECTIVE, ADVERB, PROPER_NOUN) emitted in the current
