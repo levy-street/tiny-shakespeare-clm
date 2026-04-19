@@ -38,7 +38,7 @@ def phonotactic_close_bias(
         return None
     if bad_bigram_count < 1:
         return None
-    if letter_run_len < 5:
+    if letter_run_len < 4:
         return None
 
     # Escalate with count. One bad bigram → moderate; two → hard;
