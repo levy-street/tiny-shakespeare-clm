@@ -50,6 +50,7 @@ from .line_coherence import line_coherence_wordend_bias
 from .list_bias import list_start_bias, list_wordend_comma_bias
 from .next_word import next_word_bias
 from .word_bigram_continue import word_bigram_continue_bias
+from .phrase_continue import phrase_continue_bias
 from .np_head import np_head_start_bias
 from .ornament import ornament_start_bias
 from .parallel import parallel_start_bias
@@ -407,6 +408,26 @@ def predict(state: ModelState) -> list[float]:
         if wbc is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += wbc[i]
+
+    # Layer 3c-PHC: two-word phrase CONTINUATION bias. Conditions the
+    # next char on (prev_prev_completed_word, last_completed_word) plus
+    # the current buffer. Sharper than word_bigram_continue because it
+    # knows "I have" + "b" → "e" (been), vs "to have" + "b" is looser.
+    if (
+        state.word_buffer
+        and state.last_completed_word
+        and state.prev_completed_word
+    ):
+        phc = phrase_continue_bias(
+            state.prev_completed_word,
+            state.last_completed_word,
+            state.word_buffer,
+            state.letter_run_len,
+            state.speaker_label_state,
+        )
+        if phc is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += phc[i]
 
     # Layer 3c-MC: graded trie-match-count bias. Complements the
     # binary on_word_trie. Three regimes:
