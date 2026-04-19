@@ -140,6 +140,12 @@ _ILLEGAL_BIGRAMS: frozenset[str] = frozenset({
     # Consonant + h (only ch/gh/ph/rh/sh/th/wh/zh are legal digraphs)
     "bh", "dh", "fh", "jh", "kh", "lh", "mh", "nh", "qh", "vh",
     "xh", "yh",
+    # Illegal doubled letters (not in the small attested set of
+    # English geminates: bb, cc, dd, ee, ff, gg, ll, mm, nn, oo,
+    # pp, rr, ss, tt). All other doubled letters are gibberish
+    # markers — "hh" (hhcm), "jj", "vv", "ww", "xx", "yy", "zz",
+    # "uu", "ii", "kk" (trek+k? no), "qq", "vv".
+    "hh", "jj", "kk", "qq", "uu", "vv", "ww", "xx", "yy", "zz",
     # C + non-matching C (a selection of high-confidence illegal
     # cross-consonant pairs that appear in observed gibberish)
     "tv", "td", "tb", "tm", "tn", "tk",

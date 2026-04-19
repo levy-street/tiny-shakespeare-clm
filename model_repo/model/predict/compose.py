@@ -3070,7 +3070,14 @@ def predict(state: ModelState) -> list[float]:
     elif state.letter_run_len == 0:
         # Word-start: many layer biases stack (startword, next_word,
         # pos_next, context-class, etc.).
-        T = 1.40
+        # Sentence-start has especially sharp priors (capital letter,
+        # sentence-opener word distribution); sharpen a bit. After
+        # single newlines (verse line starts), biases are also sharp.
+        # Continuation word-starts keep the default.
+        if state.sentence_start_pending or state.consecutive_newlines >= 1:
+            T = 1.28
+        else:
+            T = 1.40
     elif state.on_word_trie:
         # Mid-word on trie: word_trie bias dominates and is sharp.
         # Modulate by trie_match_count — when only 1 known word
