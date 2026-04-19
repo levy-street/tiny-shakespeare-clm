@@ -841,6 +841,25 @@ class ModelState(BaseModel):
     # Monotonic count of turns observed — useful for first-turn guards.
     turns_closed: int = 0
 
+    # --- Tier 2/3: cross-turn content echo ---
+    # Snapshot of the previous speaker's turn_content_cache at the
+    # moment that turn closed (cn == 2). Up to 6 distinct content words
+    # (nouns/verbs/adjectives/adverbs/proper nouns) that the prior
+    # speaker just used, most-recent first. Lets the new speaker's
+    # opening words echo what the prior speaker said — a classic
+    # dialogue dynamic:
+    #     A: "Where is the king?"
+    #     B: "The king is dead."
+    # without this memory, once the turn boundary crosses, the echo
+    # signal is lost. turn_content_cache resets on turn open (cn>=2)
+    # to a fresh speaker's own thematic spine; prev_turn_content_tail
+    # carries the adjacency.
+    #
+    # Updated in update_dialogue_adjacency at cn == 2 by snapshotting
+    # turn_content_cache[:6] before update_turn_content would reset it.
+    # Reset on subsequent turn closes (overwritten each time).
+    prev_turn_content_tail: tuple[str, ...] = ()
+
     # --- Tier 3: turn content echo memory ---
     # A rolling cache of up to 10 content words (NOUN, VERB, VERB_ING,
     # VERB_ED, ADJECTIVE, ADVERB, PROPER_NOUN) emitted in the current

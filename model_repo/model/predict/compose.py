@@ -100,6 +100,7 @@ from .turn_opener import TURN_OPENER_START_BIAS
 from .answer_opener import answer_opener_start_bias
 from .answer_expectation import answer_expectation_start_bias
 from .dialogue_opener import dialogue_adjacency_bias, dialogue_pacing_bias
+from .prev_turn_echo import prev_turn_echo_mid_bias, prev_turn_echo_start_bias
 from .start5gram import start5gram_bias
 from .startbigram import startbigram_bias
 from .onset_cluster import onset_cluster_bias
@@ -564,6 +565,27 @@ def predict(state: ModelState) -> list[float]:
         if crb is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += crb[i]
+
+    # Layer 3c1b: cross-turn content echo (mid-word).  When the current
+    # buffer matches a prefix of one of the prior speaker's cached
+    # content words, nudge the next letter to continue that word.
+    # Mirrors the opener start bias but fires mid-word.
+    if (
+        state.word_buffer
+        and state.speaker_label_state == 0
+        and state.prev_turn_content_tail
+    ):
+        pte_m = prev_turn_echo_mid_bias(
+            state.word_buffer,
+            state.letter_run_len,
+            state.prev_turn_content_tail,
+            state.speaker_label_state,
+            state.words_in_turn,
+            state.chars_since_sentence_end,
+        )
+        if pte_m is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += pte_m[i]
 
     # Layer 3c1a: trie-drift recovery. When the buffer has drifted
     # OFF the word-trie AND had a complete-word prefix earlier in
@@ -2213,6 +2235,21 @@ def predict(state: ModelState) -> list[float]:
         if dab is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += dab[i]
+
+        # Layer 4b6e: cross-turn content echo (start).  Uses the tail of
+        # the prior speaker's content cache snapshotted at turn close,
+        # and lifts first-letters of those words at the opening of the
+        # new turn. Captures Shakespeare's dialogue-adjacency trick of
+        # answering with an echoed thematic word.
+        pte_s = prev_turn_echo_start_bias(
+            state.prev_turn_content_tail,
+            state.speaker_label_state,
+            state.words_in_turn,
+            state.chars_since_sentence_end,
+        )
+        if pte_s is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += pte_s[i]
 
     # Layer 4b6d: dialogue pacing — stichomythia/monologue modulation
     # of sentence-end-punct preference mid-turn.  Operates at a DIFFERENT

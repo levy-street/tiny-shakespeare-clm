@@ -83,6 +83,11 @@ def update_dialogue_adjacency(state: ModelState, token_id: int) -> ModelState:
         updates["prev_turn_exclam_count"] = state.turn_exclam_count
         updates["prev_turn_question_count"] = state.turn_question_count
         updates["prev_turn_speaker_label"] = state.last_speaker_label
+        # Cross-turn content echo: snapshot the closing turn's content
+        # cache before update_turn_content resets it a few stages later.
+        # Cap at 6 entries — enough to capture the thematic spine of
+        # the prior turn without drowning the start of the new one.
+        updates["prev_turn_content_tail"] = state.turn_content_cache[:6]
         if had_content:
             updates["turns_closed"] = state.turns_closed + 1
         # Reset running final-char for the next turn.
