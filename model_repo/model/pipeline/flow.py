@@ -115,6 +115,44 @@ _ARCHAIC_STRONG_BUMP = 0.28
 _ARCHAIC_MILD_BUMP = 0.10
 _ARCHAIC_DECAY = 0.985  # per completed word
 
+# --- Meditative register ---
+# The philosophical / inward-gazing vocabulary a Shakespearean
+# soliloquy leans on. Strong markers are strongly mental; mild
+# markers are adjacent-abstract. Bumps a rolling [0, 1] field
+# that decays slowly per word.
+_MEDITATIVE_STRONG: frozenset[str] = frozenset({
+    "think", "thinks", "thinking", "thought", "thoughts",
+    "mind", "minds", "soul", "souls", "spirit", "spirits",
+    "dream", "dreams", "dreamt", "dreaming",
+    "doubt", "doubts", "wonder", "wonders", "wondering",
+    "question", "questions", "reason", "reasons",
+    "conscience", "memory", "remember", "remembered",
+    "truth", "truths", "nature", "being",
+    "meditation", "meditate", "philosophy", "philosopher",
+    "mused", "muse", "musing", "ponder", "pondered",
+    "know", "knew", "known", "knowledge",
+    "believe", "believed", "belief",
+    "contemplate", "contemplation", "reflect", "reflected",
+    "perceive", "perceived", "consider", "considered",
+    "suppose", "supposed", "imagine", "imagined",
+    "methinks", "methought",
+})
+_MEDITATIVE_MILD: frozenset[str] = frozenset({
+    "seems", "seemed", "seeming", "appears", "appeared",
+    "whether", "perhaps", "haply", "peradventure", "mayhap",
+    "if", "unless", "though", "although", "were", "would",
+    "should", "could", "might", "may",
+    "truly", "surely", "certainly", "doubtless",
+    "wisdom", "wise", "folly", "fool", "foolish",
+    "heaven", "heavens", "eternity", "eternal", "infinite",
+    "fate", "fates", "fortune", "destiny", "providence",
+    "life", "death", "world", "worlds", "mortal", "mortals",
+    "self", "selves",
+})
+_MEDITATIVE_STRONG_BUMP = 0.25
+_MEDITATIVE_MILD_BUMP = 0.08
+_MEDITATIVE_DECAY = 0.982  # per completed word — slightly faster than archaic
+
 # Emotional-intensity markers.
 _EMO_WORDS_STRONG: frozenset[str] = frozenset({
     "o", "oh", "alas", "alack", "fie", "ah", "ay", "woe",
@@ -491,6 +529,26 @@ def update_flow(state: ModelState, token_id: int) -> ModelState:
         # Preserve a fraction so scene-wide register isn't fully lost.
         archaic_density *= 0.6
 
+    # Meditative register: bumped on philosophical/abstract vocabulary,
+    # decayed per completed word. Damped at speaker-turn boundary.
+    meditative_register = state.meditative_register
+    if state.just_finished_word:
+        meditative_register *= _MEDITATIVE_DECAY
+        w = state.last_completed_word
+        if w:
+            if w in _MEDITATIVE_STRONG:
+                meditative_register = min(
+                    1.0, meditative_register + _MEDITATIVE_STRONG_BUMP
+                )
+            elif w in _MEDITATIVE_MILD:
+                meditative_register = min(
+                    1.0, meditative_register + _MEDITATIVE_MILD_BUMP
+                )
+    if state.consecutive_newlines >= 2 and state.last_char == "\n":
+        # Meditation tends to be scene-bounded; damp across turns but
+        # don't zero it (a soliloquy may span turns of silence).
+        meditative_register *= 0.55
+
     # Emotional intensity: bumped on "!", "?", and O-vocatives / emo
     # interjections; decayed per completed word.
     emo = state.emotional_intensity
@@ -745,6 +803,7 @@ def update_flow(state: ModelState, token_id: int) -> ModelState:
             "verse_score": verse_score,
             "archaic_density": archaic_density,
             "emotional_intensity": emo,
+            "meditative_register": meditative_register,
             "tonal_weight": tonal_weight,
             "imagery_density": imagery_density,
             "addressing_register": addressing_register,

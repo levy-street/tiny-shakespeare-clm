@@ -332,6 +332,20 @@ class ModelState(BaseModel):
     # that texture.
     emotional_intensity: float = 0.0
 
+    # A rolling [0, 1] float estimating *meditative register* — the
+    # philosophical / inward-gazing texture of speech. Bumped by
+    # abstract-mental vocabulary (think, thought, mind, soul, spirit,
+    # dream, doubt, wonder, question, nature, reason, conscience,
+    # truth, memory, etc.) and weakly by subjunctive/conditional
+    # framings. Decays per completed word. Distinct from
+    # emotional_intensity (which is reactive/outward) and from
+    # imagery_density (which is corporeal/sensory) — this captures
+    # the Hamlet-soliloquy feel vs. the battlefield-cry feel.
+    # Consumed at word-start to bias toward meditative-lexicon
+    # first letters (t, m, s, d, w, n, r) and against concrete
+    # battlefield-continuation letters when high.
+    meditative_register: float = 0.0
+
     # --- Tier 2: clause slot state machine ---
     # Coarse syntactic-slot tracker for the current clause:
     #   0 = FRESH       — sentence start / post-clause-break; expect

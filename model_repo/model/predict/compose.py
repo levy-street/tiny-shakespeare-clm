@@ -37,6 +37,7 @@ from .address import address_midword_bias, address_start_bias
 from .alliteration import alliteration_start_bias
 from .anaphora import anaphora_midword_bias, anaphora_start_bias
 from .archaic import archaic_midword_bias, archaic_start_bias
+from .meditative import meditative_midword_bias, meditative_start_bias
 from .bigram import bigram_bias
 from .cadence import cadence_wordend_bias
 from .enjambment import enjambment_wordend_bias
@@ -891,6 +892,34 @@ def predict(state: ModelState) -> list[float]:
         if am is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += am[i]
+
+    # Layer 3c3: meditative-register word-start bias. Reads the flow-tier
+    # meditative_register (rises on philosophical/abstract vocabulary like
+    # think/soul/mind/dream/nature/reason, decays per word). At word-start
+    # (letter_run_len == 0 AND not in a speaker label), leans toward
+    # first letters that begin meditative-lexicon words (t, m, s, d, w, r,
+    # p, f, i, h) and gently away from concrete-battlefield opener letters
+    # (b, k, g). This is a genuine flow-texture consumer: soliloquy vs.
+    # battle cry.
+    if (
+        state.letter_run_len == 0
+        and state.speaker_label_state == 0
+        and state.meditative_register > 0.08
+    ):
+        ms = meditative_start_bias(state.meditative_register)
+        for i in range(VOCAB_SIZE):
+            logits[i] += ms[i]
+
+    # Layer 3c3b: meditative mid-word disambiguation. When the buffer is
+    # a prefix shared by a meditative word and a non-meditative word,
+    # lean toward the meditative completion in proportion to register.
+    if state.word_buffer and state.meditative_register > 0.15:
+        mm = meditative_midword_bias(
+            state.word_buffer, state.meditative_register
+        )
+        if mm is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += mm[i]
 
     # Layer 3c2d: monosyllabic-run rhythm word-end bias. Reads
     # state.monosyllabic_run (a flow-tier texture field) and, when
