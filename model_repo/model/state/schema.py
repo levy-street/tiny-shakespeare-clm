@@ -1746,3 +1746,46 @@ class ModelState(BaseModel):
     # future word-starts and mid-word letters toward these recurring
     # names instead of guessing fresh each time.
     proper_nouns_seen: tuple[str, ...] = ()
+
+    # --- Tier 3: gravitas register (moral / philosophical weight) ---
+    # A rolling [0, 1] float tracking whether the recent discourse
+    # carries moral / philosophical / cosmic weight — distinct from
+    # grief (lament_register), love (tenderness_register), darkness
+    # (tonal_weight), or declamation (invocation_mode).
+    #
+    # Shakespeare's heightened meditations — Hamlet's soliloquies,
+    # Lear on the heath, Brutus in the forum — share a specific
+    # lexicon of abstract nouns (honour, duty, virtue, conscience,
+    # soul, heaven, fate, nature, truth, justice, reason) that signal
+    # a character is weighing ethics and cosmos. When this register
+    # is active, the next content word is far more likely to come
+    # from that abstract-philosophical cloud than from the concrete
+    # one (table, street, bread). This field carries that register
+    # across function-word scaffolding.
+    #
+    # Bumps per completed word (applied at just_finished_word):
+    #   Gravitas-core     (+0.14 each):
+    #       honour, honor, virtue, virtuous, soul, souls,
+    #       duty, duties, conscience, truth, justice, reason,
+    #       fate, fates, doom, mortal, mortals, immortal,
+    #       heaven, heavens, earth, nature, god, gods, divine,
+    #       eternal, perpetual, everlasting
+    #   Gravitas-halo     (+0.07 each):
+    #       honest, honesty, faith, faithful, faithless, sin, sins,
+    #       holy, sacred, blest, blessed, cursed, grace, mercy,
+    #       pity, shame, glory, power, powers, spirit, spirits,
+    #       right, wrong, deed, deeds, life, death, world, worlds,
+    #       time, times, will (noun), peace, war, crown
+    #   Anti-gravitas     (-0.05 each):
+    #       drink, drinks, cup, ale, meat, bread, bed, sleep,
+    #       laugh, laughs, jest, fool, merry, sport
+    # Decay: 0.94 per just_finished_word.
+    # Speaker turn: *0.50 (new speaker may inherit partially).
+    #
+    # Consumed by predict/gravitas.py at word-start: when register
+    # >= 0.25, boost gravitas-lexicon first letters (h=honour/heaven,
+    # v=virtue, s=soul/sin/sacred, d=duty/doom/divine, t=truth/time,
+    # c=conscience/crown, j=justice, m=mortal/mercy, e=earth/eternal,
+    # f=fate/faith, r=reason/right, g=god/glory, p=power/pity) and
+    # lift "O" / "Oh" at sentence-start (gravitas apostrophe).
+    gravitas_register: float = 0.0

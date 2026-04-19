@@ -47,6 +47,7 @@ from .referent import update_referent
 from .repetition import update_repetition
 from .subord import update_subord
 from .tenderness import update_tenderness
+from .gravitas import update_gravitas
 from .word_shape import update_word_shape
 from .enjambment import update_enjambment
 from .polysyllable import update_polysyllable
@@ -92,6 +93,7 @@ PIPELINE: list[Stage] = [
     update_doubt,           # Tier 3: doubt/assertion register texture
     update_lament,          # Tier 3: lament/grief texture register
     update_tenderness,      # Tier 3: tenderness/love texture register
+    update_gravitas,        # Tier 3: gravitas/moral-weight texture register
     update_turn_progress,   # Tier 2/3: words/sentences/lines in current turn
     update_anaphora,        # Tier 2: line-starter anaphora tracking
     update_alliteration,    # Tier 2/3: within-line alliteration memory

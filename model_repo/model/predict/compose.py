@@ -119,6 +119,7 @@ from .negation import negation_start_bias
 from .case_slot import case_slot_start_bias
 from .lament import lament_start_bias, lament_sentence_start_bias
 from .tenderness import tenderness_start_bias, tenderness_sentence_start_bias
+from .gravitas import gravitas_start_bias, gravitas_sentence_start_bias
 from .drift_recovery import drift_recovery_bias, drift_recovery_midword_bias
 from .gibberish_hardcap import gibberish_hardcap_bias
 from .verb_complement import verb_complement_start_bias
@@ -1360,6 +1361,37 @@ def predict(state: ModelState) -> list[float]:
             if tssb is not None:
                 for i in range(VOCAB_SIZE):
                     logits[i] += tssb[i]
+
+        # Layer 4b3c-gravitas: gravitas-register word-start bias. A
+        # Tier 3 flow axis capturing moral / philosophical / cosmic
+        # weight — distinct from lament (grief), tenderness (love),
+        # and tonal_weight (dark/light). Rises on abstract-moral
+        # lexicon (honour, virtue, soul, duty, conscience, heaven,
+        # fate) and decays otherwise. When register is high, boosts
+        # word-start letters for the same cloud (v, j, h, e, c, g,
+        # f, s, d, p, m, r, n). Shakespeare's soliloquies — Hamlet,
+        # Lear, Brutus — thicken this register and pull content
+        # words out of the abstract-philosophical cloud.
+        gsb = gravitas_start_bias(
+            state.gravitas_register,
+            state.speaker_label_state,
+        )
+        if gsb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += gsb[i]
+
+        if (
+            state.words_in_sentence == 0
+            and not state.word_buffer
+            and state.letter_run_len == 0
+        ):
+            gssb = gravitas_sentence_start_bias(
+                state.gravitas_register,
+                state.speaker_label_state,
+            )
+            if gssb is not None:
+                for i in range(VOCAB_SIZE):
+                    logits[i] += gssb[i]
 
         # Layer 4b3c-vcc: verb-complement class word-start bias. When
         # the last completed verb set an expectation (that-clause,
