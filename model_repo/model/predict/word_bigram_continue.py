@@ -1174,6 +1174,190 @@ _EXPECT: dict[str, tuple[tuple[str, int], ...]] = {
     "full": (
         ("of", 5), ("well", 2), ("sore", 2), ("soon", 2), ("many", 2),
     ),
+    # --- More prepositions ---
+    "between": (
+        ("us", 3), ("them", 2), ("the", 2), ("you", 2), ("his", 2),
+        ("my", 2), ("our", 2), ("her", 2), ("his", 2), ("thy", 2),
+    ),
+    "through": (
+        ("the", 4), ("my", 2), ("his", 2), ("her", 2), ("thy", 2),
+        ("our", 2), ("a", 2), ("all", 2), ("this", 2), ("that", 2),
+    ),
+    "without": (
+        ("a", 3), ("the", 3), ("my", 2), ("his", 2), ("her", 2),
+        ("any", 2), ("thee", 2), ("thy", 2), ("me", 2), ("him", 2),
+        ("delay", 2),
+    ),
+    "about": (
+        ("the", 3), ("my", 2), ("his", 2), ("her", 2), ("a", 2),
+        ("him", 2), ("her", 2), ("it", 2), ("thee", 2), ("this", 2),
+    ),
+    "among": (
+        ("the", 3), ("us", 2), ("them", 2), ("men", 2), ("thy", 2),
+        ("my", 2), ("our", 2), ("his", 2),
+    ),
+    "within": (
+        ("the", 3), ("my", 2), ("his", 2), ("her", 2), ("thy", 2),
+        ("a", 2), ("this", 2), ("these", 2), ("our", 2),
+    ),
+    "over": (
+        ("the", 3), ("my", 2), ("his", 2), ("her", 2), ("thy", 2),
+        ("and", 2), ("all", 2), ("his", 2),
+    ),
+    "down": (
+        ("the", 2), ("to", 2), ("and", 2), ("upon", 2), ("with", 2),
+        ("on", 2), ("in", 2),
+    ),
+    # --- Modal negations / archaic auxiliaries ---
+    "cannot": (
+        ("be", 3), ("do", 3), ("tell", 3), ("speak", 3), ("say", 2),
+        ("choose", 2), ("think", 2), ("but", 2), ("help", 2), ("go", 2),
+        ("find", 2), ("see", 2),
+    ),
+    "dost": (
+        ("thou", 5), ("not", 3), ("love", 2), ("know", 2),
+    ),
+    "wilt": (
+        ("thou", 5), ("not", 3),
+    ),
+    "shalt": (
+        ("thou", 4), ("not", 3), ("be", 2), ("see", 2),
+    ),
+    "wast": (
+        ("a", 2), ("not", 2), ("the", 2), ("my", 2), ("thou", 2),
+    ),
+    "wert": (
+        ("thou", 3), ("a", 2), ("not", 2), ("the", 2), ("my", 2),
+    ),
+    "ought": (
+        ("to", 4), ("not", 2),
+    ),
+    "canst": (
+        ("thou", 4), ("not", 2),
+    ),
+    "didst": (
+        ("thou", 4), ("not", 2),
+    ),
+    "hadst": (
+        ("thou", 3), ("not", 2),
+    ),
+    "mayst": (
+        ("thou", 3), ("not", 2),
+    ),
+    "wouldst": (
+        ("thou", 3), ("not", 2),
+    ),
+    "couldst": (
+        ("thou", 3), ("not", 2),
+    ),
+    "shouldst": (
+        ("thou", 3), ("not", 2),
+    ),
+    # --- Connectives not yet covered ---
+    "nor": (
+        ("i", 2), ("he", 2), ("she", 2), ("we", 2), ("they", 2),
+        ("the", 2), ("my", 2), ("thy", 2), ("any", 2), ("shall", 2),
+        ("will", 2), ("can", 2), ("ever", 2), ("yet", 2), ("no", 2),
+    ),
+    "because": (
+        ("i", 2), ("he", 2), ("she", 2), ("we", 2), ("they", 2),
+        ("the", 2), ("my", 2), ("thy", 2), ("it", 2), ("of", 2),
+        ("that", 2),
+    ),
+    "although": (
+        ("i", 2), ("he", 2), ("she", 2), ("we", 2), ("they", 2),
+        ("the", 2), ("my", 2), ("thy", 2), ("it", 2),
+    ),
+    "unless": (
+        ("i", 2), ("he", 2), ("she", 2), ("we", 2), ("they", 2),
+        ("thou", 2), ("the", 2), ("my", 2), ("thy", 2),
+    ),
+    "till": (
+        ("the", 2), ("i", 2), ("he", 2), ("we", 2), ("thou", 2),
+        ("my", 2), ("thy", 2), ("then", 2), ("now", 2), ("night", 2),
+    ),
+    "whilst": (
+        ("i", 2), ("he", 2), ("we", 2), ("thou", 2), ("the", 2),
+        ("my", 2), ("thy", 2), ("his", 2),
+    ),
+    # --- Common verbs not yet covered ---
+    "think": (
+        ("i", 2), ("thou", 2), ("you", 2), ("he", 2), ("not", 2),
+        ("on", 2), ("upon", 2), ("of", 3), ("no", 2), ("so", 2),
+        ("it", 2), ("the", 2), ("my", 2),
+    ),
+    "look": (
+        ("you", 3), ("here", 2), ("how", 2), ("what", 2), ("upon", 2),
+        ("on", 2), ("at", 2), ("to", 2), ("thee", 2), ("in", 2),
+    ),
+    "stay": (
+        ("a", 2), ("and", 2), ("here", 2), ("with", 2), ("not", 2),
+        ("thee", 2), ("me", 2), ("sir", 2),
+    ),
+    "stand": (
+        ("up", 2), ("back", 2), ("forth", 2), ("aside", 2), ("with", 2),
+        ("by", 2), ("to", 2), ("not", 2),
+    ),
+    "keep": (
+        ("thy", 2), ("the", 2), ("my", 2), ("your", 2), ("his", 2),
+        ("a", 2), ("our", 2), ("no", 2), ("thee", 2), ("her", 2),
+        ("them", 2), ("you", 2),
+    ),
+    "leave": (
+        ("me", 3), ("us", 2), ("thee", 2), ("him", 2), ("her", 2),
+        ("them", 2), ("the", 2), ("my", 2), ("your", 2), ("his", 2),
+        ("thy", 2), ("our", 2),
+    ),
+    # --- Common nouns (subject positions) ---
+    "man": (
+        ("is", 2), ("was", 2), ("hath", 2), ("shall", 2), ("will", 2),
+        ("may", 2), ("of", 2), ("in", 2), ("that", 2), ("who", 2),
+        ("and", 2),
+    ),
+    "men": (
+    ("are", 2), ("were", 2), ("have", 2), ("do", 2), ("did", 2),
+        ("may", 2), ("must", 2), ("shall", 2), ("and", 2), ("of", 2),
+        ("in", 2), ("that", 2),
+    ),
+    "love": (
+        ("is", 2), ("of", 3), ("to", 2), ("with", 2), ("hath", 2),
+        ("doth", 2), ("and", 2), ("the", 2), ("me", 2), ("thee", 2),
+        ("my", 2), ("thy", 2), ("so", 2), ("you", 2),
+    ),
+    "death": (
+        ("of", 2), ("is", 2), ("hath", 2), ("and", 2), ("to", 2),
+        ("thy", 2), ("in", 2), ("do", 2),
+    ),
+    "life": (
+        ("is", 2), ("of", 2), ("and", 2), ("hath", 2), ("to", 2),
+        ("in", 2), ("thy", 2), ("my", 2),
+    ),
+    # --- Indefinite-pronouns ---
+    "nothing": (
+        ("but", 2), ("of", 2), ("is", 2), ("shall", 2), ("will", 2),
+        ("can", 2), ("in", 2), ("to", 2),
+    ),
+    "something": (
+        ("of", 2), ("to", 2), ("that", 2), ("in", 2), ("like", 2),
+    ),
+    "anything": (
+        ("but", 2), ("of", 2), ("that", 2), ("to", 2),
+    ),
+    "somewhat": (
+        ("more", 2), ("of", 2), ("like", 2),
+    ),
+    "another": (
+        ("man", 2), ("thing", 2), ("day", 2), ("time", 2), ("world", 2),
+        ("hour", 2),
+    ),
+    "others": (
+        ("are", 2), ("were", 2), ("have", 2), ("do", 2), ("and", 2),
+        ("of", 2),
+    ),
+    "none": (
+        ("of", 3), ("but", 2), ("shall", 2), ("will", 2), ("can", 2),
+        ("else", 2), ("other", 2),
+    ),
 }
 
 
