@@ -1047,6 +1047,240 @@ _EXPECT: dict[tuple[str, str], tuple[tuple[str, int], ...]] = {
     ("by", "god"): (
         (",", 3), ("!", 2),
     ),
+    # --- New high-value 2-word contexts ---
+    # Auxiliary/modal + pronoun frames
+    ("have", "i"): (
+        ("not", 3), ("done", 2), ("seen", 2), ("said", 2), ("heard", 2),
+        ("been", 2), ("a", 2), ("any", 2), ("no", 2),
+    ),
+    ("will", "i"): (
+        ("not", 3), ("go", 2), ("do", 2), ("be", 2), ("speak", 2),
+    ),
+    ("hast", "thou"): (
+        ("not", 3), ("seen", 2), ("done", 2), ("heard", 2), ("any", 2),
+        ("no", 2), ("a", 2), ("made", 2),
+    ),
+    ("dost", "thou"): (
+        ("not", 3), ("love", 2), ("know", 2), ("speak", 2), ("think", 2),
+        ("hear", 2), ("mean", 2), ("see", 2),
+    ),
+    ("art", "thou"): (
+        ("not", 4), ("come", 3), ("there", 2), ("mad", 2), ("a", 2),
+        ("so", 2), ("my", 2), ("the", 2),
+    ),
+    ("wilt", "thou"): (
+        ("not", 3), ("go", 2), ("be", 2), ("have", 2), ("do", 2),
+        ("speak", 2), ("stay", 2), ("hear", 2),
+    ),
+    ("shalt", "thou"): (
+        ("not", 4), ("be", 2), ("have", 2), ("see", 2), ("find", 2),
+    ),
+    # Common sentence-initial vocatives and exclamatives
+    ("o", "thou"): (
+        ("most", 2), ("blessed", 2), ("wretched", 2), ("that", 2),
+        ("heaven", 2), ("god", 2),
+    ),
+    ("o", "my"): (
+        ("lord", 4), ("love", 3), ("god", 3), ("heart", 3), ("soul", 3),
+        ("father", 2), ("mother", 2), ("friend", 2), ("dear", 2),
+        ("good", 2), ("son", 2), ("liege", 2),
+    ),
+    ("o", "god"): (
+        ("!", 3), (",", 2), ("of", 3), ("the", 2),
+    ),
+    ("o", "heaven"): (
+        ("!", 2), (",", 2), ("s", 2),
+    ),
+    ("o", "sweet"): (
+        ("lord", 2), ("lady", 2), ("friend", 2), ("juliet", 1), ("soul", 2),
+    ),
+    # "my good" + noun
+    ("my", "good"): (
+        ("lord", 4), ("friend", 3), ("lady", 2), ("liege", 2), ("master", 2),
+        ("sir", 2), ("man", 2),
+    ),
+    ("my", "dear"): (
+        ("lord", 3), ("friend", 3), ("love", 2), ("father", 2),
+        ("mother", 2), ("son", 2),
+    ),
+    ("my", "noble"): (
+        ("lord", 4), ("friend", 3), ("liege", 2), ("master", 2), ("prince", 2),
+    ),
+    ("my", "sweet"): (
+        ("lord", 3), ("lady", 3), ("friend", 2), ("queen", 2), ("love", 2),
+    ),
+    # "in my" / "in his" / "in her"
+    ("in", "my"): (
+        ("heart", 3), ("soul", 2), ("eyes", 2), ("hand", 2), ("mind", 2),
+        ("life", 2), ("house", 2), ("bosom", 2), ("sight", 2),
+    ),
+    ("in", "his"): (
+        ("heart", 2), ("hand", 2), ("eyes", 2), ("face", 2), ("bed", 2),
+        ("youth", 2), ("life", 2),
+    ),
+    ("in", "her"): (
+        ("heart", 2), ("hand", 2), ("eyes", 2), ("face", 2), ("ear", 2),
+        ("breast", 2),
+    ),
+    ("in", "thy"): (
+        ("heart", 2), ("eyes", 2), ("hand", 2), ("face", 2), ("youth", 2),
+    ),
+    # "to my/thy/his/her"
+    ("to", "my"): (
+        ("lord", 3), ("father", 2), ("mother", 2), ("friend", 2),
+        ("love", 2), ("heart", 2), ("soul", 2), ("brother", 2),
+    ),
+    ("to", "thy"): (
+        ("father", 2), ("love", 2), ("heart", 2), ("master", 2), ("soul", 2),
+    ),
+    ("to", "his"): (
+        ("father", 2), ("mother", 2), ("majesty", 2), ("highness", 2),
+        ("grace", 2), ("lord", 2),
+    ),
+    ("to", "her"): (
+        ("lord", 2), ("husband", 2), ("father", 2), ("love", 2),
+    ),
+    # "with my/thy/his/her"
+    ("with", "my"): (
+        ("lord", 2), ("love", 2), ("hand", 2), ("sword", 2), ("friend", 2),
+        ("life", 2), ("heart", 2),
+    ),
+    ("with", "his"): (
+        ("hand", 2), ("sword", 2), ("eyes", 2), ("father", 2), ("men", 2),
+    ),
+    ("with", "her"): (
+        ("hand", 2), ("lord", 2), ("husband", 2), ("love", 2),
+    ),
+    # Speech-act frames
+    ("i", "beseech"): (
+        ("you", 4), ("thee", 3), ("your", 2),
+    ),
+    ("pray", "you"): (
+        (",", 3), (".", 2), ("sir", 3), ("tell", 2), ("let", 2),
+        ("speak", 2), ("good", 2),
+    ),
+    ("tell", "me"): (
+        (",", 2), (".", 2), ("not", 3), ("what", 2), ("how", 2),
+        ("why", 2), ("where", 2), ("who", 2), ("of", 2), ("the", 2),
+    ),
+    ("tell", "thee"): (
+        (",", 2), (".", 2), ("what", 2), ("how", 2), ("of", 2),
+    ),
+    # Interrogative word + auxiliary
+    ("what", "shall"): (
+        ("i", 3), ("we", 2), ("he", 2), ("be", 2),
+    ),
+    ("what", "will"): (
+        ("you", 2), ("thou", 2), ("he", 2), ("she", 2), ("become", 2),
+    ),
+    ("what", "is"): (
+        ("the", 3), ("this", 2), ("that", 2), ("he", 2), ("your", 2),
+        ("thy", 2), ("it", 2), ("your", 2), ("a", 2),
+    ),
+    ("what", "art"): (
+        ("thou", 4),
+    ),
+    ("what", "thou"): (
+        ("art", 2), ("dost", 2), ("hast", 2), ("wilt", 2), ("sayest", 2),
+    ),
+    ("where", "the"): (
+        ("king", 2), ("devil", 2), ("duke", 2), ("lord", 2), ("sun", 2),
+    ),
+    ("where", "thou"): (
+        ("art", 3), ("dost", 2), ("wilt", 2), ("liest", 2),
+    ),
+    ("why", "dost"): (
+        ("thou", 4),
+    ),
+    ("why", "then"): (
+        (",", 2), ("i", 2), ("we", 2), ("let", 2),
+    ),
+    # Noun-noun common chains
+    ("good", "my"): (
+        ("lord", 5), ("lady", 2), ("liege", 2), ("master", 2), ("friend", 2),
+    ),
+    ("sweet", "my"): (
+        ("lord", 3), ("lady", 2),
+    ),
+    ("my", "liege"): (
+        (",", 3), (".", 2), ("!", 2), (" ", 2),
+    ),
+    ("your", "grace"): (
+        (",", 3), (".", 2), ("!", 2), ("is", 2), ("shall", 2),
+    ),
+    ("your", "majesty"): (
+        (",", 3), (".", 2), ("is", 2), ("shall", 2),
+    ),
+    ("your", "highness"): (
+        (",", 3), (".", 2),
+    ),
+    ("your", "honour"): (
+        (",", 2), (".", 2),
+    ),
+    # "at the/my/his"
+    ("at", "the"): (
+        ("door", 2), ("king", 2), ("last", 2), ("court", 2), ("gates", 2),
+        ("court", 2), ("sight", 2), ("time", 2),
+    ),
+    ("at", "my"): (
+        ("heart", 2), ("feet", 2), ("hand", 2), ("request", 2), ("lord", 2),
+    ),
+    # "this is" + X
+    ("this", "is"): (
+        ("the", 3), ("a", 3), ("my", 2), ("no", 2), ("true", 2), ("not", 2),
+        ("your", 2), ("thy", 2), ("he", 2), ("that", 2),
+    ),
+    ("that", "is"): (
+        ("the", 3), ("a", 3), ("my", 2), ("no", 2), ("true", 2), ("not", 2),
+        ("most", 2), ("well", 2), ("gone", 2), ("done", 2),
+    ),
+    # "he/she hath" and "he/she is"
+    ("he", "hath"): (
+        ("done", 2), ("said", 2), ("made", 2), ("been", 2), ("no", 2),
+        ("a", 2), ("not", 2), ("sent", 2),
+    ),
+    ("she", "hath"): (
+        ("done", 2), ("said", 2), ("a", 2), ("no", 2), ("not", 2),
+        ("made", 2),
+    ),
+    ("he", "was"): (
+        ("a", 3), ("the", 2), ("not", 2), ("no", 2), ("so", 2),
+        ("my", 2), ("born", 2), ("slain", 2), ("ever", 2),
+    ),
+    ("she", "was"): (
+        ("a", 3), ("the", 2), ("not", 2), ("no", 2), ("so", 2),
+        ("my", 2),
+    ),
+    # Sentence openers
+    ("and", "yet"): (
+        (",", 2), ("i", 2), ("he", 2), ("she", 2), ("the", 2),
+    ),
+    ("but", "yet"): (
+        (",", 2), ("i", 2), ("the", 2),
+    ),
+    ("and", "so"): (
+        (",", 2), ("i", 2), ("he", 2), ("she", 2), ("we", 2), ("they", 2),
+        ("it", 2), ("the", 2), ("farewell", 2), ("be", 2),
+    ),
+    ("and", "now"): (
+        (",", 2), ("i", 2), ("he", 2), ("she", 2), ("the", 2),
+    ),
+    # Time/place adverbials
+    ("this", "day"): (
+        (",", 2), (".", 2), ("!", 1), ("shall", 2),
+    ),
+    ("this", "night"): (
+        (",", 2), (".", 2), ("!", 1), ("shall", 2),
+    ),
+    ("the", "sun"): (
+        ("is", 2), (",", 2), ("doth", 2), ("shines", 2), ("was", 2),
+    ),
+    ("the", "moon"): (
+        ("is", 2), (",", 2), ("doth", 2), ("shines", 2),
+    ),
+    ("the", "duke"): (
+        ("of", 3), ("is", 2), ("hath", 2), ("was", 2), ("shall", 2),
+    ),
 }
 
 
