@@ -192,7 +192,7 @@ def predict(state: ModelState) -> list[float]:
     ):
         for ch in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
             if ch in VOCAB_INDEX:
-                logits[VOCAB_INDEX[ch]] -= 6.0
+                logits[VOCAB_INDEX[ch]] -= 8.0
 
     # Layer 3b: trigram digraph biases (last two letters).
     if state.last_char and state.prev_char:
