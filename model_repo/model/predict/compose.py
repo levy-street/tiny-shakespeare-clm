@@ -2416,4 +2416,11 @@ def predict(state: ModelState) -> list[float]:
                 # Newline almost never happens after a function word.
                 logits[VOCAB_INDEX["\n"]] -= 1.8
 
+    # Final temperature calibration: scale logits by 1/T. Values > 1
+    # soften the distribution (reduces over-peaked losses on surprises);
+    # values < 1 sharpen. Calibrated to improve BPC under the sum of
+    # all layer biases.
+    T = 1.10
+    if T != 1.0:
+        logits = [x / T for x in logits]
     return _log_softmax(logits)
