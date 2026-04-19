@@ -219,7 +219,7 @@ def predict(state: ModelState) -> list[float]:
         tg = trigram_bias(state.prev_char, state.last_char)
         if tg is not None:
             for i in range(VOCAB_SIZE):
-                logits[i] += tg[i] * 1.5
+                logits[i] += tg[i] * 2.0
 
     # Layer 3b2: letter-trigram bias (last 3 letters → next). Apply
     # only off-trie, where the word_trie doesn't already give signal.
