@@ -52,6 +52,7 @@ from .proper_noun import proper_noun_start_bias
 from .phrase_bigram import phrase_bigram_bias
 from .phrase_trigram import phrase_trigram_bias
 from .pos_next import pos_next_bias
+from .pos_bigram_next import pos_bigram_next_bias
 from .repetition import repetition_start_bias
 from .rhyme import rhyme_midword_bias
 from .rhythm import rhythm_wordend_bias
@@ -849,6 +850,19 @@ def predict(state: ModelState) -> list[float]:
                 if pn is not None:
                     for i in range(VOCAB_SIZE):
                         logits[i] += pn[i]
+
+            # Layer 4b-bigram: 2-back POS-bigram → first-letter bias.
+            # Reads both prev_word_pos and last_word_pos. Picks up
+            # content-level bigram patterns ((DET, NOUN) → VERB next,
+            # (PRONOUN, AUX) → predicate next, etc.) that 1-back POS
+            # context can't see.
+            pbn = pos_bigram_next_bias(
+                state.prev_word_pos,
+                state.last_word_pos,
+            )
+            if pbn is not None:
+                for i in range(VOCAB_SIZE):
+                    logits[i] += pbn[i]
 
             # Layer 4b2: subject-verb agreement word-start bias.
             # When a thou-subject has been identified and the verb
