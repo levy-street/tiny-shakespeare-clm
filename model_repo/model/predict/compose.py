@@ -57,6 +57,7 @@ from .rhyme import rhyme_midword_bias
 from .sonority import sonority_midword_bias
 from .suffix_completion import suffix_completion_bias
 from .verb_word_trie import verb_word_trie_bias
+from .object_word_trie import object_word_trie_bias
 from .slot_next import slot_start_bias
 from .speaker_recency import speaker_recency_bias
 from .speaker_trie import speaker_trie_bias
@@ -412,6 +413,27 @@ def predict(state: ModelState) -> list[float]:
         if vwt is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += vwt[i]
+
+    # Layer 3c1-obj: object-phrase word-trie mid-word bias. Parallel
+    # to verb_word_trie but fires at clause_slot == HAS_VERB — the
+    # post-verb slot where a determiner / short pronoun / preposition
+    # / complement-opener is the likely next word. Closes the gap
+    # where "is se...", "gave hi...", "speak to...", etc., drift into
+    # improbable completions.
+    if (
+        state.word_buffer
+        and state.speaker_label_state == 0
+        and state.clause_slot == 2
+    ):
+        owt = object_word_trie_bias(
+            state.word_buffer,
+            state.letter_run_len,
+            state.clause_slot,
+            state.speaker_label_state,
+        )
+        if owt is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += owt[i]
 
     # Layer 3c1-trans: transitivity mid-word bias. When an object is
     # expected AND the current buffer is a short determiner-prefix
