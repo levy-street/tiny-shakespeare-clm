@@ -753,6 +753,230 @@ _EXPECT: dict[tuple[str, str, str], tuple[tuple[str, int], ...]] = {
     ("i", "'ll", "go"): (
         (" ", 2), ("with", 2), ("to", 2),
     ),
+    # --- New wave: high-frequency idioms not previously covered ---
+    # "that is" / "this is" sentence-mid
+    ("that", "is", "the"): (
+        ("question", 3), ("point", 2), ("matter", 2), ("way", 2), ("cause", 2),
+        ("truth", 2), ("reason", 2),
+    ),
+    ("that", "is", "a"): (
+        ("lie", 2), ("good", 2), ("truth", 2), ("noble", 2), ("most", 2),
+    ),
+    ("that", "is", "not"): (
+        ("so", 3), ("the", 2), ("a", 2), ("true", 2), ("my", 2),
+    ),
+    ("that", "is", "my"): (
+        ("love", 2), ("cause", 2), ("hope", 2), ("wish", 2), ("fear", 2),
+    ),
+    ("this", "is", "the"): (
+        ("day", 2), ("man", 2), ("time", 2), ("night", 2), ("place", 2),
+        ("hand", 2), ("cause", 2),
+    ),
+    ("this", "is", "a"): (
+        ("good", 2), ("fine", 2), ("bad", 1), ("noble", 2), ("strange", 2),
+    ),
+    ("this", "is", "no"): (
+        ("time", 2), ("place", 2), ("jest", 2), ("matter", 2),
+    ),
+    ("this", "is", "not"): (
+        ("so", 2), ("the", 2), ("a", 2),
+    ),
+    # "shall be" frames
+    ("you", "shall", "be"): (
+        ("a", 2), ("the", 2), ("my", 2), ("welcome", 2), ("king", 1),
+    ),
+    ("thou", "shalt", "be"): (
+        ("a", 2), ("the", 2), ("my", 2), ("king", 1), ("mine", 2),
+    ),
+    ("we", "shall", "be"): (
+        ("a", 2), ("the", 2), ("all", 2), ("gone", 2),
+    ),
+    ("i", "shall", "be"): (
+        ("a", 2), ("the", 2), ("gone", 2), ("glad", 2), ("well", 2),
+    ),
+    # "will be" frames
+    ("there", "will", "be"): (
+        ("a", 3), ("no", 2), ("the", 2),
+    ),
+    # "good morrow/night/day/even" closings and openings
+    ("good", "morrow", ","): (
+        ("sir", 2), ("my", 2), ("sweet", 2), ("good", 2), ("madam", 2),
+    ),
+    ("good", "night", ","): (
+        ("sir", 2), ("sweet", 2), ("my", 2), ("good", 2), ("madam", 2),
+    ),
+    ("good", "day", ","): (
+        ("sir", 2), ("my", 2), ("sweet", 2),
+    ),
+    ("good", "even", ","): (
+        ("sir", 2), ("my", 2), ("sweet", 2),
+    ),
+    # "is it" question frames
+    ("is", "it", "so"): (
+        ("?", 4), (",", 2), ("?", 2),
+    ),
+    ("is", "it", "true"): (
+        ("?", 4), (",", 2),
+    ),
+    ("is", "it", "a"): (
+        ("?", 3), ("man", 2), ("thing", 2),
+    ),
+    ("is", "it", "the"): (
+        ("?", 2), ("king", 2), ("duke", 2),
+    ),
+    # "what a" exclamations
+    ("what", "a", "fool"): (
+        ("!", 2), (",", 2),
+    ),
+    ("what", "a", "man"): (
+        ("!", 2), (",", 2),
+    ),
+    ("what", "a", "noble"): (
+        ("mind", 2), ("heart", 2), ("soul", 2), ("man", 2),
+    ),
+    ("what", "a", "strange"): (
+        ("thing", 2), ("sight", 2), ("man", 2),
+    ),
+    # "a pox on" / "curse on"
+    ("a", "pox", "on"): (
+        ("him", 2), ("her", 2), ("you", 2), ("them", 2), ("thee", 2),
+    ),
+    # "for mine own / his own"
+    ("for", "mine", "own"): (
+        ("sake", 2), ("part", 2), ("good", 2),
+    ),
+    ("for", "his", "own"): (
+        ("sake", 2), ("part", 2), ("good", 2),
+    ),
+    # Time / fate idioms
+    ("the", "time", "is"): (
+        ("come", 2), ("out", 2), ("near", 2), ("ripe", 2),
+    ),
+    ("the", "hour", "is"): (
+        ("come", 2), ("near", 2), ("late", 2),
+    ),
+    ("the", "day", "is"): (
+        ("come", 2), ("done", 2), ("ours", 2),
+    ),
+    ("the", "night", "is"): (
+        ("long", 2), ("done", 2), ("dark", 2), ("young", 2),
+    ),
+    # Negation chains
+    ("not", "a", "word"): (
+        (",", 2), (".", 2), ("!", 2), ("more", 2),
+    ),
+    ("not", "a", "man"): (
+        (",", 2), (".", 2), ("of", 2),
+    ),
+    # "the king" / "the queen" follow-ons
+    ("the", "king", "is"): (
+        ("dead", 2), ("come", 2), ("a", 2), ("in", 2), ("not", 2),
+    ),
+    ("the", "queen", "is"): (
+        ("dead", 2), ("come", 2), ("a", 2),
+    ),
+    # "my lord" vocative follows
+    ("my", "lord", "the"): (
+        ("king", 3), ("duke", 2),
+    ),
+    # "sir, I" speech frames
+    ("sir", ",", "i"): (
+        ("am", 2), ("have", 2), ("do", 2), ("will", 2), ("cannot", 2),
+        ("pray", 2), ("beseech", 2), ("thank", 2),
+    ),
+    ("sir", ",", "the"): (
+        ("king", 2), ("queen", 2), ("duke", 2), ("matter", 2),
+    ),
+    # "madam, I" speech frames
+    ("madam", ",", "i"): (
+        ("am", 2), ("have", 2), ("do", 2), ("will", 2), ("beseech", 2),
+    ),
+    # "come, let's / let us"
+    ("come", ",", "let"): (
+        ("us", 3), ("'s", 2),
+    ),
+    # "a man / a king / a fool" + is
+    ("a", "man", "of"): (
+        ("honour", 2), ("honor", 2), ("his", 2), ("such", 2), ("this", 2),
+        ("war", 2), ("noble", 2),
+    ),
+    # "O God" / "O Heaven"
+    ("o", "god", ","): (
+        ("o", 2), ("i", 2), ("what", 2),
+    ),
+    ("o", "heaven", "!"): (
+        ("\n", 3),
+    ),
+    ("o", "heavens", "!"): (
+        ("\n", 3),
+    ),
+    # "never, never"
+    ("never", ",", "never"): (
+        (",", 3), ("!", 2), (".", 2),
+    ),
+    # "fie, fie"
+    ("fie", ",", "fie"): (
+        ("!", 3), (",", 2), (".", 2),
+    ),
+    # Interrogative "when shall"
+    ("when", "shall", "we"): (
+        ("three", 1), ("meet", 2), ("go", 2), ("be", 2),
+    ),
+    ("when", "shall", "i"): (
+        ("see", 2), ("meet", 2), ("have", 2),
+    ),
+    # "how shall"
+    ("how", "shall", "i"): (
+        ("do", 3), ("know", 2), ("find", 2), ("say", 2), ("bear", 2),
+    ),
+    ("how", "shall", "we"): (
+        ("do", 2), ("go", 2),
+    ),
+    # "let me" frames (more)
+    ("let", "me", "see"): (
+        (",", 2), (".", 2), ("the", 2), ("him", 2), ("it", 2),
+    ),
+    ("let", "me", "go"): (
+        (",", 2), (".", 2), ("!", 2),
+    ),
+    ("let", "me", "die"): (
+        (",", 2), (".", 2), ("!", 2),
+    ),
+    ("let", "me", "live"): (
+        (",", 2), (".", 2), ("!", 2),
+    ),
+    ("let", "me", "speak"): (
+        (",", 2), (".", 2),
+    ),
+    # "nothing but"
+    ("nothing", "but", "a"): (
+        ("fool", 2), ("man", 2), ("shadow", 2), ("name", 2),
+    ),
+    ("nothing", "but", "the"): (
+        ("truth", 2), ("king", 2),
+    ),
+    # "hath been"
+    ("hath", "been", "a"): (
+        ("good", 2), ("noble", 2), ("long", 2),
+    ),
+    # "did you" interrogatives
+    ("did", "you", "see"): (
+        ("?", 3), ("him", 2), ("her", 2), ("the", 2), ("it", 2),
+    ),
+    ("did", "you", "hear"): (
+        ("?", 3), ("that", 2), ("the", 2), ("him", 2),
+    ),
+    # "shall we meet"
+    ("shall", "we", "meet"): (
+        ("?", 2), ("again", 2), ("here", 2),
+    ),
+    # Exit phrases
+    ("away", ",", "away"): (
+        ("!", 3), (",", 2),
+    ),
+    ("hence", ",", "away"): (
+        ("!", 2), (",", 2),
+    ),
 }
 
 
