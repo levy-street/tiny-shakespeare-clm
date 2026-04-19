@@ -112,6 +112,7 @@ from .case_slot import case_slot_start_bias
 from .lament import lament_start_bias, lament_sentence_start_bias
 from .tenderness import tenderness_start_bias, tenderness_sentence_start_bias
 from .drift_recovery import drift_recovery_bias, drift_recovery_midword_bias
+from .gibberish_hardcap import gibberish_hardcap_bias
 from .line_break_bias import line_break_newline_bias
 from .trigram import trigram_bias
 from .vocative import VOCATIVE_START_BIAS
@@ -455,6 +456,21 @@ def predict(state: ModelState) -> list[float]:
         if dmw is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += dmw[i]
+
+        # Hard cap: exponentially growing terminator bias once a word
+        # has extended off-trie past letter 10. Complements offtrie_depart
+        # (which caps its scaling at letter 8) by continuing the
+        # pressure to truly unbounded off-trie lengths. Forces gibberish
+        # to close by letter 13-15 at the latest.
+        ghc = gibberish_hardcap_bias(
+            state.letter_run_len,
+            state.on_word_trie,
+            state.letters_off_trie,
+            state.speaker_label_state,
+        )
+        if ghc is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += ghc[i]
 
 
     # Layer 3c1-verb: verb-word-trie mid-word bias. When the clause
