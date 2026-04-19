@@ -1239,3 +1239,22 @@ class ModelState(BaseModel):
     # Words elapsed since verb_class was set. Resets with class. Used
     # to decay the bias as the object slot falls further out of reach.
     vc_wait_words: int = 0
+
+    # --- Tier 2/3: cross-turn prior-speaker sentence-type memory ---
+    # The sentence type of the last sentence the PREVIOUS speaker
+    # uttered before the turn boundary. Captured by pipeline/sentence.py
+    # at the moment the turn boundary (\n\n) clears prev_sentence_type.
+    # Values match SENT_UNKNOWN/DECL/INTERROG/EXCLAM/IMPER.
+    #
+    # Why this captures something new: existing turn-opener biases
+    # fire when words_in_turn == 0 but they don't know WHAT the prior
+    # speaker said. When the prior speaker ended with "?", the current
+    # speaker is likely answering — opener should favour "Yes/No/Nay/
+    # Ay/Marry/Indeed/Truly/I/Not/Never/Well". When the prior speaker
+    # ended with "!", the current speaker often responds with a
+    # surprise / calming interjection ("Peace/Hold/Stay/Soft").
+    # When the prior speaker ended with "." (declarative), no
+    # particular answer-opener preference applies.
+    # Reset to 0 at the next turn boundary (so only the IMMEDIATELY
+    # preceding turn's final sentence is remembered).
+    prev_turn_final_sent_type: int = 0

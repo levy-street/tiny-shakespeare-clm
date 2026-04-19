@@ -160,8 +160,19 @@ def update_sentence(state: ModelState, token_id: int) -> ModelState:
 
     # Speaker-turn boundary: clear the cross-sentence memory; a new
     # speaker's first sentence should not inherit the prior speaker's
-    # sentence-type context.
+    # sentence-type context. BUT — preserve the prior turn's final
+    # sentence type in prev_turn_final_sent_type so cross-turn
+    # answer-opener biases can fire on the next speaker's first word.
     if state.consecutive_newlines >= 2 and ch == "\n":
+        # Capture the outgoing turn's last sentence type. Prefer
+        # prev_sentence_type (set at the last ./?/! of the outgoing
+        # turn); fall back to the in-progress sentence_type if the
+        # turn ended without terminal punctuation. Only overwrite
+        # the memory slot when we have a real value — otherwise
+        # keep whatever was there (unlikely to matter).
+        outgoing = state.prev_sentence_type
+        if outgoing == SENT_UNKNOWN and state.sentence_type != SENT_UNKNOWN:
+            outgoing = state.sentence_type
         return state.model_copy(
             update={
                 "sentence_type": SENT_UNKNOWN,
@@ -170,6 +181,7 @@ def update_sentence(state: ModelState, token_id: int) -> ModelState:
                 "prev_sentence_first_word": "",
                 "curr_sentence_first_word": "",
                 "sentence_anaphora_run": 0,
+                "prev_turn_final_sent_type": outgoing,
             }
         )
 

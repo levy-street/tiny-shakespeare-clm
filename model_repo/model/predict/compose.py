@@ -61,6 +61,7 @@ from .speaker_trie import speaker_trie_bias
 from .start4gram import start4gram_bias
 from .tonal import tonal_start_bias
 from .turn_opener import TURN_OPENER_START_BIAS
+from .answer_opener import answer_opener_start_bias
 from .start5gram import start5gram_bias
 from .startbigram import startbigram_bias
 from .starttrigram import starttrigram_bias
@@ -1146,6 +1147,23 @@ def predict(state: ModelState) -> list[float]:
         ):
             for i in range(VOCAB_SIZE):
                 logits[i] += TURN_OPENER_START_BIAS[i]
+
+        # Layer 4b6b: cross-turn answer-opener bias. If the PRIOR
+        # speaker's turn ended with "?", "!", or imperative, shape
+        # this speaker's first-word first-letter toward answer /
+        # reaction openers. Complements the generic turn-opener
+        # bias with cross-turn semantic awareness.
+        aob = answer_opener_start_bias(
+            state.prev_turn_final_sent_type,
+            state.words_in_turn,
+            state.sentences_in_turn,
+            state.speaker_label_state,
+            state.letter_run_len,
+            state.word_buffer,
+        )
+        if aob is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += aob[i]
 
     # Layer 4d: verb-agreement bias based on subject pronoun.
     # When the clause's subject is "thou", Shakespearean agreement
