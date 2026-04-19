@@ -1082,6 +1082,8 @@ def predict(state: ModelState) -> list[float]:
             state.thou_thee_commit,
             state.letter_run_len,
             state.speaker_label_state,
+            state.case_slot,
+            state.case_wait_words,
         )
         if tvb is not None:
             for i in range(VOCAB_SIZE):
