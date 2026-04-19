@@ -51,6 +51,7 @@ from .list_bias import list_start_bias, list_wordend_comma_bias
 from .next_word import next_word_bias
 from .word_bigram_continue import word_bigram_continue_bias
 from .phrase_continue import phrase_continue_bias
+from .phrase_trigram_continue import phrase_trigram_continue_bias
 from .sensory_charge import sensory_charge_start_bias
 from .np_head import np_head_start_bias
 from .ornament import ornament_start_bias
@@ -429,6 +430,30 @@ def predict(state: ModelState) -> list[float]:
         if phc is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += phc[i]
+
+    # Layer 3c-PHC3: three-word phrase CONTINUATION bias. Conditions the
+    # next char on (prev_prev, prev, last) completed words plus the
+    # current buffer. Sharper than PHC because 3-word context disambiguates
+    # continuations that 2-word cannot — "I have been" + "g" → "o" (gone),
+    # "thou shalt not" + "d" → "i" (die), "to be or" + "n" → "o" (not),
+    # "God save the" + "k" → "i" (king).
+    if (
+        state.word_buffer
+        and state.last_completed_word
+        and state.prev_completed_word
+        and state.prev_prev_completed_word
+    ):
+        ph3 = phrase_trigram_continue_bias(
+            state.prev_prev_completed_word,
+            state.prev_completed_word,
+            state.last_completed_word,
+            state.word_buffer,
+            state.letter_run_len,
+            state.speaker_label_state,
+        )
+        if ph3 is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += ph3[i]
 
     # Layer 3c-MC: graded trie-match-count bias. Complements the
     # binary on_word_trie. Three regimes:
