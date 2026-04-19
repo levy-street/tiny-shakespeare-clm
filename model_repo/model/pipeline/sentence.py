@@ -143,6 +143,17 @@ def update_sentence(state: ModelState, token_id: int) -> ModelState:
             saved = SENT_EXCLAM
         elif ch == "?" and saved == SENT_DECL:
             saved = SENT_INTERROG
+        # Discourse-rhythm rolling tuples: append the just-closed
+        # sentence's type + word count (only when the sentence was
+        # non-trivially classified and long enough to matter — empties
+        # and 1-word fragments don't carry discourse signal). Cap at 4.
+        new_types = state.recent_sentence_types
+        new_lengths = state.recent_sentence_lengths
+        if saved != SENT_UNKNOWN and state.words_in_sentence >= 1:
+            new_types = (state.recent_sentence_types + (saved,))[-4:]
+            new_lengths = (
+                state.recent_sentence_lengths + (state.words_in_sentence,)
+            )[-4:]
         # Sentence-level anaphora bookkeeping: save the just-finished
         # sentence's first word into prev_sentence_first_word so the
         # NEXT sentence's first word can be compared against it. Leave
@@ -155,6 +166,8 @@ def update_sentence(state: ModelState, token_id: int) -> ModelState:
                 "prev_sentence_type": saved,
                 "prev_sentence_first_word": state.curr_sentence_first_word,
                 "curr_sentence_first_word": "",
+                "recent_sentence_types": new_types,
+                "recent_sentence_lengths": new_lengths,
             }
         )
 
@@ -182,6 +195,8 @@ def update_sentence(state: ModelState, token_id: int) -> ModelState:
                 "curr_sentence_first_word": "",
                 "sentence_anaphora_run": 0,
                 "prev_turn_final_sent_type": outgoing,
+                "recent_sentence_types": (),
+                "recent_sentence_lengths": (),
             }
         )
 

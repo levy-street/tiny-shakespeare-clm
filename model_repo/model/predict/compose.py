@@ -65,6 +65,7 @@ from .subord import subord_midword_bias, subord_word_end_bias
 from .clause_rhythm import clause_rhythm_comma_bias
 from .offtrie_depart import offtrie_depart_bias
 from .cv_alternation import cv_alternation_bias
+from .discourse_rhythm import discourse_rhythm_start_bias
 from .slot_next import slot_start_bias
 from .speaker_recency import speaker_recency_bias
 from .speaker_trie import speaker_trie_bias
@@ -792,6 +793,24 @@ def predict(state: ModelState) -> list[float]:
         if pnb is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += pnb[i]
+
+        # Layer 4-DR: discourse-rhythm sentence-first-letter bias. Reads
+        # recent_sentence_types (rolling tuple of last 4 closed sentence
+        # types) to detect discourse patterns — question chains,
+        # exclamation chains, declarative flow — and shape the next
+        # sentence's first letter accordingly. Only fires at a true
+        # sentence-first-letter position (words_in_sentence == 0,
+        # empty word_buffer, letter_run_len == 0).
+        drb = discourse_rhythm_start_bias(
+            state.recent_sentence_types,
+            state.words_in_sentence,
+            state.letter_run_len,
+            state.word_buffer,
+            state.speaker_label_state,
+        )
+        if drb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += drb[i]
 
         # Layer 4-LIST: list-parallelism first-letter bias. When we're
         # in a comma-separated list, bias toward (a) the same first

@@ -389,6 +389,19 @@ class ModelState(BaseModel):
     # self-repetition (a speaker is very unlikely to produce two
     # adjacent speaker labels with their own name).
     recent_speakers: tuple[str, ...] = ()
+    # Rolling tuple of the last 4 completed sentences' types (most-recent
+    # LAST). Each entry is a sentence_type integer (SENT_DECL / INTEROG /
+    # EXCLAM / IMPER / UNKNOWN). Unlike prev_sentence_type (1-back), this
+    # captures DISCOURSE-LEVEL rhythm: three-questions-in-a-row, two-
+    # declaratives-then-exclamation, etc. — patterns that shape a speaker's
+    # voice over multiple sentences and that 1-back memory can't see.
+    # Reset on turn boundary (new speaker).
+    recent_sentence_types: tuple[int, ...] = ()
+    # Parallel rolling tuple of the last 4 completed sentences' word
+    # counts (most-recent LAST). Captures sentence-LENGTH rhythm —
+    # short-short-long staccato vs long-sentence declamatory mode.
+    # Reset on turn boundary.
+    recent_sentence_lengths: tuple[int, ...] = ()
 
     # A rolling float in [-1, +1] tracking the dark/heavy vs
     # light/hopeful tonal texture of the emerging text. Shakespeare's
