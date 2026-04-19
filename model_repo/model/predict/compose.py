@@ -2592,8 +2592,10 @@ def predict(state: ModelState) -> list[float]:
             T = 1.52
         elif tmc <= 4:
             T = 1.42
+        elif tmc <= 8:
+            T = 1.36
         else:
-            T = 1.38
+            T = 1.32
     else:
         # Off-trie mid-word: letter n-grams + drift-recovery stack.
         # Higher T than on-trie because many strong negative biases
