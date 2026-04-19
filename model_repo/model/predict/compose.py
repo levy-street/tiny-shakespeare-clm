@@ -2522,7 +2522,7 @@ def predict(state: ModelState) -> list[float]:
         T = 1.33
     elif state.on_word_trie:
         # Mid-word on trie: word_trie bias dominates and is sharp.
-        T = 1.28
+        T = 1.40
     else:
         # Off-trie mid-word: letter n-grams + drift-recovery stack.
         # Higher T than on-trie because many strong negative biases
