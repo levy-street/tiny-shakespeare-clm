@@ -503,6 +503,266 @@ _EXPECT: dict[tuple[str, str], tuple[tuple[str, int], ...]] = {
         ("king", 2), ("house", 2), ("court", 2), ("world", 2), ("end", 2),
         ("same", 2),
     ),
+    # --- expanded I + verb combinations ---
+    ("i", "love"): (
+        ("thee", 5), ("her", 3), ("him", 2), ("my", 2), ("the", 2), ("thy", 2),
+        ("you", 2), ("not", 2), ("none", 1),
+    ),
+    ("i", "saw"): (
+        ("him", 3), ("her", 3), ("the", 3), ("my", 2), ("a", 2), ("thee", 2),
+        ("it", 2), ("his", 2), ("no", 1),
+    ),
+    ("i", "said"): (
+        ("i", 3), ("so", 3), ("to", 3), ("unto", 2), ("the", 2), ("my", 2),
+        ("it", 2),
+    ),
+    ("i", "told"): (
+        ("thee", 3), ("him", 3), ("her", 3), ("you", 3), ("my", 2), ("the", 2),
+    ),
+    ("i", "heard"): (
+        ("the", 3), ("a", 2), ("him", 2), ("her", 2), ("it", 2), ("my", 2),
+        ("thee", 2),
+    ),
+    ("i", "found"): (
+        ("him", 3), ("her", 3), ("the", 2), ("my", 2), ("a", 2), ("it", 2),
+        ("thee", 2),
+    ),
+    ("i", "fear"): (
+        ("not", 4), ("me", 3), ("the", 2), ("thee", 2), ("him", 2),
+        ("thy", 1), ("my", 1),
+    ),
+    ("i", "speak"): (
+        ("not", 3), ("of", 3), ("to", 3), ("the", 2), ("it", 2), ("no", 2),
+    ),
+    ("i", "come"): (
+        ("to", 4), ("not", 3), ("from", 2), ("hither", 2), ("with", 2),
+        ("for", 2), ("no", 1),
+    ),
+    ("i", "go"): (
+        ("to", 3), ("not", 2), ("with", 2), ("forth", 2), ("and", 2),
+    ),
+    ("i", "swear"): (
+        ("to", 3), ("by", 3), ("it", 2), ("thee", 2),
+    ),
+    ("i", "wish"): (
+        ("thee", 3), ("him", 2), ("her", 2), ("you", 2), ("to", 2), ("it", 2),
+        ("thy", 2), ("my", 2), ("no", 2),
+    ),
+    ("i", "mean"): (
+        ("to", 4), ("not", 3), ("no", 2), ("the", 2), ("thee", 2), ("him", 1),
+    ),
+    # --- my + noun (very common starting phrases) ---
+    ("my", "heart"): (
+        ("is", 3), ("doth", 2), ("hath", 2), ("and", 2), ("to", 2), ("of", 2),
+    ),
+    ("my", "soul"): (
+        ("is", 3), ("doth", 2), ("hath", 2), ("and", 2), ("to", 2),
+    ),
+    ("my", "father"): (
+        ("is", 3), ("and", 3), ("hath", 2), ("doth", 2), ("was", 2), ("the", 1),
+    ),
+    ("my", "mother"): (
+        ("is", 3), ("and", 3), ("hath", 2), ("doth", 2), ("was", 2),
+    ),
+    # --- the + ... ---
+    ("the", "king"): (
+        ("is", 3), ("hath", 3), ("doth", 2), ("of", 2), ("and", 2), ("his", 2),
+        ("my", 1), ("shall", 2), ("will", 2),
+    ),
+    ("the", "queen"): (
+        ("is", 3), ("hath", 3), ("doth", 2), ("of", 2), ("and", 2), ("his", 2),
+    ),
+    ("the", "duke"): (
+        ("of", 5), ("is", 2), ("hath", 2), ("and", 2), ("doth", 2),
+    ),
+    ("the", "lord"): (
+        ("of", 4), ("hath", 2), ("is", 2), ("and", 2),
+    ),
+    ("the", "world"): (
+        ("is", 3), ("of", 2), ("and", 2), ("hath", 2), ("doth", 2),
+        ("to", 2),
+    ),
+    ("the", "sun"): (
+        ("is", 3), ("doth", 2), ("hath", 2), ("of", 2), ("and", 2),
+        ("shall", 1),
+    ),
+    ("the", "time"): (
+        ("is", 3), ("of", 3), ("when", 2), ("to", 2), ("hath", 2), ("and", 2),
+        ("shall", 1),
+    ),
+    # --- after "upon" / "from" ---
+    ("upon", "my"): (
+        ("soul", 3), ("life", 3), ("word", 3), ("honour", 2), ("head", 2),
+        ("knee", 2), ("knees", 1), ("faith", 2),
+    ),
+    ("upon", "his"): (
+        ("head", 3), ("soul", 2), ("knee", 2), ("knees", 2), ("life", 2),
+        ("breast", 2), ("face", 2),
+    ),
+    ("from", "the"): (
+        ("king", 2), ("court", 2), ("world", 2), ("sea", 2), ("earth", 2),
+        ("ground", 2), ("time", 2), ("east", 1), ("west", 1), ("north", 1),
+    ),
+    ("from", "my"): (
+        ("soul", 3), ("heart", 3), ("lord", 2), ("lady", 2), ("father", 2),
+        ("mother", 2), ("eyes", 2),
+    ),
+    # --- "be" phrases ---
+    ("may", "be"): (
+        ("a", 3), ("the", 2), ("so", 2), ("done", 2), ("my", 2),
+    ),
+    ("must", "be"): (
+        ("a", 3), ("so", 2), ("the", 2), ("done", 2), ("my", 2),
+    ),
+    ("would", "be"): (
+        ("a", 3), ("the", 2), ("so", 2), ("done", 2), ("my", 2),
+    ),
+    # --- "have/hath" chains ---
+    ("hath", "done"): (
+        ("it", 2), ("the", 2), ("me", 2), ("thee", 2), ("so", 2), ("no", 1),
+    ),
+    ("hath", "made"): (
+        ("me", 3), ("thee", 2), ("him", 2), ("her", 2), ("a", 2), ("the", 2),
+    ),
+    ("have", "done"): (
+        ("it", 3), ("so", 2), ("the", 2), ("no", 2), ("thee", 2), ("with", 2),
+    ),
+    ("have", "made"): (
+        ("me", 3), ("a", 2), ("thee", 2), ("him", 2), ("her", 2), ("the", 2),
+    ),
+    ("have", "seen"): (
+        ("the", 3), ("him", 2), ("her", 2), ("my", 2), ("a", 2), ("thee", 2),
+    ),
+    # --- "give/take/make/let" chains ---
+    ("give", "me"): (
+        ("thy", 3), ("your", 2), ("the", 2), ("a", 2), ("my", 2), ("leave", 3),
+        ("some", 2),
+    ),
+    ("make", "me"): (
+        ("a", 3), ("not", 2), ("the", 2), ("to", 2), ("thy", 1),
+    ),
+    ("tell", "me"): (
+        ("not", 3), ("the", 3), ("thy", 3), ("what", 2), ("how", 2), ("why", 2),
+        ("of", 2), ("a", 1),
+    ),
+    # --- pronoun + verb ---
+    ("he", "hath"): (
+        ("done", 3), ("made", 2), ("said", 2), ("a", 2), ("the", 2), ("no", 2),
+        ("been", 2), ("sworn", 1),
+    ),
+    ("she", "hath"): (
+        ("done", 3), ("made", 2), ("said", 2), ("a", 2), ("no", 2),
+        ("been", 2),
+    ),
+    ("they", "are"): (
+        ("the", 2), ("not", 3), ("all", 2), ("but", 2), ("my", 2), ("gone", 2),
+        ("here", 2), ("come", 2),
+    ),
+    ("you", "are"): (
+        ("a", 3), ("not", 3), ("the", 2), ("my", 2), ("too", 2), ("so", 2),
+        ("welcome", 2), ("come", 2),
+    ),
+    ("we", "must"): (
+        ("not", 3), ("be", 2), ("have", 2), ("go", 2), ("do", 2), ("needs", 1),
+    ),
+    # --- "if" conditionals ---
+    ("if", "thou"): (
+        ("wilt", 2), ("art", 2), ("hast", 2), ("dost", 2), ("didst", 2),
+        ("shalt", 2), ("be", 2), ("have", 1), ("wert", 1),
+    ),
+    ("if", "i"): (
+        ("be", 3), ("have", 2), ("had", 2), ("were", 3), ("could", 2),
+        ("should", 2), ("must", 2), ("do", 2),
+    ),
+    ("if", "he"): (
+        ("be", 3), ("have", 2), ("had", 2), ("were", 2), ("come", 2),
+        ("doth", 2), ("hath", 2),
+    ),
+    ("if", "the"): (
+        ("king", 2), ("duke", 2), ("queen", 2), ("lord", 2), ("gods", 2),
+        ("world", 2), ("time", 2),
+    ),
+    # --- "but" + pronoun/determiner ---
+    ("but", "i"): (
+        ("am", 3), ("will", 2), ("have", 2), ("do", 2), ("must", 2),
+        ("know", 2), ("say", 2), ("fear", 2), ("pray", 2),
+    ),
+    ("but", "thou"): (
+        ("art", 2), ("hast", 2), ("wilt", 2), ("dost", 2), ("shalt", 1),
+    ),
+    ("but", "he"): (
+        ("is", 3), ("was", 2), ("hath", 2), ("doth", 2), ("will", 2),
+        ("shall", 1),
+    ),
+    ("but", "she"): (
+        ("is", 3), ("was", 2), ("hath", 2), ("doth", 2), ("will", 2),
+    ),
+    ("but", "the"): (
+        ("king", 2), ("queen", 2), ("duke", 2), ("lord", 2), ("time", 2),
+        ("world", 2),
+    ),
+    # --- "who" / "whose" ---
+    ("who", "is"): (
+        ("there", 3), ("this", 2), ("he", 2), ("she", 2), ("the", 2),
+        ("it", 2),
+    ),
+    ("whose", "name"): (
+        ("is", 3), ("shall", 2), ("was", 2), ("doth", 2), ("hath", 2),
+    ),
+    # --- relative pronouns ---
+    ("that", "i"): (
+        ("am", 3), ("have", 3), ("will", 2), ("did", 2), ("do", 2),
+        ("know", 2), ("may", 2), ("should", 2), ("must", 2), ("should", 1),
+    ),
+    ("that", "he"): (
+        ("is", 3), ("hath", 2), ("doth", 2), ("was", 2), ("will", 2),
+        ("shall", 2),
+    ),
+    ("that", "thou"): (
+        ("art", 2), ("hast", 2), ("dost", 2), ("wilt", 2), ("shalt", 1),
+        ("didst", 1),
+    ),
+    ("which", "i"): (
+        ("have", 3), ("did", 2), ("do", 2), ("would", 2), ("will", 2),
+        ("must", 2),
+    ),
+    # --- "O" invocations ---
+    ("o", "god"): (
+        ("of", 3), ("the", 2), ("i", 2), ("my", 2),
+    ),
+    ("o", "lord"): (
+        ("of", 3), ("the", 2), ("my", 2), ("i", 2),
+    ),
+    # --- "all" combinations ---
+    ("all", "my"): (
+        ("life", 2), ("love", 2), ("heart", 2), ("soul", 2), ("days", 2),
+        ("friends", 2), ("hopes", 2),
+    ),
+    # --- "most" / "more" ---
+    ("more", "than"): (
+        ("a", 3), ("i", 2), ("all", 2), ("the", 2), ("my", 2), ("thou", 2),
+        ("he", 2), ("ever", 2),
+    ),
+    ("most", "noble"): (
+        ("lord", 3), ("sir", 2), ("prince", 2), ("and", 2), ("king", 1),
+    ),
+    # --- "thy" nouns ---
+    ("thy", "love"): (
+        ("is", 3), ("and", 2), ("to", 2), ("shall", 2), ("will", 2),
+    ),
+    ("thy", "name"): (
+        ("is", 3), ("shall", 2), ("and", 2), ("from", 2), ("to", 2),
+    ),
+    ("thy", "heart"): (
+        ("is", 3), ("and", 2), ("to", 2), ("shall", 1),
+    ),
+    # --- "good" ---
+    ("good", "night"): (
+        ("my", 3), ("sir", 2), ("to", 2), ("sweet", 2), ("and", 2),
+    ),
+    ("good", "morrow"): (
+        ("my", 3), ("to", 3), ("sir", 2), ("sweet", 2), ("and", 2),
+    ),
 }
 
 
