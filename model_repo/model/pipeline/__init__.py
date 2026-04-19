@@ -20,6 +20,7 @@ from .alliteration import update_alliteration
 from .anaphora import update_anaphora
 from .clause import update_clause
 from .clause_slot import update_clause_slot
+from .line_break import update_line_break
 from .verb_agreement import update_verb_agreement
 from .np_head import update_np_head
 from .transitivity import update_transitivity
@@ -74,6 +75,7 @@ PIPELINE: list[Stage] = [
     update_rhyme,           # Tier 2/3: line-tail rhyme memory
     update_prosody,         # Tier 3: syllable / cadence tracking
     update_word_shape,      # Tier 2: per-word phonotactic red-flag counter
+    update_line_break,      # Tier 2: syntactic line-break propriety
     update_flow,            # Tier 3: flow / mood / cadence
 ]
 

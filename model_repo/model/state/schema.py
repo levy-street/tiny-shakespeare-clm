@@ -1184,3 +1184,31 @@ class ModelState(BaseModel):
     #   PN_NONE mid-sentence → gentle penalty on A-Z (phantom-cap
     #   guard); PN_STRONG/QUOTE → mild boost on capital starts.
     proper_noun_slot: int = 0
+
+    # --- Tier 2: line-break propriety ---
+    # A coarse "is this a legal place to end a verse line?" tracker,
+    # computed each token from existing syntactic-position fields
+    # (np_open, clause_slot, letter_run_len, word_buffer, chars_since_comma).
+    #
+    #   0 BREAK_DEEP_MID_PHRASE — mid-word, or an NP is open (article/
+    #                             preposition/possessive unresolved), or
+    #                             the clause has no verb yet. Line break
+    #                             here is ungrammatical; suppress \n.
+    #   1 BREAK_WEAK            — post-verb but NP still pending head,
+    #                             or general mid-clause. Line break is
+    #                             tolerated but not ideal.
+    #   2 BREAK_PHRASE_END      — at a complete word AND clause has a
+    #                             verb AND no NP is open. Natural place
+    #                             to break a verse line.
+    #   3 BREAK_CLAUSE_END      — just after a clause-break punctuation
+    #                             (, ; :) — the strongest line-break
+    #                             signal short of sentence-end.
+    #
+    # Why this captures something new: the existing verse-line signals
+    # (verse_score, chars_since_newline, prev_line_length) are all
+    # position/scoring — they say "a break is overdue" but not "this
+    # is a grammatical place to break". Samples show the model ending
+    # lines mid-NP ("wade certain\nEngage yearly", "Is adieu\n"), which
+    # real Shakespeare rarely does. Predict consumers can suppress \n
+    # at propriety 0/1 and keep it at 2/3.
+    line_break_propriety: int = 0

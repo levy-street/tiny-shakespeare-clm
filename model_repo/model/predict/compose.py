@@ -90,6 +90,7 @@ from .verb_chain import verb_chain_bias
 from .clause_depth import clause_depth_close_bias
 from .double_cons_start import double_consonant_penalty
 from .red_flags import red_flags_close_bias
+from .line_break_bias import line_break_newline_bias
 from .trigram import trigram_bias
 from .vocative import VOCATIVE_START_BIAS
 from .unigram import UNIGRAM_LOGPROBS
@@ -1277,6 +1278,20 @@ def predict(state: ModelState) -> list[float]:
             logits[VOCAB_INDEX["\n"]] += 3.5
         elif csn >= 20:
             logits[VOCAB_INDEX["\n"]] += 1.8
+
+    # Line-break propriety bias: suppress \n at grammatically-bad
+    # positions (mid-word, open NP, no verb yet) and mildly boost it
+    # at clause-break positions. Gated to verse contexts.
+    lbb = line_break_newline_bias(
+        state.line_break_propriety,
+        state.verse_score,
+        state.chars_since_newline,
+        state.speaker_label_state,
+        state.in_prose_line,
+    )
+    if lbb is not None:
+        for i in range(VOCAB_SIZE):
+            logits[i] += lbb[i]
 
 
     # After apostrophe, the bias depends on what preceded the apostrophe:
