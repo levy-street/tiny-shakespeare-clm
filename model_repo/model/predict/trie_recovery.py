@@ -94,6 +94,7 @@ def trie_recovery_bias(
     # nothing on legit escapes from the word_trie. Terminator pressure
     # is expensive: biasing toward " " when the corpus has a real word
     # continuation costs BPC. Escalate gib hard, terminator very gently.
+    #
     past_only_term = 0.0
 
     if n <= 2:
