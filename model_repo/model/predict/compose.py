@@ -69,6 +69,7 @@ from .phrase_bigram import phrase_bigram_bias
 from .phrase_trigram import phrase_trigram_bias
 from .pos_next import pos_next_bias
 from .pos_bigram_next import pos_bigram_next_bias
+from .pos_trigram_next import pos_trigram_next_bias
 from .repetition import repetition_start_bias
 from .rhyme import rhyme_midword_bias
 from .rhythm import rhythm_wordend_bias
@@ -1421,6 +1422,22 @@ def predict(state: ModelState) -> list[float]:
             if pbn is not None:
                 for i in range(VOCAB_SIZE):
                     logits[i] += pbn[i]
+
+            # Layer 4b1c: POS-trigram next-word first-letter bias.
+            # Structural step beyond the bigram: fires only for
+            # narrow 3-back contexts where the triple strongly
+            # predicts a specific next POS class (e.g., "the fair
+            # maid" → main VERB; "I am slain" → "by" / punct; "see
+            # the king" → CONJ / prep / punct). Additive with
+            # pos_bigram_next and pos_next for a graded backoff.
+            ptn = pos_trigram_next_bias(
+                state.prev_prev_word_pos,
+                state.prev_word_pos,
+                state.last_word_pos,
+            )
+            if ptn is not None:
+                for i in range(VOCAB_SIZE):
+                    logits[i] += ptn[i]
 
             # Layer 4b2: subject-verb agreement word-start bias.
             # When a thou-subject has been identified and the verb
