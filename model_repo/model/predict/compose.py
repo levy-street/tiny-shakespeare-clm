@@ -64,6 +64,7 @@ from .subject_word_trie import subject_word_trie_bias
 from .subord import subord_midword_bias, subord_word_end_bias
 from .clause_rhythm import clause_rhythm_comma_bias
 from .offtrie_depart import offtrie_depart_bias
+from .cv_alternation import cv_alternation_bias
 from .slot_next import slot_start_bias
 from .speaker_recency import speaker_recency_bias
 from .speaker_trie import speaker_trie_bias
@@ -365,6 +366,23 @@ def predict(state: ModelState) -> list[float]:
         if od is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += od[i]
+
+        # Layer 3c1a-cv: C-V alternation push inside polysyllabic
+        # off-trie interiors. When 3+ consonants have been stacked
+        # without a vowel (or 3+ vowels without a consonant),
+        # overextended clusters get a phonotactic correction.
+        cv = cv_alternation_bias(
+            state.syllables_in_word,
+            state.letter_run_len,
+            state.consonants_since_vowel,
+            state.vowels_since_consonant,
+            state.on_word_trie,
+            state.letters_off_trie,
+            state.speaker_label_state,
+        )
+        if cv is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += cv[i]
         # Word-end bigram plausibility: look at the last 2 letters of
         # the off-trie buffer and decide whether the suffix looks like
         # a real English word ending (boost " ") or clearly mid-word
