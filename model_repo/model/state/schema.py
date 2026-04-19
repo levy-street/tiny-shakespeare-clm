@@ -1543,3 +1543,52 @@ class ModelState(BaseModel):
     # p, d, l) and modestly lift "O" at sentence-start (apostrophe
     # of grief: "O woe!", "O grief!", "O heaven!").
     lament_register: float = 0.0
+
+    # --- Tier 3: tenderness register (love / romance texture) ---
+    # A rolling [0, 1] float tracking whether the recent text is in
+    # tenderness mode — the soft, romantic, caressing texture of
+    # Shakespeare's love scenes ("my dear lady", "sweet love", "fair
+    # flower", "gentle rose", "O my beloved").
+    #
+    # Distinct from other flow axes:
+    #   - tonal_weight (dark/light):         light-valence covers many
+    #                                        cheerful things (mirth, joy,
+    #                                        victory); tenderness is
+    #                                        specifically the caressing,
+    #                                        endearing lexicon.
+    #   - imagery_density (concrete/abstract): tenderness often carries
+    #                                        vivid sensory imagery but
+    #                                        so do violence scenes.
+    #   - emotional_intensity (outburst):    tenderness is quiet warmth.
+    #   - lament_register:                    opposite pole (grief).
+    #   - invocation_mode:                    declamatory, not intimate.
+    #
+    # Bumps per completed word:
+    #   Tender-core     (+0.15 each):
+    #       love, loves, loved, loving, lover, lovers, beloved,
+    #       sweet, sweets, sweetly, dear, dearest, darling,
+    #       fair, fairer, fairest, beauty, beauteous,
+    #       kiss, kisses, kissed, gentle, gently, mild,
+    #       tender, tenderly, soft, softly, fond, kind, kindly,
+    #       charming, angel, angels, flower, rose, bosom
+    #   Tender-halo     (+0.08 each):
+    #       cheek, cheeks, eye, eyes, lip, lips,
+    #       heart (shared with lament — mild halo in tenderness),
+    #       bright, blossom, delight, delights, grace,
+    #       heaven, true, mine
+    #   Anti-tender     (-0.12 each):
+    #       war, wars, blood, sword, swords, arms (weapons),
+    #       battle, slain, kill, strike, strikes, rage, hate,
+    #       wrath, fury, curse, cursed, foe, enemy, foul,
+    #       rotten, venom
+    #   Anti-tender-mild (-0.04 each):
+    #       death, dread, dread, grief, woe, sorrow, tears (overlap
+    #       with lament — anti-correlated)
+    # Decay: 0.93 per just_finished_word.
+    # Speaker turn: *0.40.
+    #
+    # Consumed by predict/tenderness.py at word-start: when register
+    # >= 0.35, boost tenderness-lexicon first letters (l, s, f, d, g,
+    # k, m, t, b, r) and mildly lift "O" at sentence-start (apostrophe
+    # of love: "O my love!", "O sweet!", "O beauteous!").
+    tenderness_register: float = 0.0

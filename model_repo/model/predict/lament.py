@@ -43,7 +43,7 @@ _GRIEF_STARTERS: dict[str, float] = {
     "l": 0.25,   # lament, lost, loss
 }
 
-_THRESHOLD = 0.35
+_THRESHOLD = 0.20
 
 
 def lament_start_bias(

@@ -110,6 +110,7 @@ from .red_flags import red_flags_close_bias
 from .negation import negation_start_bias
 from .case_slot import case_slot_start_bias
 from .lament import lament_start_bias, lament_sentence_start_bias
+from .tenderness import tenderness_start_bias, tenderness_sentence_start_bias
 from .line_break_bias import line_break_newline_bias
 from .trigram import trigram_bias
 from .vocative import VOCATIVE_START_BIAS
@@ -1202,6 +1203,33 @@ def predict(state: ModelState) -> list[float]:
             if lssb is not None:
                 for i in range(VOCAB_SIZE):
                     logits[i] += lssb[i]
+
+        # Layer 4b3c-tender: tenderness-register word-start bias. The
+        # complementary pole to lament: love/sweet/fair/dear/gentle
+        # lexicon. A Tier 3 flow axis distinct from tonal_weight
+        # (generic valence), imagery_density (concreteness), and
+        # lament_register (grief). Samples in Shakespeare's romantic
+        # scenes want "my dear lady", "sweet love", "fair flower".
+        tsb = tenderness_start_bias(
+            state.tenderness_register,
+            state.speaker_label_state,
+        )
+        if tsb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += tsb[i]
+
+        if (
+            state.words_in_sentence == 0
+            and not state.word_buffer
+            and state.letter_run_len == 0
+        ):
+            tssb = tenderness_sentence_start_bias(
+                state.tenderness_register,
+                state.speaker_label_state,
+            )
+            if tssb is not None:
+                for i in range(VOCAB_SIZE):
+                    logits[i] += tssb[i]
 
         # Layer 4b3b2: 2nd-person addressing-register word-start bias.
         # When the register is established (|register| > 0.5), nudge
