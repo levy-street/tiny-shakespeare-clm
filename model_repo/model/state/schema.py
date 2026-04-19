@@ -637,6 +637,49 @@ class ModelState(BaseModel):
     # before the head noun.
     ornament_density: float = 0.0
 
+    # --- Tier 3: monosyllabic-run momentum (percussive-rhythm texture) ---
+    # Integer counter of the number of consecutive 1-syllable words most
+    # recently completed. Captures one of Shakespeare's most distinctive
+    # textural modes: the drumbeat of stacked monosyllables —
+    #   "To be, or not to be, that is the question"
+    #   "Words, words, words"
+    #   "Out, out, brief candle"
+    #   "This above all: to thine own self be true"
+    #   "Now is the winter of our discontent"
+    #
+    # Monosyllabic runs coincide with heightened rhetorical force —
+    # gnomic lines, epigrams, soliloquy climaxes, urgent dialogue —
+    # and have sharply different statistics from mixed-syllable prose:
+    #   * Next word is far more likely to also be monosyllabic (the
+    #     percussive momentum reinforces itself).
+    #   * First letters of next words concentrate on a small set:
+    #     t/a/b/w/h/i/n/o/s/m/y/d/f/g/l — the head letters of the
+    #     closed-class function words plus the most common 1-syllable
+    #     content verbs (be/go/do/say/see/know/come/love/die/live).
+    #   * Low likelihood of Latinate polysyllables starting q/x/z/j,
+    #     or of heavy consonant clusters starting str-/spr-/scr-.
+    #
+    # Updated in pipeline/flow.py on `just_finished_word`:
+    #   * If the completed word's syllable count (counted via vowel
+    #     groups) is 1: increment (cap at 12).
+    #   * Else: reset to 0.
+    # Reset on:
+    #   * Sentence-end punctuation (. ? !).
+    #   * Speaker-turn boundary (consecutive_newlines >= 2).
+    #   * Speaker label transition.
+    # Preserved across:
+    #   * Newlines within a turn (so enjambed monosyllabic lines sustain).
+    #   * Comma / semicolon / colon breaks (so "To be, or not to be"
+    #     keeps climbing across the comma).
+    #
+    # Consumed by predict/rhythm.py at word-start:
+    #   * When run >= 3, boost first letters of the short-word cluster
+    #     above (additive, small magnitude).
+    #   * When run >= 5, also penalize polysyllable-leader clusters
+    #     (q, x, z, j, and consonant-heavy starts of >8-letter latinate
+    #     words).
+    monosyllabic_run: int = 0
+
     # --- Tier 2: per-word phonotactic red-flag accumulator ---
     # Count of phonotactic "red flags" observed in the current word
     # buffer so far. A red flag is a non-English-like substructure

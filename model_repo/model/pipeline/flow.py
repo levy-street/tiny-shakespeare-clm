@@ -68,6 +68,31 @@ def _sent_distance_bucket(chars_since_sentence_end: int) -> int:
 _VOWELS_SET = frozenset("aeiouAEIOU")
 
 
+def _count_syllables(word: str) -> int:
+    """Count vowel groups in a word (proxy for syllables). Strips
+    apostrophes, handles silent-final-e in multi-syllable words, and
+    returns at least 1 for any letter-bearing input. Approximate but
+    robust enough for the 1-vs-multi distinction."""
+    if not word:
+        return 0
+    s = word.lower().replace("'", "")
+    if not s:
+        return 0
+    count = 0
+    prev_vowel = False
+    for ch in s:
+        is_v = ch in "aeiouy"
+        if is_v and not prev_vowel:
+            count += 1
+        prev_vowel = is_v
+    # Silent final 'e' (except -le which is syllabic): "love", "made",
+    # "time" → 1 syllable not 2. Only strip when we have >= 2 counted
+    # groups, to avoid reducing e.g. "be" to 0.
+    if count > 1 and s.endswith("e") and not s.endswith("le"):
+        count -= 1
+    return max(1, count)
+
+
 # Words whose appearance marks an archaic / early-modern register.
 # Not a frequency list — a hand-picked set of lexical markers that
 # unambiguously signal "this scene is in archaic mode". Each bumps
@@ -611,6 +636,23 @@ def update_flow(state: ModelState, token_id: int) -> ModelState:
     if state.consecutive_newlines >= 2 and lc == "\n":
         ornament_density *= 0.4
 
+    # --- monosyllabic_run ---
+    # Increment on completing a 1-syllable word; reset otherwise.
+    # Reset on sentence-end and speaker-turn boundary.
+    monosyllabic_run = state.monosyllabic_run
+    if state.just_finished_word:
+        w = state.last_completed_word
+        if w:
+            syl = _count_syllables(w)
+            if syl == 1:
+                monosyllabic_run = min(12, monosyllabic_run + 1)
+            else:
+                monosyllabic_run = 0
+    if lc in ".!?":
+        monosyllabic_run = 0
+    if state.consecutive_newlines >= 2 and lc == "\n":
+        monosyllabic_run = 0
+
     return state.model_copy(
         update={
             "on_word_trie": on_trie,
@@ -634,5 +676,6 @@ def update_flow(state: ModelState, token_id: int) -> ModelState:
             "ornament_density": ornament_density,
             "invocation_mode": invocation_mode,
             "sonority_level": sonority_level,
+            "monosyllabic_run": monosyllabic_run,
         }
     )

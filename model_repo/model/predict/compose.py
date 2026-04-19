@@ -54,6 +54,7 @@ from .phrase_trigram import phrase_trigram_bias
 from .pos_next import pos_next_bias
 from .repetition import repetition_start_bias
 from .rhyme import rhyme_midword_bias
+from .rhythm import rhythm_wordend_bias
 from .sonority import sonority_midword_bias
 from .suffix_completion import suffix_completion_bias
 from .verb_word_trie import verb_word_trie_bias
@@ -595,6 +596,31 @@ def predict(state: ModelState) -> list[float]:
             for i in range(VOCAB_SIZE):
                 logits[i] += am[i]
 
+    # Layer 3c2d: monosyllabic-run rhythm word-end bias. Reads
+    # state.monosyllabic_run (a flow-tier texture field) and, when
+    # we're deep in a monosyllabic-run cadence AND the current word
+    # buffer has reached a complete known word (has_seen_complete),
+    # nudges toward word-ending characters (space/punct) over further
+    # letters. This closes the word before it drifts polysyllabic and
+    # breaks the percussive rhythm. Gated on has_seen_complete AND
+    # letters_past_complete <= 1 so we only fire at legitimate close
+    # points, not mid-word at positions that may still have letters.
+    if (
+        state.word_buffer
+        and state.speaker_label_state == 0
+        and state.has_seen_complete
+        and state.letters_past_complete <= 1
+    ):
+        rh = rhythm_wordend_bias(
+            state.monosyllabic_run,
+            state.letter_run_len,
+            state.speaker_label_state,
+            state.on_word_trie,
+        )
+        if rh is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += rh[i]
+
     # Layer 3c2c: rhyme-position mid-word bias. When we're in a verse
     # run and approaching line-end, nudge the next letter toward the
     # previous line's rhyme letter.
@@ -967,6 +993,7 @@ def predict(state: ModelState) -> list[float]:
             if fsb is not None:
                 for i in range(VOCAB_SIZE):
                     logits[i] += fsb[i]
+
 
         # Layer 4b4: topic bias — at word-start outside speaker labels,
         # use the rolling content_words tuple (last 4 content words) to
