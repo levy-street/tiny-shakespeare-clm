@@ -51,6 +51,7 @@ from .list_bias import list_start_bias, list_wordend_comma_bias
 from .next_word import next_word_bias
 from .word_bigram_continue import word_bigram_continue_bias
 from .phrase_continue import phrase_continue_bias
+from .sensory_charge import sensory_charge_start_bias
 from .np_head import np_head_start_bias
 from .ornament import ornament_start_bias
 from .parallel import parallel_start_bias
@@ -1067,6 +1068,19 @@ def predict(state: ModelState) -> list[float]:
     ):
         for i in range(VOCAB_SIZE):
             logits[i] += START_BIAS[i]
+
+        # Layer 4-SC: sensory-charge register start bias. When the
+        # recent-words window has been corporeal / sensory (tragic
+        # lyric), boost first letters of sensory vocabulary. When it
+        # has been abstract / discursive (court argument), boost
+        # first letters of reasoning vocabulary. Flow-tier texture.
+        scb = sensory_charge_start_bias(
+            state.sensory_charge,
+            state.speaker_label_state,
+        )
+        if scb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += scb[i]
 
         # Layer 4-PN: proper-noun slot bias. At mid-sentence word-
         # starts, penalize phantom capitals when no title / vocative

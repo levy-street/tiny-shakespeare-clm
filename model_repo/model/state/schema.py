@@ -2078,3 +2078,37 @@ class ModelState(BaseModel):
     # trajectories (-ed / -eth / -s / -ing branch selection).
     sentence_tense: int = 0
     sentence_tense_age: int = 0
+
+    # --- Tier 3: sensory charge (corporeal ↔ abstract axis) ---
+    # A rolling float in roughly [-3, +3] that tracks whether recent
+    # completed content words have been CORPOREAL / SENSORY (body
+    # parts, elements, weapons, weather, blood, tears, flame, sword,
+    # heart, eye, hand, night, storm, moon, sun, grave, fire) or
+    # ABSTRACT / DISCURSIVE (cause, matter, reason, question, truth,
+    # justice, honour, virtue, duty, purpose, sense, fault, doubt).
+    #
+    #   +3  = heavy sensory / corporeal texture (tragic lyric, battle
+    #         speech, imagery-soaked verse)
+    #    0  = neutral
+    #   -3  = heavy discursive / reasoning texture (court argument,
+    #         deliberation, deliberative prose)
+    #
+    # Update rule (pipeline/sensory_charge.py, at word-completion):
+    #   - Look up last_completed_word in curated sensory / abstract
+    #     word sets (prior knowledge, not corpus-derived). Sensory
+    #     words add +0.6, abstract words add −0.5 — clamped to
+    #     [-3, +3]. All words (including function words) decay the
+    #     value by a small factor (×0.93) so influence fades.
+    #   - Reset to 0 on speaker-turn boundary (\n\n).
+    #
+    # Consumed by predict/sensory_charge.py at word-start positions
+    # (outside speaker-label territory, post space/newline): when
+    # charge > +1.0, first-letters of sensory vocabulary get a boost
+    # (b/e/h/f/s/t/n/g — blood/eye/heart/fire/sword/tears/night/grave);
+    # when charge < −1.0, first-letters of abstract/discursive
+    # vocabulary get a boost (c/m/r/q/t/j/h/v/d — cause/matter/reason/
+    # question/truth/justice/honour/virtue/duty). Neutral charge =
+    # no bias. This makes lyric passages continue their corporeal
+    # register, and prose-argument passages continue their abstract
+    # register, rather than drifting between modes mid-passage.
+    sensory_charge: float = 0.0

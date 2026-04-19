@@ -58,6 +58,7 @@ from .word_shape import update_word_shape
 from .enjambment import update_enjambment
 from .polysyllable import update_polysyllable
 from .rhyme import update_rhyme
+from .sensory_charge import update_sensory_charge
 from .sentence import update_sentence
 from .speaker_memory import update_speaker_memory
 from .speaker_register import update_speaker_register
@@ -108,6 +109,7 @@ PIPELINE: list[Stage] = [
     update_tenderness,      # Tier 3: tenderness/love texture register
     update_gravitas,        # Tier 3: gravitas/moral-weight texture register
     update_fury,            # Tier 3: fury/rage/curse texture register
+    update_sensory_charge,  # Tier 3: corporeal ↔ abstract charge (lyric vs argument register)
     update_dialogue_adjacency,  # Tier 2/3: snapshot prev-turn shape before turn counters reset
     update_turn_progress,   # Tier 2/3: words/sentences/lines in current turn
     update_turn_content,    # Tier 3: per-turn content-word echo cache
