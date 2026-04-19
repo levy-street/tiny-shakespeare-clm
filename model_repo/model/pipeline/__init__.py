@@ -32,6 +32,7 @@ from .flow import update_flow
 from .formula import update_formula
 from .linguistic import update_linguistic
 from .list_structure import update_list_structure
+from .negation import update_negation
 from .pos import update_pos
 from .proper_noun import update_proper_noun
 from .caesura import update_caesura
@@ -63,6 +64,7 @@ PIPELINE: list[Stage] = [
     update_clause,          # Tier 2: clause-structure (clauses, subj pronoun)
     update_clause_slot,     # Tier 2: syntactic-slot state machine
     update_subord,          # Tier 2: subordinate-clause depth tracker
+    update_negation,        # Tier 2: negation-scope polarity tracker
     update_verb_agreement,  # Tier 2: subject-verb agreement expectation
     update_np_head,         # Tier 2: NP-head expectation (np_open, np_wait_words)
     update_transitivity,    # Tier 2: verb transitivity / object-expectation

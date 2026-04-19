@@ -107,6 +107,7 @@ from .verb_object_class import verb_object_class_start_bias
 from .clause_depth import clause_depth_close_bias
 from .double_cons_start import double_consonant_penalty
 from .red_flags import red_flags_close_bias
+from .negation import negation_start_bias
 from .line_break_bias import line_break_newline_bias
 from .trigram import trigram_bias
 from .vocative import VOCATIVE_START_BIAS
@@ -1133,6 +1134,24 @@ def predict(state: ModelState) -> list[float]:
         if dwsb is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += dwsb[i]
+
+        # Layer 4b3c-neg: negation-scope word-start bias. When a
+        # negation-class word (not/no/nor/never/neither/...) fired
+        # recently inside this sentence, boost "n"/"b"/"y" starters
+        # for characteristic Shakespearean continuations:
+        #   "nor X nor Y", "not X but Y", "neither X nor Y",
+        #   "never X, never Y". The specific last_negation_word
+        #   targets the strongest of these patterns ("neither" →
+        #   almost-certain "nor" next).
+        nsb = negation_start_bias(
+            state.negation_count,
+            state.words_since_negation,
+            state.last_negation_word,
+            state.speaker_label_state,
+        )
+        if nsb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += nsb[i]
 
         # Layer 4b3b2: 2nd-person addressing-register word-start bias.
         # When the register is established (|register| > 0.5), nudge

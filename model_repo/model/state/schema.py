@@ -1414,3 +1414,43 @@ class ModelState(BaseModel):
     # Reset to 0 at the next turn boundary (so only the IMMEDIATELY
     # preceding turn's final sentence is remembered).
     prev_turn_final_sent_type: int = 0
+
+    # --- Tier 2: negation scope tracker ---
+    # Count of negation-class words completed inside the current
+    # sentence. Negation class is:
+    #   not, no, nay, never, none, nothing, naught, nought, nor,
+    #   neither, n't (contracted enclitic on an auxiliary: cannot,
+    #   don't, hasn't — detected as a word ending in "n't" or a
+    #   word equal to "cannot").
+    # Reset to 0 on sentence-end punctuation (. ? !) and on
+    # speaker-turn boundary (consecutive_newlines >= 2). Capped at 5.
+    #
+    # Why this captures something new: Shakespeare's negations chain
+    # and balance in characteristic ways:
+    #   "nor X nor Y"             — once "nor" fires, another "nor"
+    #                                is very likely in the next 1-4
+    #                                words.
+    #   "not X but Y"             — "not" often attracts a later
+    #                                "but".
+    #   "neither X nor Y"         — "neither" almost always preludes
+    #                                a "nor".
+    #   "no, nor..."              — answer-opener "no" often pairs
+    #                                with a follow-on "nor"/"not".
+    #   "never X, never Y"        — parallel "never" patterns.
+    # No existing state field (verb_agreement, clause_slot, subord,
+    # list_structure, repetition) tracks clause-level negation scope
+    # or the identity of the triggering negation word. Predict layers
+    # reading this can sharpen word-start letter priors for "n" (nor,
+    # never, no, nothing) and "b" (but) while negation is live.
+    negation_count: int = 0
+    # Words completed since the most recent negation word fired.
+    # Set to 0 at the moment the negation completes. Increments on
+    # each subsequent just_finished_word. Capped at 8. Reset to 0
+    # on sentence-end / speaker-turn.
+    words_since_negation: int = 0
+    # The most recent negation word (lowercased) inside this sentence,
+    # or "" if no active negation. Distinguishes "nor" (which most
+    # strongly attracts another "nor") from "not"/"never"/"no" (which
+    # attract "but"/"nor" more broadly). Reset to "" on sentence-end /
+    # speaker-turn.
+    last_negation_word: str = ""
