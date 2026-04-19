@@ -90,17 +90,17 @@ def _build_vec(depart_pos: int, off_len: int) -> list[float] | None:
     if depart_pos <= 2:
         if off_len < 2:
             return None
-        term_scale = 0.04
-        end_scale = 0.02
+        term_scale = 0.03
+        end_scale = 0.08
         gib_scale = 0.25
     elif depart_pos <= 4:
         return None
     else:  # depart_pos >= 5
         if off_len < 2:
             return None
-        term_scale = 0.05
-        end_scale = 0.03
-        gib_scale = 0.35
+        term_scale = 0.04
+        end_scale = 0.12
+        gib_scale = 0.30
 
     # Escalate with off_len.
     if off_len == 2:
