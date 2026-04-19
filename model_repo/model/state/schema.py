@@ -1212,3 +1212,30 @@ class ModelState(BaseModel):
     # real Shakespeare rarely does. Predict consumers can suppress \n
     # at propriety 0/1 and keep it at 2/3.
     line_break_propriety: int = 0
+
+    # --- Tier 2: verb semantic class of the current clause's main verb ---
+    # A coarse 9-way classification of the verb that was most recently
+    # seen in the current clause. Enables post-verb predictions that
+    # depend on the verb's *meaning*, not just its presence.
+    # Values:
+    #   0 VC_NONE        — no recent verb / reset by sentence/clause break
+    #   1 VC_PERCEPT     — see/hear/feel/behold/witness/watch/observe…
+    #   2 VC_COGNITION   — know/think/believe/doubt/suspect/understand…
+    #   3 VC_SPEECH      — tell/say/speak/ask/call/swear/promise/answer
+    #   4 VC_MOTION      — go/come/follow/lead/seek/meet/fly/hunt…
+    #   5 VC_GIVE_TAKE   — give/take/bring/send/offer/keep/hold…
+    #   6 VC_VIOLENCE    — kill/slay/strike/wound/stab/hurt/beat/break
+    #   7 VC_EMOTION     — love/hate/fear/curse/bless/thank/praise…
+    #   8 VC_BE_EXIST    — is/are/be/seem/become/appear/remain/prove
+    #
+    # Why this captures something new: transitivity tracks WHETHER an
+    # object is expected; verb_class tracks what KIND of object. The
+    # predict layer can use this to bias first-letters toward object
+    # nouns semantically compatible with the verb — e.g. after VIOLENCE
+    # verbs, person-pronoun / person-noun starters; after BE_EXIST,
+    # article/adjective starters. This is a semantic axis n-grams
+    # fundamentally can't compute.
+    verb_class: int = 0
+    # Words elapsed since verb_class was set. Resets with class. Used
+    # to decay the bias as the object slot falls further out of reach.
+    vc_wait_words: int = 0

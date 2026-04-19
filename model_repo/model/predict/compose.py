@@ -87,6 +87,7 @@ from .word_end_bigram import word_end_bigram_bias
 from .referent import referent_start_bias
 from .verb_agreement import verb_agreement_bias, verb_agreement_start_bias
 from .verb_chain import verb_chain_bias
+from .verb_object_class import verb_object_class_start_bias
 from .clause_depth import clause_depth_close_bias
 from .double_cons_start import double_consonant_penalty
 from .red_flags import red_flags_close_bias
@@ -874,6 +875,22 @@ def predict(state: ModelState) -> list[float]:
             if wfb is not None:
                 for i in range(VOCAB_SIZE):
                     logits[i] += wfb[i]
+
+        # Layer 4b4c-voc: verb-object semantic-class bias. After a
+        # recent main verb, bias first-letters toward objects that
+        # are semantically compatible with the verb's class:
+        # VIOLENCE → person-pronoun starters; BE_EXIST → article/
+        # possessive starters; MOTION → prepositions; etc. This is a
+        # semantic nudge, not a form constraint.
+        if state.speaker_label_state == 0:
+            voc = verb_object_class_start_bias(
+                state.verb_class,
+                state.vc_wait_words,
+                state.speaker_label_state,
+            )
+            if voc is not None:
+                for i in range(VOCAB_SIZE):
+                    logits[i] += voc[i]
 
         # Layer 4b2-par: parallel-structure bias after a coordinating
         # conjunction. When last_completed_word is "and"/"or"/"nor"/

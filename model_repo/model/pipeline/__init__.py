@@ -24,6 +24,7 @@ from .line_break import update_line_break
 from .verb_agreement import update_verb_agreement
 from .np_head import update_np_head
 from .transitivity import update_transitivity
+from .verb_class import update_verb_class
 from .word_form import update_word_form
 from .counters import update_basic_counters
 from .doubt import update_doubt
@@ -62,6 +63,7 @@ PIPELINE: list[Stage] = [
     update_verb_agreement,  # Tier 2: subject-verb agreement expectation
     update_np_head,         # Tier 2: NP-head expectation (np_open, np_wait_words)
     update_transitivity,    # Tier 2: verb transitivity / object-expectation
+    update_verb_class,      # Tier 2: verb semantic class (9-way)
     update_word_form,       # Tier 2: morphological-form expectation FSM
     update_vocative,        # Tier 2: vocative-expectation flag
     update_addressee,       # Tier 2/3: vocative-noun memory
