@@ -376,6 +376,44 @@ _URGENCY_SHORT_SENT_BUMP = 0.12
 _URGENCY_LONG_WORD_PENALTY = -0.04
 _URGENCY_DECAY = 0.94
 
+# --- Oath mode (solemn-oath / promise / curse texture) ---
+# Strong oath markers — verbs and nouns of swearing/pledging.
+_OATH_STRONG: frozenset[str] = frozenset({
+    "swear", "swears", "swore", "sworn", "swearing",
+    "oath", "oaths", "vow", "vows", "vowed", "vowing",
+    "pledge", "pledged", "pledges",
+    "troth", "faith", "honour", "honor",
+    "promise", "promised", "promises",
+    "curse", "cursed", "curses",
+    "avow", "avowed",
+})
+# Oath prepositions — "by" / "upon" / "on" when in a structural
+# position that makes them oath-phrase openers. We bump mildly on
+# any completion of these and rely on the predict-layer gate to
+# only fire after a clear oath opener context.
+_OATH_PREPS: frozenset[str] = frozenset({
+    "by", "upon",
+})
+# Oath objects — when oath_mode is already warm, these reinforce
+# the texture (they complete the formula).
+_OATH_OBJECTS: frozenset[str] = frozenset({
+    "heaven", "heavens", "god", "gods", "soul", "souls",
+    "honour", "honor", "faith", "troth", "life", "blood",
+    "word", "sword", "hand", "crown", "cross", "saints",
+    "mother", "father", "king", "queen", "majesty",
+    "grave", "tomb",
+})
+# "I swear" / "we swear" — when last_completed_word is "swear"
+# after a 1st-person pronoun, extra bump.
+_OATH_PRONOUNS: frozenset[str] = frozenset({
+    "i", "we", "thou", "you",
+})
+_OATH_STRONG_BUMP = 0.35
+_OATH_PREP_SENTSTART_BUMP = 0.24
+_OATH_PREP_POSTCOMMA_BUMP = 0.18
+_OATH_OBJECT_REINFORCE = 0.22
+_OATH_DECAY = 0.92
+
 # --- Sonority level (phonetic texture) ---
 # Per-letter bumps categorized by phonetic class. Vowels and liquids
 # push positive (melodic); hard stops and harsh consonants push negative
@@ -769,6 +807,51 @@ def update_flow(state: ModelState, token_id: int) -> ModelState:
     if state.consecutive_newlines >= 2 and lc == "\n":
         urgency_tempo *= 0.35
 
+    # --- Oath mode ---
+    # Rolling [0, 1] field: solemn-oath / promise / curse texture.
+    # Reads last_completed_word (after linguistic stage has set it)
+    # plus local structural cues (sentence-start, post-comma, pronoun
+    # chain). Decay per completed word; speaker-turn damping.
+    oath_mode = state.oath_mode
+    if state.just_finished_word:
+        oath_mode *= _OATH_DECAY
+        w = state.last_completed_word
+        if w:
+            if w in _OATH_STRONG:
+                oath_mode = min(1.0, oath_mode + _OATH_STRONG_BUMP)
+                # "I swear" / "we swear" → extra bump (1st-person oath)
+                if state.prev_completed_word in _OATH_PRONOUNS:
+                    oath_mode = min(1.0, oath_mode + 0.10)
+            elif w in _OATH_PREPS:
+                # "by" / "upon" at clausal/sentence start is the
+                # typical oath-phrase opener. Reward structural
+                # position rather than raw lexical appearance.
+                if state.words_in_sentence == 1:
+                    oath_mode = min(
+                        1.0, oath_mode + _OATH_PREP_SENTSTART_BUMP
+                    )
+                elif state.chars_since_comma < 8:
+                    # Just-after-comma — likely starting an oath
+                    # phrase: "..., by heaven, ...".
+                    oath_mode = min(
+                        1.0, oath_mode + _OATH_PREP_POSTCOMMA_BUMP
+                    )
+            elif oath_mode > 0.15 and w in _OATH_OBJECTS:
+                # Reinforce once we see the oath object following
+                # the opener ("by my SOUL", "by HEAVEN").
+                oath_mode = min(
+                    1.0, oath_mode + _OATH_OBJECT_REINFORCE
+                )
+    # Comma closes an oath phrase; gentle attenuation.
+    if lc == ",":
+        oath_mode *= 0.80
+    # Sentence-end: stronger attenuation (formula complete).
+    elif lc in ".!?":
+        oath_mode *= 0.55
+    # Fresh speaker: damp carryover (oaths rarely cross speakers).
+    if state.consecutive_newlines >= 2 and lc == "\n":
+        oath_mode *= 0.25
+
     # --- monosyllabic_run ---
     # Increment on completing a 1-syllable word; reset otherwise.
     # Reset on sentence-end and speaker-turn boundary.
@@ -813,5 +896,6 @@ def update_flow(state: ModelState, token_id: int) -> ModelState:
             "sonority_level": sonority_level,
             "monosyllabic_run": monosyllabic_run,
             "urgency_tempo": urgency_tempo,
+            "oath_mode": oath_mode,
         }
     )

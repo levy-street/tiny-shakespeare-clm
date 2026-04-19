@@ -2198,3 +2198,21 @@ class ModelState(BaseModel):
     # last vowel in word_buffer). Resets to 0 at each vowel, growing
     # by 1 per consonant. Does not increment on apostrophe.
     buffer_consonant_run: int = 0
+
+    # --- Flow tier: oath_mode -------------------------------------------
+    # [0, 1] rolling field capturing solemn-oath texture. Bumps on oath
+    # openers ("swear", "swore", "sworn", "oath", "pledge", "vow",
+    # "troth", "faith"), on "by"/"upon" at sentence start or after
+    # comma, and on reinforcing oath objects ("heaven", "soul", "God",
+    # "honour") when the mode is already warm. Decays per completed
+    # word. Damped across speaker turns.
+    #
+    # Unlike invocation_mode (declamatory voice) or emotional_intensity
+    # (generic heat), oath_mode specifically captures the formulaic
+    # promise / curse texture that punctuates Shakespeare — "by my
+    # troth", "upon my soul", "God save the king", "I swear it by my
+    # sword". The predict layer uses it to sharpen word-start biases
+    # toward oath-object vocabulary after "by" / "upon" / "my" when
+    # the mode is hot, and toward a closing comma once the oath-object
+    # has been completed.
+    oath_mode: float = 0.0

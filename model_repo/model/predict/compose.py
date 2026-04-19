@@ -56,6 +56,7 @@ from .phrase_continue import phrase_continue_bias
 from .phrase_trigram_continue import phrase_trigram_continue_bias
 from .word_integrity import word_integrity_bias
 from .sensory_charge import sensory_charge_start_bias
+from .oath_mode import oath_mode_start_bias, oath_mode_close_bias
 from .np_head import np_head_start_bias
 from .ornament import ornament_start_bias
 from .parallel import parallel_start_bias
@@ -1184,6 +1185,38 @@ def predict(state: ModelState) -> list[float]:
         if scb is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += scb[i]
+
+        # Layer 4-OATH-S: oath-mode word-start bias. After "by" /
+        # "upon" / "my" / "his" / "thy" / "our" with hot oath_mode,
+        # bias first letters toward oath-object vocabulary (heaven,
+        # troth, soul, faith, honour, God, sword, life, crown, grave).
+        omsb = oath_mode_start_bias(
+            state.oath_mode,
+            state.last_completed_word,
+            state.speaker_label_state,
+            state.letter_run_len,
+            state.word_buffer,
+        )
+        if omsb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += omsb[i]
+
+        # Layer 4-OATH-C: oath-mode closure bias. When the just-
+        # completed word is a canonical oath object (heaven/soul/
+        # troth/faith/sword/honour/etc.) with oath_mode still warm,
+        # bias next char toward "," (formulaic closure), "." , or
+        # "!" over starting another word.
+        omcb = oath_mode_close_bias(
+            state.oath_mode,
+            state.last_completed_word,
+            state.speaker_label_state,
+            state.word_buffer,
+            state.letter_run_len,
+            state.chars_since_sentence_end,
+        )
+        if omcb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += omcb[i]
 
         # Layer 4-PN: proper-noun slot bias. At mid-sentence word-
         # starts, penalize phantom capitals when no title / vocative
