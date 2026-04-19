@@ -1869,3 +1869,41 @@ class ModelState(BaseModel):
     # f=fate/faith, r=reason/right, g=god/glory, p=power/pity) and
     # lift "O" / "Oh" at sentence-start (gravitas apostrophe).
     gravitas_register: float = 0.0
+    # --- Tier 3 flow: fury register — rage / wrath / curse texture ---
+    # A rolling float in [0, 1] tracking the rage / wrath / cursing
+    # register of the current speech. Distinct from:
+    #   - tonal_weight (dark vs light scene events — external)
+    #   - gravitas    (moral / philosophical weight — sober, not angry)
+    #   - lament      (grief — mournful, not angry)
+    #   - tenderness  (love — opposite polarity of fury)
+    # Fury is angry speech FROM the speaker TOWARD someone or something:
+    # curses, threats, insults, imprecations. Characteristic Shakespeare:
+    # Lear's storm, Timon's misanthropy, Mercutio's "plague o' both your
+    # houses", Iago's asides.
+    #
+    # Bumps on completed words:
+    #   STRONG_FURY (rage, wrath, fury, damn, curse, hell, plague,
+    #                villain, knave, traitor, slave-as-insult, vile,
+    #                foul, wretch, fiend, viper, poison, venom, devil):
+    #                                              +0.22
+    #   MILD_FURY   (hate, hated, strike, kill, blood-for-vengeance,
+    #                scorn, spite, shame-on-you, bastard, rascal,
+    #                cur, dog-as-insult, rogue, rot, burn-in-hell):
+    #                                              +0.10
+    #   COUNTER     (peace, love, sweet, gentle, kind, fair, soft,
+    #                calm, mercy, forgive): -0.06 (cools the register)
+    #   "!" completed boosts +0.08 when fury > 0 (exclamation as anger
+    #                 amplifier — neutral when fury already 0).
+    #
+    # Decay: multiply by 0.94 per completed word (faster decay than
+    # gravitas: anger is punchier and should not linger).
+    # Speaker-turn: multiply by 0.20 (mostly reset — a new speaker
+    # rarely inherits the prior speaker's rage except in an ongoing
+    # argument, where the next speaker's own words will quickly re-raise
+    # it).
+    #
+    # Consumed by predict/fury.py at word-start and word-end to:
+    #   - boost fury-lexicon starter letters (d, h, w, v, c, r, f)
+    #   - boost "!" over "." at sentence-end when fury > 0.35
+    #   - mildly discourage tender-lexicon starters (l, s)
+    fury_register: float = 0.0

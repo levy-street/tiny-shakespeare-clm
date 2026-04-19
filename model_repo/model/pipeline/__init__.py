@@ -35,6 +35,7 @@ from .doubt import update_doubt
 from .drift import update_drift
 from .flow import update_flow
 from .formula import update_formula
+from .fury import update_fury
 from .lament import update_lament
 from .linguistic import update_linguistic
 from .list_structure import update_list_structure
@@ -100,6 +101,7 @@ PIPELINE: list[Stage] = [
     update_lament,          # Tier 3: lament/grief texture register
     update_tenderness,      # Tier 3: tenderness/love texture register
     update_gravitas,        # Tier 3: gravitas/moral-weight texture register
+    update_fury,            # Tier 3: fury/rage/curse texture register
     update_turn_progress,   # Tier 2/3: words/sentences/lines in current turn
     update_anaphora,        # Tier 2: line-starter anaphora tracking
     update_alliteration,    # Tier 2/3: within-line alliteration memory

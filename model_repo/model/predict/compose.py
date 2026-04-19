@@ -123,6 +123,7 @@ from .negation import negation_start_bias
 from .case_slot import case_slot_start_bias
 from .lament import lament_start_bias, lament_sentence_start_bias
 from .tenderness import tenderness_start_bias, tenderness_sentence_start_bias
+from .fury import fury_end_bias, fury_start_bias
 from .gravitas import gravitas_start_bias, gravitas_sentence_start_bias
 from .drift_recovery import drift_recovery_bias, drift_recovery_midword_bias
 from .gibberish_hardcap import gibberish_hardcap_bias
@@ -1437,6 +1438,36 @@ def predict(state: ModelState) -> list[float]:
         if gsb is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += gsb[i]
+
+        # Layer 4-FURY: rage/wrath texture register.
+        # Tier-3 flow field tracking angry speech TOWARD another
+        # (curses, threats, invective). Distinct from gravitas
+        # (controlled), lament (passive-grieving), tonal (event-driven).
+        # Rises on rage/curse/insult lexicon and "!" amplification;
+        # decays quickly; mostly reset on turn boundary.
+        # At word-start, boosts fury-cluster letter starters
+        # (d/h/w/v/c/r/f/p) and mildly discourages tender ones (l/g).
+        fsb = fury_start_bias(
+            state.fury_register,
+            state.letter_run_len,
+            state.speaker_label_state,
+        )
+        if fsb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += fsb[i]
+
+        # At word-end with fury high, bias sentence termination
+        # toward "!" over "." / ";".
+        feb = fury_end_bias(
+            state.fury_register,
+            state.letter_run_len,
+            state.word_buffer,
+            state.speaker_label_state,
+            state.words_in_sentence,
+        )
+        if feb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += feb[i]
 
         if (
             state.words_in_sentence == 0
