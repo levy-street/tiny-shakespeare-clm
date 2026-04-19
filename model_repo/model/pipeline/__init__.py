@@ -29,6 +29,7 @@ from .verb_class import update_verb_class
 from .word_form import update_word_form
 from .counters import update_basic_counters
 from .doubt import update_doubt
+from .drift import update_drift
 from .flow import update_flow
 from .formula import update_formula
 from .lament import update_lament
@@ -57,6 +58,7 @@ Stage = Callable[[ModelState, int], ModelState]
 PIPELINE: list[Stage] = [
     update_basic_counters,  # Tier 1: base bookkeeping
     update_linguistic,      # Tier 2: linguistic structure
+    update_drift,           # Tier 2/3: consecutive-off-trie word streak
     update_speaker_offtrie, # Tier 2: speaker-buffer off-trie run
     update_pos,             # Tier 2: POS tag of last completed word
     update_proper_noun,     # Tier 2: proper-noun expectation slot

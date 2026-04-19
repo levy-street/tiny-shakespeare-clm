@@ -1592,3 +1592,32 @@ class ModelState(BaseModel):
     # k, m, t, b, r) and mildly lift "O" at sentence-start (apostrophe
     # of love: "O my love!", "O sweet!", "O beauteous!").
     tenderness_register: float = 0.0
+
+    # --- Tier 2/3: scene drift detector (gibberish-streak safety net) ---
+    # Counts CONSECUTIVE words that completed OFF the word-trie. A
+    # structural quality signal distinct from per-word letters_off_trie
+    # (which resets when the word completes). When this streak grows,
+    # samples are in a runaway-gibberish regime:
+    #
+    #   "rseanhalgmiefsem se turnce arcahil IBiesfe steed eata"
+    #
+    # Real Shakespeare's word-trie misses are mostly isolated (a rare
+    # inflection here, an archaic form there). Three or more consecutive
+    # off-trie completions almost certainly indicate the letter-n-gram
+    # runaway we want to interrupt with aggressive recovery.
+    #
+    # Update rule (in pipeline/drift.py, after update_basic_counters
+    # and word_trie state are fresh):
+    #   * On just_finished_word:
+    #       - If the *completed* word was on the trie (last_completed_word
+    #         in COMPLETE_WORDS): reset drift_streak to 0.
+    #       - Else: drift_streak = min(drift_streak + 1, 8).
+    #   * On "\n\n" turn boundary: reset to 0 (a fresh speaker starts
+    #     clean even after gibberish).
+    #
+    # Consumed by predict/drift_recovery.py: when drift_streak >= 2,
+    # apply an increasingly aggressive recovery bias at word-start
+    # that boosts very common English first letters (t, a, i, o, h, w,
+    # b, s, f, m) and suppresses rare starters (x, z, j, q) — pulling
+    # the sampler back toward known-word territory.
+    drift_streak: int = 0

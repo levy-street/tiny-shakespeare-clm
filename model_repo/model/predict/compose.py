@@ -111,6 +111,7 @@ from .negation import negation_start_bias
 from .case_slot import case_slot_start_bias
 from .lament import lament_start_bias, lament_sentence_start_bias
 from .tenderness import tenderness_start_bias, tenderness_sentence_start_bias
+from .drift_recovery import drift_recovery_bias, drift_recovery_midword_bias
 from .line_break_bias import line_break_newline_bias
 from .trigram import trigram_bias
 from .vocative import VOCATIVE_START_BIAS
@@ -439,6 +440,21 @@ def predict(state: ModelState) -> list[float]:
         if rf is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += rf[i]
+
+        # Scene-drift mid-word terminator push. When drift_streak >= 2
+        # AND the current word is also off-trie AND has extended 4+
+        # letters, push aggressively toward terminator / safe ending
+        # letters to cut the gibberish short.
+        dmw = drift_recovery_midword_bias(
+            state.drift_streak,
+            state.letter_run_len,
+            state.letters_off_trie,
+            state.on_word_trie,
+            state.speaker_label_state,
+        )
+        if dmw is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += dmw[i]
 
 
     # Layer 3c1-verb: verb-word-trie mid-word bias. When the clause
@@ -1230,6 +1246,24 @@ def predict(state: ModelState) -> list[float]:
             if tssb is not None:
                 for i in range(VOCAB_SIZE):
                     logits[i] += tssb[i]
+
+        # Layer 4b3c-drift: scene-drift recovery. When 2+ consecutive
+        # words have completed OFF the word-trie, we're in a runaway
+        # letter-ngram gibberish regime. Apply a recovery bias pulling
+        # word-starts toward common English starters (t/a/i/o/h/w/b/s/
+        # f/m) and away from rare letters (x/z/j/q). This is a
+        # STRUCTURAL safety net — a different *kind* of signal from
+        # the additive lexicon biases: it fires only on detected
+        # quality failure and its strength scales with streak length.
+        dr = drift_recovery_bias(
+            state.drift_streak,
+            state.speaker_label_state,
+            state.words_in_sentence,
+            state.consecutive_newlines,
+        )
+        if dr is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += dr[i]
 
         # Layer 4b3b2: 2nd-person addressing-register word-start bias.
         # When the register is established (|register| > 0.5), nudge
