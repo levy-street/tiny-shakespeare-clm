@@ -31,21 +31,30 @@ from ..vocab import VOCAB_INDEX, VOCAB_SIZE
 
 def phonotactic_close_bias(
     bad_bigram_count: int,
+    bad_trigram_count: int,
     letter_run_len: int,
     speaker_label_state: int,
 ) -> list[float] | None:
     if speaker_label_state != 0:
         return None
-    if bad_bigram_count < 1:
+    # Combine the two violation counts. Trigrams fire often (my
+    # legal-CCC list is hand-compiled and inevitably misses some real
+    # English clusters like "ngt" in "strength"), so a SINGLE trigram
+    # violation is weak evidence of gibberish — only count trigrams
+    # beyond the first. Bigram violations are stricter and count
+    # from 1.
+    effective_trigrams = max(0, bad_trigram_count - 1)
+    effective = bad_bigram_count + effective_trigrams
+    if effective < 1:
         return None
     if letter_run_len < 4:
         return None
 
-    # Escalate with count. One bad bigram → moderate; two → hard;
+    # Escalate with count. One violation → moderate; two → hard;
     # three+ → overwhelming.
-    if bad_bigram_count == 1:
+    if effective == 1:
         sc = 1.2
-    elif bad_bigram_count == 2:
+    elif effective == 2:
         sc = 2.8
     else:
         sc = 4.5

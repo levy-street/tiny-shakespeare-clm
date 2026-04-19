@@ -1090,6 +1090,18 @@ class ModelState(BaseModel):
     # predecessor.
     bad_bigram_count: int = 0
 
+    # Count of 3-letter sequences within the current word whose
+    # consonant structure is impossible in English — e.g., three
+    # consonants in a row that don't form a legal onset (scr/spl/
+    # spr/str/shr/thr) or coda (nct/rst/mpt/pts/…). The bigram
+    # check misses trigrams like "glr" in "claitaglrt" or "rsn"
+    # in "tarrsnrach" because each 2-letter pair happens to occur
+    # elsewhere in English, but the specific 3-letter cluster is
+    # phonotactically impossible.
+    #
+    # Reset on word boundary, same gating rules as bad_bigram_count.
+    bad_trigram_count: int = 0
+
     # --- Tier 2/3: within-line alliteration memory ---
     # The lowercase first letter currently being alliterated on this
     # line (a content-word's first letter). "" when no alliteration

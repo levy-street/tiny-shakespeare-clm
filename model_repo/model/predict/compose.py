@@ -707,6 +707,7 @@ def predict(state: ModelState) -> list[float]:
         # a strong termination signal; two is essentially diagnostic.
         pt = phonotactic_close_bias(
             state.bad_bigram_count,
+            state.bad_trigram_count,
             state.letter_run_len,
             state.speaker_label_state,
         )

@@ -30,10 +30,77 @@ from ..vocab import VOCAB
 
 
 _LETTERS: frozenset[str] = frozenset("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+_VOWELS: frozenset[str] = frozenset("aeiouyAEIOUY")
+_CONSONANTS: frozenset[str] = frozenset("bcdfghjklmnpqrstvwxzBCDFGHJKLMNPQRSTVWXZ")
 
 
 def _lc(ch: str) -> str:
     return ch.lower() if ch.isupper() else ch
+
+
+# Legal English 3-consonant clusters. When three consonants in a row
+# occur in the buffer, the cluster must match one of these (anywhere
+# in the sequence — onsets like "spr" at word-start, or codas like
+# "nct" at word-end, or syllable-boundary clusters like "str" in
+# "astronaut"). If not, it's a phonotactic violation.
+#
+# Compiled from well-known English onset/coda inventories.
+_LEGAL_CCC: frozenset[str] = frozenset({
+    # Onsets (word-initial 3-consonant clusters in English)
+    "spr", "str", "scr", "spl", "skr", "skl",
+    "shr", "thr",
+    "sph", "sch",
+    # Common codas / medials (mostly arising at syllable boundaries)
+    "nth", "nst", "rst", "nct", "mpt", "pts", "cts",
+    "rld", "rth", "rts", "rds", "rns", "rks", "rms", "rps",
+    "rls", "lth", "lds", "lts", "lks", "lms", "lps",
+    "nds", "nts", "ngs", "nks", "ncs",
+    "cks", "sks", "sps", "sts",
+    "fts", "fth",
+    "pth", "xth", "ghs", "gth",
+    # Cross-syllable medials common in English
+    "ngl", "nkl", "rpl", "rbl", "rkl", "rgl", "rsl", "rtl",
+    "ndl", "ntl", "mpl", "nkl", "stl", "scl",
+    "ndr", "ntr", "mpr", "mbr", "nkr", "ngr", "str",
+    "ldr", "lgr", "lfr",
+    # Preceded by 's': strl? no. Keep tight.
+    "mbl", "ndl", "rdl", "rml", "rnl",
+    # Less common but attested medials with 'h'
+    "rch", "lch", "nch", "rsh", "lsh", "nsh",
+    "rph", "lph", "nph",
+    # Archaic Shakespeare forms with apostrophe-'d converted: here 'd
+    # is a separate char so not a 3-cluster. OK.
+})
+
+# Pre-enumerated rare-but-legal 3-consonant clusters that occur in
+# recognizable English words; add a few more to prevent false positives:
+_LEGAL_CCC = _LEGAL_CCC | frozenset({
+    "chr", "phr", "shr", "thr",  # christian, phrase, shrew, three
+    "scl", "spl", "squ",           # ACT+ual → ct+u not CCC, skip
+    "bst", "bts",                  # abst-/debts
+    "cts",
+    "dth", "bth", "gth",
+    "wth",
+    "lv", "rv",  # not CCC; ignore
+    "xpl", "xpr", "xtr", "xcl",    # express, explain, extreme, exclaim
+    "nthr", "mblr",  # monster-like (not CCC, skip)
+    "ght", "lst",
+    "rtch", "ntch", "stch", "ltch", "rdsh",
+    # The above are 4-letter; they cover 3-letter subsequences too:
+    # rtc, tch; nrt; ngt. Add:
+    "rtc", "ntc", "stc",
+    "rgh", "lgh", "ngh",  # burgh, sigh, aught
+})
+
+
+# Three-vowel runs are mostly illegal in English except for a handful
+# like "eau" (beauteous), "iou" (adventurous), "uee" (payee), "eie"
+# (marquee? no). Treat 3+ vowels as violation UNLESS in the allowed
+# set.
+_LEGAL_VVV: frozenset[str] = frozenset({
+    "eau", "iou", "uee", "iau", "iai", "oue", "eue", "uie",
+    "iei", "uea", "aia", "oui", "aie", "uae", "eia",
+})
 
 
 # English phonotactically illegal letter bigrams. These are pairs
@@ -117,16 +184,22 @@ def update_phonotactic(state: ModelState, token_id: int) -> ModelState:
 
     # Speaker-label: don't account. Reset if anything is set.
     if state.speaker_label_state != 0:
-        if state.bad_bigram_count != 0:
-            return state.model_copy(update={"bad_bigram_count": 0})
+        if state.bad_bigram_count != 0 or state.bad_trigram_count != 0:
+            return state.model_copy(update={
+                "bad_bigram_count": 0,
+                "bad_trigram_count": 0,
+            })
         return state
 
     # Word-boundary: non-letter (apostrophe is a continuer so it
     # doesn't boundary the word, but we also don't update bigrams on
     # apostrophes — handled below).
     if ch not in _LETTERS and ch != "'":
-        if state.bad_bigram_count != 0:
-            return state.model_copy(update={"bad_bigram_count": 0})
+        if state.bad_bigram_count != 0 or state.bad_trigram_count != 0:
+            return state.model_copy(update={
+                "bad_bigram_count": 0,
+                "bad_trigram_count": 0,
+            })
         return state
 
     # Apostrophe: continuer but doesn't participate in bigram.
@@ -146,7 +219,24 @@ def update_phonotactic(state: ModelState, token_id: int) -> ModelState:
         return state
 
     pair = _lc(prev_ch) + _lc(cur_ch)
+    updates: dict = {}
     if pair in _ILLEGAL_BIGRAMS:
-        new_count = state.bad_bigram_count + 1
-        return state.model_copy(update={"bad_bigram_count": new_count})
+        updates["bad_bigram_count"] = state.bad_bigram_count + 1
+
+    # Trigram check: three consonants in a row whose cluster isn't
+    # a legal English CCC pattern, or three vowels in a row whose
+    # sequence isn't in the attested set.
+    if len(wb) >= 3:
+        a, b, c = _lc(wb[-3]), _lc(wb[-2]), _lc(wb[-1])
+        if a in _CONSONANTS and b in _CONSONANTS and c in _CONSONANTS:
+            tri = a + b + c
+            if tri not in _LEGAL_CCC:
+                updates["bad_trigram_count"] = state.bad_trigram_count + 1
+        elif a in _VOWELS and b in _VOWELS and c in _VOWELS:
+            tri = a + b + c
+            if tri not in _LEGAL_VVV:
+                updates["bad_trigram_count"] = state.bad_trigram_count + 1
+
+    if updates:
+        return state.model_copy(update=updates)
     return state
