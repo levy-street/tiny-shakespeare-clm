@@ -49,6 +49,7 @@ from .letter4 import letter4_bias
 from .line_coherence import line_coherence_wordend_bias
 from .list_bias import list_start_bias, list_wordend_comma_bias
 from .next_word import next_word_bias
+from .word_bigram_continue import word_bigram_continue_bias
 from .np_head import np_head_start_bias
 from .ornament import ornament_start_bias
 from .parallel import parallel_start_bias
@@ -387,6 +388,25 @@ def predict(state: ModelState) -> list[float]:
                 wt_scale = 1.54
             for i in range(VOCAB_SIZE):
                 logits[i] += wt[i] * wt_scale
+
+    # Layer 3c-WBC: word-bigram CONTINUATION bias. Given the previous
+    # completed word and the current buffer (letters 1-4), bias the
+    # next char toward the canonical continuations after that prior
+    # word: after "to" + "b" → "e" (be); after "I" + "a" → "m" (am);
+    # after "my" + "l" → "o" (lord); after "the" + "k" → "i" (king).
+    # This extends next_word_bias beyond the first letter, sharpening
+    # mid-word decisions with word-bigram context.
+    if state.word_buffer and state.last_completed_word:
+        wbc = word_bigram_continue_bias(
+            state.last_completed_word,
+            state.word_buffer,
+            state.letter_run_len,
+            state.speaker_label_state,
+            state.on_word_trie,
+        )
+        if wbc is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += wbc[i]
 
     # Layer 3c-MC: graded trie-match-count bias. Complements the
     # binary on_word_trie. Three regimes:
