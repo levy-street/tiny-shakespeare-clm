@@ -479,7 +479,7 @@ def _build_vector(nexts: dict[str, int], prefix_len: int) -> list[float]:
     if total <= 0:
         return vec
     # Scale grows with prefix length — longer prefix = more informative.
-    scale = min(0.4 + 0.25 * prefix_len, 1.2)
+    scale = min(0.35 + 0.2 * prefix_len, 1.1)
     # Small negative bump on all unlisted letters so unseen branches
     # are softly penalized.
     negative = -0.4 * scale
