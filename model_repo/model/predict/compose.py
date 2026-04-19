@@ -60,6 +60,7 @@ from .verb_word_trie import verb_word_trie_bias
 from .object_word_trie import object_word_trie_bias
 from .post_obj_word_trie import post_obj_word_trie_bias
 from .subject_word_trie import subject_word_trie_bias
+from .subord import subord_midword_bias, subord_word_end_bias
 from .slot_next import slot_start_bias
 from .speaker_recency import speaker_recency_bias
 from .speaker_trie import speaker_trie_bias
@@ -479,6 +480,25 @@ def predict(state: ModelState) -> list[float]:
             for i in range(VOCAB_SIZE):
                 logits[i] += swt[i]
 
+    # Layer 3c1-subord: subordinate-clause mid-word bias. Inside a
+    # subord at HAS_SUBJ, lean toward -eth / -est completions.
+    if (
+        state.word_buffer
+        and state.speaker_label_state == 0
+        and state.subord_depth >= 1
+    ):
+        sbm = subord_midword_bias(
+            state.subord_depth,
+            state.subord_words_since_open,
+            state.letter_run_len,
+            state.word_buffer,
+            state.clause_slot,
+            state.speaker_label_state,
+        )
+        if sbm is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += sbm[i]
+
     # Layer 3c1-trans: transitivity mid-word bias. When an object is
     # expected AND the current buffer is a short determiner-prefix
     # ("t"/"th"/"m"/"my"/"h"/"hi"/"a"/"an"/"y"/"yo"), nudge the
@@ -754,6 +774,24 @@ def predict(state: ModelState) -> list[float]:
                 for i in range(VOCAB_SIZE):
                     logits[i] += vc[i]
 
+
+        # Layer 4b0-subord: subordinate-clause word-end bias.
+        # Inside a subord (depth >= 1), suppress sentence-end punct
+        # (the main clause still needs closing) and boost comma /
+        # semicolon once the subord has run 4+ words.
+        if state.subord_depth >= 1 and state.word_buffer:
+            sbe = subord_word_end_bias(
+                state.subord_depth,
+                state.subord_words_since_open,
+                state.letter_run_len,
+                state.word_buffer,
+                state.on_word_trie,
+                state.chars_since_sentence_end,
+                state.speaker_label_state,
+            )
+            if sbe is not None:
+                for i in range(VOCAB_SIZE):
+                    logits[i] += sbe[i]
 
         # Layer 4b1: word-repetition bias. Shakespeare's emotional
         # climaxes chain identical words with comma separators

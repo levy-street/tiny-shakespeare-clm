@@ -319,6 +319,38 @@ class ModelState(BaseModel):
     # syntactic signal that a verb is overdue.
     words_since_verb: int = 0
 
+    # --- Tier 2: subordinate-clause depth tracker (new axis) ---
+    # Depth of currently-open subordinate / relative clauses inside
+    # the current sentence. Increments when a subordinator (that,
+    # which, who, whom, whose, where, when, while, whilst, though,
+    # although, if, unless, because, till, until, since, as, ere,
+    # lest, whereas) completes in a position where it opens a
+    # dependent clause. Decrements when the dependent clause closes
+    # (detected via next-comma-that-isn't-nested or sentence-end).
+    # Hard-capped at 3; reset to 0 on sentence-end punctuation and
+    # on speaker-turn boundaries.
+    #
+    # Why this matters: Shakespeare sentences are often multi-clausal:
+    # "The king WHO loves her WHEN she sings IS happy." Without
+    # tracking subordinate depth, clause_slot can't distinguish
+    # "verb in relative clause" (doesn't close main clause) from
+    # "main-clause verb" (does). A model that knows subord_depth > 0
+    # can keep clause_slot = HAS_VERB open for the main clause even
+    # after a dependent verb lands, and can resist premature sentence
+    # termination inside deep nesting.
+    subord_depth: int = 0
+    # Words since the last subordinator was emitted. Grows per word
+    # completed while subord_depth > 0; resets on subordinator entry
+    # and on sentence-end. Useful for deciding when a subordinate
+    # clause "should close" — 4+ words in and no verb yet means the
+    # clause is malformed or closing soon.
+    subord_words_since_open: int = 0
+    # clause_slot at the moment the most-recent subordinate clause
+    # opened (so we can restore context when it closes). Saved as a
+    # small stack flattened into a single int (3 bits per level,
+    # cap depth 3): lowest 3 bits = level 1, next 3 = level 2, etc.
+    subord_slot_stack: int = 0
+
     # True when the last completed word was a vocative-prefix adjective
     # (good, sweet, gentle, fair, dear, poor, noble) AND the previous
     # word was also a possessive-like word ("my", "thy", "good") OR a

@@ -37,6 +37,7 @@ from .proper_noun import update_proper_noun
 from .prosody import update_prosody
 from .referent import update_referent
 from .repetition import update_repetition
+from .subord import update_subord
 from .word_shape import update_word_shape
 from .rhyme import update_rhyme
 from .sentence import update_sentence
@@ -60,6 +61,7 @@ PIPELINE: list[Stage] = [
     update_sentence,        # Tier 2/3: sentence-type FSM
     update_clause,          # Tier 2: clause-structure (clauses, subj pronoun)
     update_clause_slot,     # Tier 2: syntactic-slot state machine
+    update_subord,          # Tier 2: subordinate-clause depth tracker
     update_verb_agreement,  # Tier 2: subject-verb agreement expectation
     update_np_head,         # Tier 2: NP-head expectation (np_open, np_wait_words)
     update_transitivity,    # Tier 2: verb transitivity / object-expectation
