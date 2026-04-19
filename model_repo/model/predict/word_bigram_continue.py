@@ -878,6 +878,181 @@ _EXPECT: dict[str, tuple[tuple[str, int], ...]] = {
         (",", 3), (".", 2), ("!", 2), ("of", 2), ("is", 2), ("and", 2),
         ("hath", 2),
     ),
+    # --- quantifiers / determiners ---
+    "every": (
+        ("man", 3), ("day", 2), ("night", 2), ("one", 2), ("where", 2),
+        ("part", 2), ("hour", 2), ("thing", 2), ("way", 2),
+    ),
+    "each": (
+        ("man", 2), ("other", 3), ("one", 2), ("of", 2), ("day", 2),
+    ),
+    "some": (
+    ("man", 2), ("other", 2), ("of", 3), ("time", 2), ("few", 2),
+        ("little", 2), ("thing", 2), ("say", 2), ("think", 2), ("words", 2),
+    ),
+    "any": (
+        ("man", 2), ("of", 3), ("other", 2), ("thing", 2), ("more", 2),
+        ("way", 2), ("one", 2), ("such", 2),
+    ),
+    "none": (
+        ("of", 3), ("but", 3), ("else", 2), ("shall", 2), ("but", 2),
+        (",", 2), (".", 2),
+    ),
+    "both": (
+        ("of", 3), ("the", 2), ("my", 2), ("thy", 2), ("his", 2),
+        ("our", 2), ("their", 2), ("your", 2),
+    ),
+    # --- intensifiers / adverbs ---
+    "too": (
+        ("much", 3), ("far", 2), ("many", 2), ("soon", 2), ("late", 2),
+        ("much", 2), ("well", 2), ("long", 2), ("bold", 2),
+    ),
+    "very": (
+        ("well", 3), ("much", 2), ("man", 2), ("same", 2), ("true", 2),
+        ("noble", 2), ("fair", 2), ("good", 2),
+    ),
+    "more": (
+        ("than", 3), ("of", 2), ("to", 2), ("in", 2), ("i", 2), ("a", 2),
+        ("noble", 2), ("good", 2), ("fair", 2), ("the", 2), ("my", 2),
+    ),
+    "most": (
+        ("noble", 3), ("gracious", 2), ("sweet", 2), ("dear", 2), ("fair", 2),
+        ("true", 2), ("worthy", 2), ("of", 2), ("the", 2), ("high", 2),
+    ),
+    "ever": (
+        ("more", 2), ("was", 2), ("been", 2), ("i", 2), ("the", 2),
+        ("shall", 2), ("be", 2), ("and", 2),
+    ),
+    "never": (
+        ("was", 2), ("were", 2), ("been", 2), ("seen", 2), ("heard", 2),
+        ("more", 2), ("did", 2), ("have", 2), ("yet", 2), ("shall", 2),
+    ),
+    "only": (
+        ("the", 2), ("to", 2), ("my", 2), ("thou", 2), ("i", 2), ("a", 2),
+        ("but", 2),
+    ),
+    # --- common verbs as prev ---
+    "take": (
+        ("my", 3), ("the", 2), ("thy", 2), ("his", 2), ("her", 2),
+        ("your", 2), ("him", 2), ("her", 2), ("this", 2), ("a", 2),
+        ("heed", 2), ("up", 2), ("away", 2), ("leave", 2),
+    ),
+    "give": (
+        ("me", 4), ("the", 2), ("thy", 2), ("your", 2), ("him", 2),
+        ("her", 2), ("us", 2), ("a", 2), ("it", 2), ("way", 2),
+    ),
+    "bring": (
+        ("me", 3), ("him", 2), ("her", 2), ("them", 2), ("the", 2),
+        ("thy", 2), ("your", 2), ("forth", 2), ("a", 2),
+    ),
+    "hold": (
+        ("thy", 3), ("the", 2), ("my", 2), ("your", 2), ("his", 2),
+        ("her", 2), ("it", 2), ("up", 2), ("back", 2), ("a", 2),
+        ("me", 2),
+    ),
+    "let": (
+        ("me", 4), ("us", 4), ("him", 3), ("her", 2), ("them", 2),
+        ("thy", 2), ("thee", 2), ("it", 3), ("the", 2), ("my", 2),
+        ("every", 2), ("all", 2), ("no", 2),
+    ),
+    "speak": (
+        ("to", 2), ("the", 2), ("thy", 2), ("your", 2), ("my", 2), ("not", 2),
+        ("of", 2), ("me", 2), ("a", 2), ("no", 2),
+    ),
+    "tell": (
+        ("me", 4), ("thee", 3), ("him", 2), ("her", 2), ("us", 2),
+        ("the", 2), ("my", 2), ("thy", 2), ("your", 2), ("you", 2),
+    ),
+    "hear": (
+        ("me", 3), ("him", 2), ("her", 2), ("thee", 2), ("the", 2),
+        ("thy", 2), ("my", 2), ("a", 2), ("no", 2),
+    ),
+    # --- temporal markers ---
+    "after": (
+        ("the", 3), ("my", 2), ("this", 2), ("that", 2), ("all", 2),
+        ("so", 2), ("a", 2), ("his", 2), ("her", 2), ("many", 2),
+    ),
+    "before": (
+        ("the", 3), ("my", 2), ("thy", 2), ("thee", 2), ("his", 2),
+        ("her", 2), ("you", 2), ("us", 2), ("me", 2), ("our", 2),
+        ("i", 2), ("he", 2),
+    ),
+    "while": (
+        ("the", 2), ("my", 2), ("thy", 2), ("his", 2), ("her", 2),
+        ("you", 2), ("we", 2), ("i", 2), ("he", 2), ("she", 2),
+    ),
+    # --- adjectives + head-noun continuations via prev-word entry ---
+    "true": (
+        ("love", 3), ("man", 2), ("and", 2), ("to", 2), ("as", 2),
+        ("is", 2), ("friend", 2), ("heart", 2), ("or", 2),
+    ),
+    "brave": (
+        ("lord", 2), ("prince", 2), ("friend", 2), ("man", 2), ("son", 2),
+        ("and", 2), ("warrior", 2),
+    ),
+    "wise": (
+        ("man", 2), ("lord", 2), ("and", 2), ("in", 2), ("to", 2),
+        ("as", 2),
+    ),
+    "poor": (
+        ("man", 2), ("soul", 2), ("fool", 2), ("lady", 2), ("boy", 2),
+        ("girl", 2), ("heart", 2), ("i", 2), ("thou", 2),
+    ),
+    # --- body parts (prev) ---
+    "hand": (
+        (",", 3), (".", 2), ("of", 3), ("and", 2), ("to", 2), ("in", 2),
+        ("hath", 2), ("is", 2),
+    ),
+    "eyes": (
+        (",", 3), ("of", 2), ("and", 2), ("are", 2), ("do", 2), ("have", 2),
+        ("that", 2),
+    ),
+    "tongue": (
+        (",", 3), ("of", 2), ("and", 2), ("hath", 2), ("doth", 2), ("is", 2),
+    ),
+    "blood": (
+        (",", 3), (".", 2), ("of", 2), ("and", 2), ("is", 2), ("hath", 2),
+    ),
+    "sword": (
+        (",", 3), (".", 2), ("of", 2), ("and", 2), ("is", 2), ("hath", 2),
+        ("in", 2),
+    ),
+    # --- sentence-openers / discourse ---
+    "yet": (
+        ("i", 3), ("he", 2), ("she", 2), ("we", 2), ("they", 2), ("you", 2),
+        ("thou", 2), ("the", 2), ("my", 2), ("shall", 2), ("will", 2),
+        ("do", 2), ("have", 2), ("not", 2),
+    ),
+    "still": (
+        ("i", 2), ("he", 2), ("she", 2), ("the", 2), ("my", 2), ("more", 2),
+        ("a", 2),
+    ),
+    "thus": (
+        ("i", 2), ("he", 2), ("she", 2), ("it", 2), ("the", 2), ("my", 2),
+        ("we", 2), ("they", 2), ("you", 2),
+    ),
+    "though": (
+        ("i", 2), ("he", 2), ("she", 2), ("thou", 2), ("it", 2), ("the", 2),
+        ("my", 2), ("we", 2), ("they", 2), ("you", 2), ("in", 2),
+    ),
+    "so": (
+        ("i", 3), ("he", 2), ("she", 2), ("we", 2), ("they", 2), ("you", 2),
+        ("thou", 2), ("the", 2), ("my", 2), ("it", 3), ("much", 2),
+        ("many", 2), ("well", 2), ("may", 2), ("shall", 2), ("will", 2),
+        ("is", 2), ("are", 2), ("do", 2), ("far", 2), ("long", 2),
+        ("soon", 2), ("fair", 2),
+    ),
+    # --- "this/that/these/those" as prev ---
+    "this": (
+        ("is", 4), ("day", 2), ("night", 2), ("hour", 2), ("man", 2),
+        ("way", 2), ("lord", 2), ("noble", 2), ("same", 2), ("world", 2),
+        ("time", 2), ("place", 2), ("land", 2),
+    ),
+    "that": (
+        ("is", 4), ("i", 3), ("he", 2), ("she", 2), ("thou", 2), ("we", 2),
+        ("they", 2), ("you", 2), ("which", 2), ("same", 2), ("was", 2),
+        ("may", 2), ("shall", 2), ("will", 2), ("doth", 2), ("hath", 2),
+    ),
 }
 
 
