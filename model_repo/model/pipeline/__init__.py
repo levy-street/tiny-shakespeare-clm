@@ -18,6 +18,7 @@ from ..state import ModelState
 from .addressee import update_addressee
 from .alliteration import update_alliteration
 from .anaphora import update_anaphora
+from .antithesis import update_antithesis
 from .case_slot import update_case_slot
 from .clause import update_clause
 from .clause_slot import update_clause_slot
@@ -84,6 +85,7 @@ PIPELINE: list[Stage] = [
     update_proper_noun,     # Tier 2: proper-noun expectation slot
     update_proper_noun_memory,  # Tier 2: rolodex of recent capitalized words
     update_list_structure,  # Tier 2: list-parallelism progress
+    update_antithesis,      # Tier 2/3: antithesis / rhetorical-contrast state
     update_repetition,      # Tier 2: short-range word-repetition memory
     update_formula,         # Tier 2: formulaic-phrase trie position
     update_sentence,        # Tier 2/3: sentence-type FSM

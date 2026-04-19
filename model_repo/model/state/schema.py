@@ -346,6 +346,35 @@ class ModelState(BaseModel):
     # battlefield-continuation letters when high.
     meditative_register: float = 0.0
 
+    # --- Tier 2/3: antithesis / rhetorical contrast ---
+    # Shakespeare's signature antithesis structures — "not X but Y",
+    # "to be or not to be", "neither A nor B", "more X than Y" —
+    # create a two-part prosody that the model can exploit. After a
+    # contrast-opener word ("not", "nor", "neither", "either",
+    # "rather", "more", "less", "either") appears, the next pivot
+    # word ("but", "or", "nor", "than", "yet") is elevated, and
+    # after the pivot the complement half is expected.
+    #
+    # antithesis_state:
+    #   0 = NONE          — no active contrast
+    #   1 = OPENER_SEEN   — an opener word has fired; pivot expected
+    #                       within a few words
+    #   2 = PIVOTED       — pivot word has fired; we're in the
+    #                       contrast complement half
+    # Reset on sentence-end punctuation (. ? !) and on speaker-turn
+    # boundary (consecutive_newlines >= 2 AND last_char == "\n").
+    antithesis_state: int = 0
+    # Completed-words since the opener fired. Used to decay the
+    # OPENER_SEEN state back to NONE after ~6 words without a pivot
+    # (the contrast never materialized). Zero in state NONE / PIVOTED
+    # opener_age reset.
+    antithesis_words_since_opener: int = 0
+    # Completed-words since the pivot fired. Lets the predict layer
+    # know how deep into the complement half we are — closing
+    # punctuation becomes more likely after 3-5 complement words.
+    # Zero unless antithesis_state == PIVOTED.
+    antithesis_words_since_pivot: int = 0
+
     # --- Tier 2: clause slot state machine ---
     # Coarse syntactic-slot tracker for the current clause:
     #   0 = FRESH       — sentence start / post-clause-break; expect

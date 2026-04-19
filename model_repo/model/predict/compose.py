@@ -36,6 +36,7 @@ from ..vocab import VOCAB, VOCAB_INDEX, VOCAB_SIZE
 from .address import address_midword_bias, address_start_bias
 from .alliteration import alliteration_start_bias
 from .anaphora import anaphora_midword_bias, anaphora_start_bias
+from .antithesis import antithesis_closure_bias, antithesis_pivot_bias
 from .archaic import archaic_midword_bias, archaic_start_bias
 from .meditative import meditative_midword_bias, meditative_start_bias
 from .bigram import bigram_bias
@@ -892,6 +893,36 @@ def predict(state: ModelState) -> list[float]:
         if am is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += am[i]
+
+    # Layer 3c2e: antithesis pivot / closure bias. Reads the state
+    # maintained by pipeline/antithesis.py. At word-start, when we're
+    # in OPENER_SEEN state (a "not/nor/neither/rather" opener has
+    # fired and no pivot yet), nudge toward pivot-opener letters
+    # (b/o/n/t/y/e). When PIVOTED and we're deep in the complement
+    # half, gently elevate closing punctuation at between-word
+    # positions. This captures a uniquely Shakespearean rhetorical
+    # axis — the two-part contrast rhythm — that no existing layer
+    # sees.
+    if (
+        state.letter_run_len == 0
+        and state.speaker_label_state == 0
+        and state.antithesis_state == 1  # OPENER_SEEN
+        and state.antithesis_words_since_opener >= 2
+    ):
+        ap = antithesis_pivot_bias(state.antithesis_words_since_opener)
+        for i in range(VOCAB_SIZE):
+            logits[i] += ap[i]
+    if (
+        state.letter_run_len == 0
+        and state.speaker_label_state == 0
+        and state.antithesis_state == 2  # PIVOTED
+        and state.antithesis_words_since_pivot >= 3
+    ):
+        ac = antithesis_closure_bias(
+            state.antithesis_words_since_pivot, state.letter_run_len
+        )
+        for i in range(VOCAB_SIZE):
+            logits[i] += ac[i]
 
     # Layer 3c3: meditative-register word-start bias. Reads the flow-tier
     # meditative_register (rises on philosophical/abstract vocabulary like
