@@ -510,7 +510,7 @@ def predict(state: ModelState) -> list[float]:
         )
         if cv is not None:
             for i in range(VOCAB_SIZE):
-                logits[i] += cv[i]
+                logits[i] += cv[i] * 2.8
         # Word-end bigram plausibility: look at the last 2 letters of
         # the off-trie buffer and decide whether the suffix looks like
         # a real English word ending (boost " ") or clearly mid-word
