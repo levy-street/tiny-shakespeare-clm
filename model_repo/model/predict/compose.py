@@ -58,6 +58,7 @@ from .sonority import sonority_midword_bias
 from .suffix_completion import suffix_completion_bias
 from .verb_word_trie import verb_word_trie_bias
 from .object_word_trie import object_word_trie_bias
+from .post_obj_word_trie import post_obj_word_trie_bias
 from .slot_next import slot_start_bias
 from .speaker_recency import speaker_recency_bias
 from .speaker_trie import speaker_trie_bias
@@ -434,6 +435,25 @@ def predict(state: ModelState) -> list[float]:
         if owt is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += owt[i]
+
+    # Layer 3c1-post: post-object word-trie bias. Third corner of the
+    # clause-FSM-aware predict family. Fires at clause_slot == POST_OBJ
+    # and biases toward coordinating / subordinating conjunctions,
+    # relatives, chain adverbs, and PP-extending prepositions.
+    if (
+        state.word_buffer
+        and state.speaker_label_state == 0
+        and state.clause_slot == 3
+    ):
+        pwt = post_obj_word_trie_bias(
+            state.word_buffer,
+            state.letter_run_len,
+            state.clause_slot,
+            state.speaker_label_state,
+        )
+        if pwt is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += pwt[i]
 
     # Layer 3c1-trans: transitivity mid-word bias. When an object is
     # expected AND the current buffer is a short determiner-prefix
