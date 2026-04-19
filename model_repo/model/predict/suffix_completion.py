@@ -97,6 +97,18 @@ _PROGRESSIONS: tuple[tuple[str, str, float], ...] = (
     # -ward / -wards
     # -hood (noun: "knighthood", "manhood")
     ("hoo", "d", 0.45),
+
+    # -ive (adjective: "active", "native", "captive", "fugitive")
+    ("iv", "e", 0.35),
+
+    # -ity (noun: "vanity", "trinity") — scaled low as "it" is "it"
+    ("it", "y", 0.15),
+
+    # -ship (noun: "friendship", "worship", "hardship")
+    ("shi", "p", 0.25),
+
+    # -age (noun: "courage", "marriage")
+    ("ag", "e", 0.15),
 )
 
 # Suffix completions — once the buffer ends in one of these, the word
@@ -119,6 +131,10 @@ _COMPLETE_SUFFIXES: tuple[tuple[str, float], ...] = (
     ("ence", 0.55),
     ("ward", 0.35),
     ("hood", 0.45),
+    ("ive", 0.35),
+    ("ship", 0.40),
+    ("age", 0.25),
+    ("ity", 0.35),
 )
 
 
