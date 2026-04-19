@@ -2736,7 +2736,7 @@ def predict(state: ModelState) -> list[float]:
         # Higher T than on-trie because many strong negative biases
         # (red_flags, gibberish_hardcap, drift recovery) stack and
         # over-sharpen when the actual next char is a vowel-insert.
-        T = 1.40
+        T = 1.70
     if T != 1.0:
         logits = [x / T for x in logits]
     return _log_softmax_smoothed(logits, 0.5e-4)
