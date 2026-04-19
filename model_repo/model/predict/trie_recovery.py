@@ -97,10 +97,18 @@ def trie_recovery_bias(
     #
     past_only_term = 0.0
 
-    if n <= 2:
+    if n <= 1:
         term_boost = 0.0
         end_letter_scale = 0.0
         gib_scale = 0.0
+    elif n == 2:
+        # Early-drift: gentle nudge toward ending letters and away from
+        # gibberish-extending letters. Fires one step earlier than before
+        # so we catch drift like "awake"→"awakeg"→"awakegu" at step 2
+        # (when past_only==2), not step 3.
+        term_boost = past_only_term
+        end_letter_scale = 0.55
+        gib_scale = 0.15
     elif n == 3:
         term_boost = past_only_term
         end_letter_scale = 0.7
