@@ -343,6 +343,211 @@ _EXPECT: dict[tuple[str, str, str], tuple[tuple[str, int], ...]] = {
     ("i", "am", "thy"): (
         ("father", 2), ("son", 2), ("friend", 2), ("servant", 2),
     ),
+    # --- further 3-word patterns from common Shakespearean idiom ---
+    ("there", "is", "no"): (
+        ("more", 3), ("end", 2), ("help", 2), ("harm", 2), ("cause", 2),
+        ("doubt", 2), ("man", 2), ("such", 2),
+    ),
+    ("there", "is", "a"): (
+        ("man", 2), ("thing", 2), ("lady", 2), ("woman", 2), ("kind", 2),
+        ("time", 2), ("way", 2), ("world", 2),
+    ),
+    ("there", "is", "not"): (
+        ("a", 2), ("so", 2), ("one", 2), ("such", 2),
+    ),
+    ("there", "is", "the"): (
+        ("point", 2), ("man", 2), ("question", 2), ("lord", 2),
+    ),
+    ("i", "am", "sorry"): (
+        ("for", 3), ("to", 3), (",", 2), ("sir", 2), ("that", 2),
+    ),
+    ("i", "do", "beseech"): (
+        ("you", 4), ("thee", 3), ("your", 2),
+    ),
+    ("i", "do", "love"): (
+        ("thee", 3), ("her", 2), ("him", 2), ("you", 2), ("my", 2),
+    ),
+    ("i", "do", "believe"): (
+        ("it", 2), ("the", 2), ("thee", 2), ("him", 2),
+    ),
+    ("i", "do", "remember"): (
+        ("me", 2), ("him", 2), (",", 2), ("a", 2), ("the", 2),
+    ),
+    ("what", "say", "you"): (
+        ("?", 4), (",", 2), ("to", 3), ("of", 2),
+    ),
+    ("what", "say", "thou"): (
+        ("?", 4), (",", 2), ("to", 3),
+    ),
+    ("how", "now", ","): (
+        ("my", 2), ("good", 2), ("sir", 2), ("what", 2), ("daughter", 2),
+        ("madam", 2), ("sweet", 2),
+    ),
+    ("how", "do", "you"): (
+        ("do", 3), ("?", 3), (",", 2), ("know", 2),
+    ),
+    ("how", "dost", "thou"): (
+        ("?", 3), (",", 2), ("now", 2), ("do", 2),
+    ),
+    ("i", "prithee", "tell"): (
+        ("me", 4), ("us", 2),
+    ),
+    ("i", "prithee", ","): (
+        ("sir", 2), ("speak", 2), ("come", 2), ("tell", 2), ("good", 2),
+    ),
+    ("where", "is", "my"): (
+        ("lord", 3), ("father", 3), ("son", 2), ("sword", 2), ("daughter", 2),
+        ("wife", 2), ("friend", 2),
+    ),
+    ("where", "is", "thy"): (
+        ("father", 3), ("sword", 2), ("lord", 2), ("mother", 2),
+    ),
+    ("where", "is", "he"): (
+        ("?", 4), (",", 2), ("gone", 2), ("now", 2),
+    ),
+    ("where", "art", "thou"): (
+        ("?", 5), (",", 2), ("gone", 1),
+    ),
+    ("who", "art", "thou"): (
+        ("?", 5), (",", 2),
+    ),
+    ("who", "are", "you"): (
+        ("?", 4), (",", 2),
+    ),
+    ("when", "i", "was"): (
+        ("a", 3), ("young", 2), ("but", 2), ("in", 2), ("with", 2),
+    ),
+    ("in", "the", "world"): (
+        (",", 3), (".", 2), ("?", 2),
+    ),
+    ("in", "the", "name"): (
+        ("of", 5),
+    ),
+    ("all", "the", "world"): (
+        ("'s", 2), ("is", 2), (",", 2), ("?", 2),
+    ),
+    ("from", "my", "heart"): (
+        (",", 3), (".", 2), ("!", 1),
+    ),
+    ("with", "all", "my"): (
+        ("heart", 4), ("soul", 2), ("might", 2),
+    ),
+    ("by", "this", "hand"): (
+        (",", 4), (".", 2), ("!", 1),
+    ),
+    ("by", "this", "light"): (
+        (",", 3), (".", 2),
+    ),
+    ("by", "heaven", ","): (
+        ("i", 2), ("he", 2), ("it", 2), ("a", 2), ("thou", 2),
+    ),
+    ("i", "warrant", "you"): (
+        (",", 3), (".", 2), ("!", 1),
+    ),
+    ("i", "warrant", "thee"): (
+        (",", 3), (".", 2),
+    ),
+    ("i", "thank", "you"): (
+        (",", 3), ("sir", 2), ("for", 2), (".", 2),
+    ),
+    ("i", "thank", "thee"): (
+        (",", 3), ("for", 2), (".", 2),
+    ),
+    ("farewell", ",", "good"): (
+        ("my", 2), ("sir", 2), ("friend", 2), ("madam", 2), ("cousin", 2),
+        ("brother", 2),
+    ),
+    ("good", "night", ","): (
+        ("my", 2), ("sweet", 2), ("good", 2), ("sir", 2),
+    ),
+    ("good", "morrow", ","): (
+        ("my", 2), ("sir", 2), ("good", 2), ("sweet", 2),
+    ),
+    ("what", "a", "piece"): (
+        ("of", 5),
+    ),
+    ("i", "have", "a"): (
+        ("mind", 2), ("heart", 2), ("tongue", 2), ("son", 2), ("word", 2),
+        ("brother", 2), ("friend", 2), ("daughter", 2),
+    ),
+    ("you", "shall", "not"): (
+        ("have", 2), ("be", 3), ("go", 2), ("speak", 2), ("see", 2),
+    ),
+    ("you", "have", "done"): (
+        ("me", 2), ("well", 3), ("a", 2), ("it", 2),
+    ),
+    ("he", "hath", "done"): (
+        ("me", 2), ("it", 2), ("no", 2), ("the", 2),
+    ),
+    ("hath", "he", "not"): (
+        ("?", 3), ("done", 2), ("been", 2),
+    ),
+    ("is", "it", "not"): (
+        ("?", 4), ("so", 2), ("a", 2),
+    ),
+    ("i", "cannot", "tell"): (
+        (",", 3), (".", 2), ("what", 2), ("how", 2), ("why", 2),
+    ),
+    ("i", "cannot", "speak"): (
+        ("it", 2), ("to", 2), (",", 2),
+    ),
+    ("do", "you", "hear"): (
+        ("?", 4), (",", 2), ("me", 2),
+    ),
+    ("do", "you", "know"): (
+        ("?", 3), ("me", 2), ("what", 2), ("him", 2), ("her", 2),
+    ),
+    ("did", "you", "not"): (
+        ("?", 3), ("hear", 2), ("see", 2), ("know", 2),
+    ),
+    ("take", "my", "leave"): (
+        (",", 3), (".", 3), ("of", 2),
+    ),
+    ("take", "heed", ","): (
+        ("my", 2), ("sir", 2), ("lest", 2),
+    ),
+    ("come", "hither", ","): (
+        ("sir", 2), ("my", 2), ("good", 2), ("sweet", 2),
+    ),
+    ("come", ",", "sir"): (
+        (",", 3), (".", 2), ("!", 1),
+    ),
+    ("so", "help", "me"): (
+        ("god", 3), ("heaven", 2), (",", 2),
+    ),
+    ("as", "i", "am"): (
+        ("a", 3), ("the", 2), ("thy", 2), ("true", 2),
+    ),
+    ("as", "thou", "art"): (
+        ("a", 3), ("the", 2), ("my", 2), ("true", 2),
+    ),
+    ("if", "it", "be"): (
+        ("so", 3), ("true", 2), ("not", 2), ("the", 2),
+    ),
+    ("if", "you", "will"): (
+        (",", 2), ("not", 2), ("have", 2), ("go", 2),
+    ),
+    ("if", "thou", "wilt"): (
+        (",", 2), ("not", 2), ("have", 2), ("go", 2),
+    ),
+    ("in", "good", "faith"): (
+        (",", 3), (".", 2),
+    ),
+    ("in", "good", "sooth"): (
+        (",", 3), (".", 2),
+    ),
+    ("i", "tell", "thee"): (
+        (",", 3), ("what", 2), ("no", 2), (".", 2),
+    ),
+    ("i", "tell", "you"): (
+        (",", 3), ("what", 2), ("sir", 2), (".", 2),
+    ),
+    ("mark", "me", ","): (
+        ("sir", 2), ("my", 2), ("now", 2),
+    ),
+    ("mark", "you", ","): (
+        ("sir", 2), ("my", 2), ("now", 2),
+    ),
 }
 
 
