@@ -45,6 +45,7 @@ from .proper_noun_memory import update_proper_noun_memory
 from .caesura import update_caesura
 from .prosody import update_prosody
 from .referent import update_referent
+from .register_commit import update_register_commit
 from .repetition import update_repetition
 from .subord import update_subord
 from .tenderness import update_tenderness
@@ -92,6 +93,7 @@ PIPELINE: list[Stage] = [
     update_addressee,       # Tier 2/3: vocative-noun memory
     update_speaker_memory,  # Tier 2/3: recent-speakers rolling window
     update_speaker_register, # Tier 2/3: categorical register from speaker name
+    update_register_commit, # Tier 2: thou/you address-form commit (per-turn)
     update_referent,        # Tier 2: anaphoric referent gender tracking
     update_topic_tracker,   # Tier 3: scene-topic semantic cluster memory
     update_doubt,           # Tier 3: doubt/assertion register texture

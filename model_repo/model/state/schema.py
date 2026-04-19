@@ -433,6 +433,30 @@ class ModelState(BaseModel):
     # consumer taper the bias strength early in a turn (first few tokens
     # are usually the speaker label itself).
     register_age: int = 0
+    # --- Tier 2: thou/you register commit (Early Modern address form) ---
+    # In Early Modern English a speaker chooses between the T-form
+    # (thou/thee/thy/thine/thyself — singular, familiar, intimate or
+    # condescending) and the V-form (you/your/yours/ye — plural or
+    # polite-singular) for their addressee. Once a speaker commits
+    # within a turn, mixing is JARRING — "Thou art mad. You look
+    # pale." is ungrammatical Shakespeare.
+    #
+    # State codes:
+    #   0 UNCOMMITTED — no 2nd-person pronoun seen this turn
+    #   1 T_COMMIT     — thou / thee / thy / thine / thyself seen;
+    #                    also implicit via -st auxiliary forms
+    #                    (hast, didst, wilt, shalt, canst, art, wert)
+    #   2 V_COMMIT     — you / your / yours / ye seen
+    #
+    # Reset rule: on turn boundary (consecutive_newlines >= 2). Once
+    # committed, stays committed for the rest of the turn, giving
+    # downstream consumers a TURN-LEVEL prior that reinforces the
+    # clause-level verb_agreement signal across sentence breaks.
+    #
+    # Consumed by predict.register_commit_bias at word-start to tilt
+    # 2nd-person-pronoun leading letters (t/T vs y/Y) in favor of
+    # the committed register.
+    thou_thee_commit: int = 0
     # Rolling tuple of the last 4 completed sentences' types (most-recent
     # LAST). Each entry is a sentence_type integer (SENT_DECL / INTEROG /
     # EXCLAM / IMPER / UNKNOWN). Unlike prev_sentence_type (1-back), this

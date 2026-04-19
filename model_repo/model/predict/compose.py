@@ -79,7 +79,9 @@ from .cv_alternation import cv_alternation_bias
 from .discourse_rhythm import discourse_rhythm_start_bias
 from .slot_next import slot_start_bias
 from .speaker_recency import speaker_recency_bias
+from .register_commit_bias import register_commit_start_bias
 from .speaker_register_bias import speaker_register_start_bias
+from .sentence_length_prior import sentence_length_prior_bias
 from .speaker_trie import speaker_trie_bias
 from .start4gram import start4gram_bias
 from .tonal import tonal_start_bias
@@ -1069,6 +1071,21 @@ def predict(state: ModelState) -> list[float]:
         if srb is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += srb[i]
+
+        # Layer 4-TVC: thou/you address-register commit tilt. Once
+        # the speaker has used a T-form or V-form pronoun this turn,
+        # keep their address register consistent for the rest of the
+        # turn (Early Modern English grammar — switching mid-turn is
+        # jarring). Reinforces verb_agreement's clause-local signal
+        # with a turn-level prior that persists across sentence ends.
+        tvb = register_commit_start_bias(
+            state.thou_thee_commit,
+            state.letter_run_len,
+            state.speaker_label_state,
+        )
+        if tvb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += tvb[i]
 
         # Layer 4-LIST: list-parallelism first-letter bias. When we're
         # in a comma-separated list, bias toward (a) the same first
