@@ -113,6 +113,7 @@ from .lament import lament_start_bias, lament_sentence_start_bias
 from .tenderness import tenderness_start_bias, tenderness_sentence_start_bias
 from .drift_recovery import drift_recovery_bias, drift_recovery_midword_bias
 from .gibberish_hardcap import gibberish_hardcap_bias
+from .verb_complement import verb_complement_start_bias
 from .line_break_bias import line_break_newline_bias
 from .trigram import trigram_bias
 from .vocative import VOCATIVE_START_BIAS
@@ -1262,6 +1263,27 @@ def predict(state: ModelState) -> list[float]:
             if tssb is not None:
                 for i in range(VOCAB_SIZE):
                     logits[i] += tssb[i]
+
+        # Layer 4b3c-vcc: verb-complement class word-start bias. When
+        # the last completed verb set an expectation (that-clause,
+        # preposition, past-participle, infinitive, predicate), nudge
+        # the NEXT word's first letter toward the expected complement
+        # opener. Complementary to the existing pos_next / pos_bigram
+        # biases, which condition only on POS — this conditions on
+        # a specific verb-class-driven slot with per-slot letter
+        # inventories (e.g., "hath" → s/b/g/t [seen, been, gone,
+        # taken]; "shall" → b/s/h/g [be, see, have, go]; "said" →
+        # t/i/w [that, I, what]).
+        vcb = verb_complement_start_bias(
+            state.verb_complement_class,
+            state.vcc_wait_words,
+            state.speaker_label_state,
+            state.letter_run_len,
+            state.word_buffer,
+        )
+        if vcb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += vcb[i]
 
         # Layer 4b3c-drift: scene-drift recovery. When 2+ consecutive
         # words have completed OFF the word-trie, we're in a runaway

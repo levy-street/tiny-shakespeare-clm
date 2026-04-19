@@ -1621,3 +1621,32 @@ class ModelState(BaseModel):
     # b, s, f, m) and suppresses rare starters (x, z, j, q) — pulling
     # the sampler back toward known-word territory.
     drift_streak: int = 0
+
+    # --- Tier 2: verb-complement class expectation ---
+    # When a verb completes, mark what KIND of complement it expects.
+    # This is finer-grained than `verb_transitivity` (3-way: NONE /
+    # DO_EXPECTED / COMP_EXPECTED): mental verbs want that-clauses,
+    # motion verbs want PPs, auxiliaries want past participles,
+    # perception verbs want NP-or-clause. Each needs a different
+    # word-start bias on the IMMEDIATELY following word.
+    #
+    # Values (verb_complement_class):
+    #   VCC_NONE = 0   — no active expectation
+    #   VCC_THAT  = 1  — mental/communication verb: expect "that",
+    #                    or direct quote/clause opener, or NP (when
+    #                    the verb also licenses a bare NP: "I know him")
+    #   VCC_PP    = 2  — motion verb: expect preposition (to/from/
+    #                    toward/into/through/upon)
+    #   VCC_PPART = 3  — auxiliary "have/hath/had/hast": expect past
+    #                    participle (verb_ed or irregular: seen, done,
+    #                    gone, taken, fought, spoken)
+    #   VCC_INF   = 4  — modal / "to": expect bare infinitive verb
+    #   VCC_PRED  = 5  — copula "is/are/was/were/be/am/art": expect
+    #                    predicate ADJ, NP, or VERB_ING (progressive)
+    #
+    # Set at verb-completion (on just_finished_word, when
+    # last_completed_word is in the appropriate verb inventory).
+    # Aged each subsequent just_finished_word; reset when a fitting
+    # complement appears or when wait exceeds a small budget.
+    verb_complement_class: int = 0
+    vcc_wait_words: int = 0

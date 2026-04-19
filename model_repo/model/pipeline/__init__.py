@@ -26,6 +26,7 @@ from .verb_agreement import update_verb_agreement
 from .np_head import update_np_head
 from .transitivity import update_transitivity
 from .verb_class import update_verb_class
+from .verb_complement import update_verb_complement
 from .word_form import update_word_form
 from .counters import update_basic_counters
 from .doubt import update_doubt
@@ -75,6 +76,7 @@ PIPELINE: list[Stage] = [
     update_transitivity,    # Tier 2: verb transitivity / object-expectation
     update_case_slot,       # Tier 2: pronoun case slot (SUBJ/OBJ)
     update_verb_class,      # Tier 2: verb semantic class (9-way)
+    update_verb_complement, # Tier 2: verb-complement class expectation
     update_word_form,       # Tier 2: morphological-form expectation FSM
     update_vocative,        # Tier 2: vocative-expectation flag
     update_addressee,       # Tier 2/3: vocative-noun memory
