@@ -153,6 +153,15 @@ class ModelState(BaseModel):
     # Is the current word_buffer still a prefix of some known word? False
     # when we have no buffer or when the buffer has drifted off-trie.
     on_word_trie: bool = True
+    # Number of COMPLETE known words that still start with word_buffer.
+    # 0 = no known word remains possible; 1 = exactly one completion; >1
+    # = many. Graded complement to on_word_trie. 0 when word_buffer
+    # is empty. Updated by pipeline/word_matches.py.
+    trie_match_count: int = 0
+    # `trie_match_count` on the previous token. Lets downstream predict
+    # layers detect the exact character that dropped the count to 0
+    # (and react strongly the next step).
+    prev_trie_match_count: int = 0
     # Rough line-length floor threshold bucket — encodes "is the line
     # already long enough to plausibly end?". Derived from chars_since_newline.
     # 0: short (<20), 1: medium (20-34), 2: long (35-49), 3: overlong (>=50)

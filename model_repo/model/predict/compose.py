@@ -44,6 +44,7 @@ from .meter import pentameter_wordend_bias
 from .polysyllable import polysyllable_midword_bias
 from .context import CTX_BIAS_VECTORS, context_key
 from .letter3 import letter3_bias
+from .match_count import match_count_bias
 from .letter4 import letter4_bias
 from .list_bias import list_start_bias, list_wordend_comma_bias
 from .next_word import next_word_bias
@@ -348,7 +349,10 @@ def predict(state: ModelState) -> list[float]:
             for i in range(VOCAB_SIZE):
                 logits[i] += s5[i]
 
-    # Layer 3c: word-trie completion bias.
+    # Layer 3c: word-trie completion bias. Scaled by letter position
+    # AND by trie_match_count — when the completion set is tight
+    # (1-3 words), the remaining bias vector is a sharp near-unique
+    # prediction; push it a little harder so the model commits.
     if state.word_buffer:
         wt = word_trie_bias(state.word_buffer)
         if wt is not None:
@@ -372,6 +376,24 @@ def predict(state: ModelState) -> list[float]:
                 wt_scale = 1.32
             for i in range(VOCAB_SIZE):
                 logits[i] += wt[i] * wt_scale
+
+    # Layer 3c-MC: graded trie-match-count bias. Complements the
+    # binary on_word_trie. Three regimes:
+    #   * count == 0 (just dropped from >=1): strong terminator push.
+    #   * count == 1: unique completion — discourage premature end.
+    #   * count in {2,3}: narrow set — gentle anti-term nudge.
+    if state.word_buffer:
+        mc = match_count_bias(
+            state.trie_match_count,
+            state.prev_trie_match_count,
+            state.letter_run_len,
+            state.on_word_trie,
+            len(state.word_buffer),
+            state.speaker_label_state,
+        )
+        if mc is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += mc[i]
 
     # Layer 3c-PNM: proper-noun rolodex mid-word continuation bias.
     # When we're inside a capitalized word that started mid-sentence
@@ -2522,7 +2544,20 @@ def predict(state: ModelState) -> list[float]:
         T = 1.33
     elif state.on_word_trie:
         # Mid-word on trie: word_trie bias dominates and is sharp.
-        T = 1.40
+        # Modulate by trie_match_count — when only 1 known word
+        # matches, our trie is probably wrong a large fraction of the
+        # time (the real text has many rare words we don't know);
+        # soften there. At broader counts, the bias is averaged
+        # across many completions and we can trust it.
+        tmc = state.trie_match_count
+        if tmc == 1:
+            T = 1.65
+        elif tmc == 2:
+            T = 1.52
+        elif tmc <= 4:
+            T = 1.42
+        else:
+            T = 1.38
     else:
         # Off-trie mid-word: letter n-grams + drift-recovery stack.
         # Higher T than on-trie because many strong negative biases

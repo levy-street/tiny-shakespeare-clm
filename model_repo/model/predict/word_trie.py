@@ -6258,6 +6258,32 @@ def _precompute() -> dict[str, list[float]]:
 PREFIX_BIAS: dict[str, list[float]] = _precompute()
 
 
+def _build_prefix_complete_count() -> dict[str, int]:
+    """Precompute, for every prefix in the trie, the number of COMPLETE
+    known words that have that prefix. Provides a graded signal of how
+    many real-English completions remain possible at each point in a
+    word; complements the binary on_word_trie flag.
+    """
+    counts: dict[str, int] = {}
+    for w in COMPLETE_WORDS:
+        for i in range(len(w) + 1):
+            prefix = w[:i]
+            counts[prefix] = counts.get(prefix, 0) + 1
+    return counts
+
+
+PREFIX_COMPLETE_COUNT: dict[str, int] = _build_prefix_complete_count()
+
+
+def prefix_completion_count(buffer: str) -> int:
+    """Number of COMPLETE known words that start with `buffer`. Returns
+    0 if the prefix is not a prefix of any known word.
+    """
+    if not buffer:
+        return 0
+    return PREFIX_COMPLETE_COUNT.get(buffer, 0)
+
+
 def word_trie_bias(buffer: str) -> list[float] | None:
     """Return a bias vector for the current partial-word buffer, or None."""
     if not buffer:

@@ -28,6 +28,7 @@ from .transitivity import update_transitivity
 from .verb_class import update_verb_class
 from .verb_complement import update_verb_complement
 from .word_form import update_word_form
+from .word_matches import update_word_matches
 from .counters import update_basic_counters
 from .dash_aside import update_dash_aside
 from .doubt import update_doubt
@@ -65,6 +66,7 @@ PIPELINE: list[Stage] = [
     update_basic_counters,  # Tier 1: base bookkeeping
     update_dash_aside,      # Tier 2: parenthetical-dash scope tracking
     update_linguistic,      # Tier 2: linguistic structure
+    update_word_matches,    # Tier 2: graded trie-completion count for word_buffer
     update_drift,           # Tier 2/3: consecutive-off-trie word streak
     update_speaker_offtrie, # Tier 2: speaker-buffer off-trie run
     update_pos,             # Tier 2: POS tag of last completed word
