@@ -42,6 +42,7 @@ from .formula import update_formula
 from .fury import update_fury
 from .lament import update_lament
 from .linguistic import update_linguistic
+from .mid_departure import update_mid_departure
 from .list_structure import update_list_structure
 from .negation import update_negation
 from .pos import update_pos
@@ -79,6 +80,7 @@ PIPELINE: list[Stage] = [
     update_linguistic,      # Tier 2: linguistic structure
     update_word_matches,    # Tier 2: graded trie-completion count for word_buffer
     update_word_integrity,  # Tier 2/3: per-char word-shape plausibility monitor
+    update_mid_departure,   # Tier 2: mid-departure (pos 3-4) extension length
     update_drift,           # Tier 2/3: consecutive-off-trie word streak
     update_line_coherence,  # Tier 2: per-line on-trie vs off-trie word counts
     update_speaker_offtrie, # Tier 2: speaker-buffer off-trie run

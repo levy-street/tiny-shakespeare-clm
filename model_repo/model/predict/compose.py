@@ -85,6 +85,7 @@ from .clause_rhythm import clause_rhythm_comma_bias
 from .urgency import urgency_word_end_bias, urgency_long_word_bias
 from .dependent_clause import dependent_clause_bias
 from .offtrie_depart import offtrie_depart_bias
+from .mid_departure import mid_departure_bias
 from .cv_alternation import cv_alternation_bias
 from .discourse_rhythm import discourse_rhythm_start_bias
 from .slot_next import slot_start_bias
@@ -584,6 +585,19 @@ def predict(state: ModelState) -> list[float]:
         if od is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += od[i] * 1.5
+
+        # Layer 3c1a-mid: mid-departure (pos 3-4) extension bias.
+        # offtrie_depart_bias explicitly skips depart_pos in {3, 4}
+        # and trie_recovery has term_boost=0; this fills the gap.
+        # Pushes end-letter and terminator probability in the 5-10
+        # char gibberish window after a plausible 3-4 letter prefix.
+        mdb = mid_departure_bias(
+            state.mid_departure_extension,
+            state.speaker_label_state,
+        )
+        if mdb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += mdb[i]
 
         # Layer 3c1a-cv: C-V alternation push inside polysyllabic
         # off-trie interiors. When 3+ consonants have been stacked

@@ -204,6 +204,32 @@ class ModelState(BaseModel):
     # gibberish-letter penalty with a much sharper signal than the
     # current-letters-off count alone.
     offtrie_depart_pos: int = 0
+
+    # --- Tier 2: mid-departure extension length ---
+    # Counts letters written since the current word drifted off the
+    # word-trie, but ONLY for words whose departure happened at
+    # position 3 or 4 (i.e., had a plausible 3-4 letter prefix but
+    # then stepped off). This is the exact regime the existing
+    # offtrie_depart_bias layer leaves unhandled (it returns None for
+    # depart_pos <= 4), and also the regime trie_recovery handles
+    # only weakly (its term_boost is 0). Real gibberish samples like
+    # "etustartea", "Fulfilm", "iegeohce" depart at positions 3-4 and
+    # then drift 4-6 more letters before terminating.
+    #
+    # Semantics:
+    #   Active (>= 1) iff on_word_trie == False, letters_off_trie >= 1,
+    #                  and offtrie_depart_pos in {3, 4}.
+    #   Value = letters written past the departure point
+    #   (= letters_off_trie for this regime).
+    #   0 whenever any condition is false: on-trie, early-dep (1-2),
+    #   late-dep (>= 5 — already covered by other layers), or no word.
+    #   Reset to 0 at word completion.
+    #
+    # Consumed by predict/mid_departure.py to apply the missing
+    # terminator-plus-end-letter pressure in the 5-10 char gibberish
+    # window.
+    mid_departure_extension: int = 0
+
     # Number of consecutive consonant letters since the last vowel in
     # the current word. Real English words rarely allow 4+ consecutive
     # consonants (even "strength" tops out at "str"). Resets on vowel,
