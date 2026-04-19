@@ -61,6 +61,7 @@ from .speaker_register import update_speaker_register
 from .speaker_offtrie import update_speaker_offtrie
 from .topic_tracker import update_topic_tracker
 from .turn import update_turn_progress
+from .turn_content import update_turn_content
 from .vocative import update_vocative
 
 Stage = Callable[[ModelState, int], ModelState]
@@ -103,6 +104,7 @@ PIPELINE: list[Stage] = [
     update_gravitas,        # Tier 3: gravitas/moral-weight texture register
     update_fury,            # Tier 3: fury/rage/curse texture register
     update_turn_progress,   # Tier 2/3: words/sentences/lines in current turn
+    update_turn_content,    # Tier 3: per-turn content-word echo cache
     update_anaphora,        # Tier 2: line-starter anaphora tracking
     update_alliteration,    # Tier 2/3: within-line alliteration memory
     update_rhyme,           # Tier 2/3: line-tail rhyme memory

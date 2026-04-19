@@ -373,15 +373,15 @@ def predict(state: ModelState) -> list[float]:
             # to the residual context-class/bigram priors.
             rl = state.letter_run_len
             if rl <= 1:
-                wt_scale = 1.12
+                wt_scale = 1.28
             elif rl == 2:
-                wt_scale = 1.24
+                wt_scale = 1.40
             elif rl == 3:
-                wt_scale = 1.30
+                wt_scale = 1.46
             elif rl == 4:
-                wt_scale = 1.34
+                wt_scale = 1.50
             else:
-                wt_scale = 1.38
+                wt_scale = 1.54
             for i in range(VOCAB_SIZE):
                 logits[i] += wt[i] * wt_scale
 

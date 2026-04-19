@@ -730,6 +730,34 @@ class ModelState(BaseModel):
     turn_exclam_count: int = 0
     turn_question_count: int = 0
 
+    # --- Tier 3: turn content echo memory ---
+    # A rolling cache of up to 10 content words (NOUN, VERB, VERB_ING,
+    # VERB_ED, ADJECTIVE, ADVERB, PROPER_NOUN) emitted in the current
+    # speaker turn, most-recent first, with duplicates removed so the
+    # cache captures DISTINCT thematic words, not a token stream.
+    #
+    # This is TURN-scoped (reset on speaker-turn boundary), in contrast
+    # to `content_words` which is a short global 4-word rolling buffer
+    # without turn awareness. Captures the Shakespearean pattern where
+    # a single turn circles back to its key nouns / verbs / images
+    # ("honour", "king", "blood", "death", "sweet", "love") multiple
+    # times — the thematic spine of a speech.
+    #
+    # Updated by pipeline/turn_content.py at word completion when
+    # last_word_pos is a content tag AND the word is >=3 chars. Reset
+    # to () at turn boundary (consecutive_newlines >= 2).
+    #
+    # Consumed by predict/turn_content_echo.py to:
+    #   - at word-start: boost the first letter of cached words so the
+    #     speaker is slightly more likely to reach back for a thematic
+    #     word already said (a soft anaphora/repetition pull)
+    #   - at mid-word: when word_buffer is a prefix of a cached word
+    #     (and the buffer already differs from the most-recently-said
+    #     word to avoid immediate verbatim echo), boost the continuing
+    #     letter toward that cached completion — makes the model finish
+    #     a mid-word into a thematically-relevant known word.
+    turn_content_cache: tuple[str, ...] = ()
+
     # --- Tier 2: formulaic-phrase progress ---
     # Current node ID in a precomputed trie of common multi-word
     # Shakespeare formulas ("I pray thee", "good my lord", "by my
