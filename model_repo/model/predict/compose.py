@@ -109,6 +109,10 @@ from .topic import content_repeat_bias, topic_bias, topic_midword_bias
 from .addressee import addressee_midword_bias, addressee_start_bias
 from .adjacent_repeat import adjacent_repeat_bias
 from .transitivity import transitivity_midword_bias, transitivity_start_bias
+from .turn_punct_texture import (
+    turn_punct_texture_bias,
+    turn_punct_texture_sentence_start_bias,
+)
 from .word_form import word_form_midword_bias, word_form_start_bias
 from .trie_recovery import trie_recovery_bias
 from .word_end_bigram import word_end_bigram_bias
@@ -1772,6 +1776,20 @@ def predict(state: ModelState) -> list[float]:
             if sab is not None:
                 for i in range(VOCAB_SIZE):
                     logits[i] += sab[i]
+            # Turn-emphasis sentence-start bias: when the current turn
+            # has shown an "!"-heavy or "?"-heavy texture, tilt the
+            # first letter of the new sentence toward canonical
+            # exclamative openers (O/A/H) or WH-openers. Scaled down
+            # because sentence-start is already heavily over-determined.
+            tpt_ss = turn_punct_texture_sentence_start_bias(
+                state.turn_exclam_count,
+                state.turn_question_count,
+                state.sentences_in_turn,
+                state.speaker_label_state,
+            )
+            if tpt_ss is not None:
+                for i in range(VOCAB_SIZE):
+                    logits[i] += tpt_ss[i] * 0.30
 
         # Verse-line-start capital boost: after a *single* newline that
         # terminated a VERSE-length line (typically 15-55 chars),
@@ -2310,6 +2328,37 @@ def predict(state: ModelState) -> list[float]:
         #     shift_i = min(0.08 * inv, 0.08)
         #     ratio_excl += ratio_period * shift_i
         #     ratio_period *= (1.0 - shift_i)
+
+        # Turn-emphasis ratio shift: when the current speaker turn has
+        # an established "!"-heavy or "?"-heavy punctuation texture
+        # (e.g. a raging speaker vs an interrogating speaker), shift
+        # end-punct mass toward the turn's dominant mode. Conservative:
+        # only fires at sentences_in_turn >= 2 and scales with excess
+        # over baseline proportions. This is a TURN-level texture
+        # signal, distinct from emotional_intensity (short-burst) and
+        # invocation_mode (decay-based declamatory register).
+        _tsit = state.sentences_in_turn
+        if _tsit >= 2 and st_type != 2:
+            _excl_frac = state.turn_exclam_count / _tsit
+            _ques_frac = state.turn_question_count / _tsit
+            _excl_excess = max(0.0, _excl_frac - 0.15)
+            _ques_excess = max(0.0, _ques_frac - 0.12)
+            if _tsit == 2:
+                _tconf = 0.50
+            elif _tsit == 3:
+                _tconf = 0.75
+            elif _tsit == 4:
+                _tconf = 0.90
+            else:
+                _tconf = 1.0
+            if _excl_excess > 0.0:
+                _shift_e = min(0.70 * _excl_excess * _tconf, 0.65)
+                ratio_excl += ratio_period * _shift_e
+                ratio_period *= (1.0 - _shift_e)
+            if _ques_excess > 0.0:
+                _shift_q = min(0.65 * _ques_excess * _tconf, 0.65)
+                ratio_q += ratio_period * _shift_q
+                ratio_period *= (1.0 - _shift_q)
 
         # Overdue sentence end: at word-end on-trie, boost sentence-end
         # punctuation so the model actually closes sentences. The

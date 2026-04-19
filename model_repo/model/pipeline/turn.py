@@ -45,11 +45,15 @@ def update_turn_progress(state: ModelState, token_id: int) -> ModelState:
             state.words_in_turn
             or state.sentences_in_turn
             or state.lines_in_turn
+            or state.turn_exclam_count
+            or state.turn_question_count
         ):
             return state.model_copy(update={
                 "words_in_turn": 0,
                 "sentences_in_turn": 0,
                 "lines_in_turn": 0,
+                "turn_exclam_count": 0,
+                "turn_question_count": 0,
             })
         return state
 
@@ -66,6 +70,10 @@ def update_turn_progress(state: ModelState, token_id: int) -> ModelState:
     lc = state.last_char
     if lc in (".", "?", "!"):
         updates["sentences_in_turn"] = state.sentences_in_turn + 1
+        if lc == "!":
+            updates["turn_exclam_count"] = state.turn_exclam_count + 1
+        elif lc == "?":
+            updates["turn_question_count"] = state.turn_question_count + 1
 
     # Body newline: a single \n that doesn't mark the turn boundary.
     if lc == "\n" and state.consecutive_newlines == 1:

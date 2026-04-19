@@ -707,6 +707,29 @@ class ModelState(BaseModel):
     sentences_in_turn: int = 0
     lines_in_turn: int = 0
 
+    # --- Tier 3: turn emphasis texture ---
+    # Counts of specific sentence-end punctuation tokens in the current
+    # speaker turn. Together with `sentences_in_turn` they describe the
+    # emphatic shape of the turn: an "!"-heavy turn (exclamations) vs a
+    # "?"-heavy turn (interrogative cascade) vs a "."-heavy turn (even
+    # declarative). Captures speaker TEXTURE: some Shakespeare turns are
+    # rapid-fire exclamations ("O villain! O most damned villain!"),
+    # some are a cascade of questions ("Is it possible? Is it so? Canst
+    # thou believe it?"), some are composed declaratives. The real text
+    # shows strong within-turn autocorrelation: once a speaker has
+    # produced two "!"-ending sentences, another "!"-ending sentence is
+    # more likely than baseline.
+    #
+    # Reset to 0 on turn boundary (consecutive_newlines >= 2).
+    # Incremented at the emission of the corresponding punct, outside
+    # speaker-label territory, by pipeline/turn.py.
+    #
+    # Consumed by predict (sentence-end-position bias) to nudge the
+    # next sentence-end-punct choice toward the turn's dominant mode
+    # and by sentence-start bias (interjection/WH openers).
+    turn_exclam_count: int = 0
+    turn_question_count: int = 0
+
     # --- Tier 2: formulaic-phrase progress ---
     # Current node ID in a precomputed trie of common multi-word
     # Shakespeare formulas ("I pray thee", "good my lord", "by my
