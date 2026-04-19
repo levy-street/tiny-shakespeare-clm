@@ -65,6 +65,7 @@ from .subject_word_trie import subject_word_trie_bias
 from .subord import subord_midword_bias, subord_word_end_bias
 from .caesura import caesura_bias
 from .clause_rhythm import clause_rhythm_comma_bias
+from .urgency import urgency_word_end_bias, urgency_long_word_bias
 from .dependent_clause import dependent_clause_bias
 from .offtrie_depart import offtrie_depart_bias
 from .cv_alternation import cv_alternation_bias
@@ -729,6 +730,37 @@ def predict(state: ModelState) -> list[float]:
         if cb is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += cb[i]
+
+    # Layer 3c2b-urgency: flow-driven urgency/tempo bias.
+    # Reads the urgency_tempo flow field (frantic ↔ languid), pushing
+    # "!"/"." and away from "," at word-end in high-urgency contexts,
+    # and pushing space inside long words to keep the tempo tight.
+    if state.speaker_label_state == 0:
+        ub = urgency_word_end_bias(
+            state.urgency_tempo,
+            state.letter_run_len,
+            state.on_word_trie,
+            state.word_buffer,
+            COMPLETE_WORDS,
+            state.speaker_label_state,
+            state.consecutive_newlines,
+            state.chars_since_sentence_end,
+            state.words_in_sentence,
+        )
+        if ub is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += ub[i]
+        ulw = urgency_long_word_bias(
+            state.urgency_tempo,
+            state.letter_run_len,
+            state.on_word_trie,
+            state.word_buffer,
+            COMPLETE_WORDS,
+            state.speaker_label_state,
+        )
+        if ulw is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += ulw[i]
 
     # Layer 3c2c: rhyme-position mid-word bias. When we're in a verse
     # run and approaching line-end, nudge the next letter toward the

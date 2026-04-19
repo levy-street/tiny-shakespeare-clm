@@ -306,6 +306,38 @@ _INVOC_VOCATIVE_BUMP = 0.10
 _INVOC_EXCLAIM_BUMP = 0.25
 _INVOC_DECAY = 0.92
 
+# --- Urgency / tempo ---
+# Hurry adverbs (strong) — explicitly signal "now/fast/quickly".
+_URGENCY_HURRY: frozenset[str] = frozenset({
+    "now", "anon", "straight", "straightway", "quick", "quickly",
+    "hence", "hither", "haste", "swift", "swiftly", "presently",
+    "soon", "fast", "speedy", "speedily", "hie", "forthwith",
+    "instantly", "immediately",
+})
+# Imperative action verbs — when first word of sentence, strong bump.
+_URGENCY_IMPERATIVES: frozenset[str] = frozenset({
+    "come", "go", "stand", "stay", "hold", "strike", "run", "speak",
+    "tell", "hark", "look", "rouse", "away", "up", "down", "forth",
+    "off", "hence", "fly", "flee", "on", "back", "out", "follow",
+    "march", "attack", "rise", "sit", "kneel", "turn", "wait", "halt",
+    "silence", "peace", "draw", "mount", "pursue", "return", "depart",
+    "begone", "avaunt", "softly", "nay",
+})
+# Motion / pursuit verbs (mild) — strong bump if at sentence start
+# too; mild otherwise.
+_URGENCY_MOTION: frozenset[str] = frozenset({
+    "chase", "pursue", "seize", "catch", "rush", "charge",
+    "defend", "attack", "slay", "kill", "strike", "wound",
+    "flee", "escape", "hurry",
+})
+_URGENCY_HURRY_BUMP = 0.32
+_URGENCY_IMPERATIVE_BUMP = 0.35
+_URGENCY_MOTION_BUMP = 0.14
+_URGENCY_EXCLAIM_BUMP = 0.28
+_URGENCY_SHORT_SENT_BUMP = 0.12
+_URGENCY_LONG_WORD_PENALTY = -0.04
+_URGENCY_DECAY = 0.94
+
 # --- Sonority level (phonetic texture) ---
 # Per-letter bumps categorized by phonetic class. Vowels and liquids
 # push positive (melodic); hard stops and harsh consonants push negative
@@ -645,6 +677,40 @@ def update_flow(state: ModelState, token_id: int) -> ModelState:
     if state.consecutive_newlines >= 2 and lc == "\n":
         ornament_density *= 0.4
 
+    # --- Urgency / tempo ---
+    # Rolling [0, 1] frantic-vs-languid texture. Distinct from cadence
+    # (which is clause-length) and invocation_mode (declamatory).
+    urgency_tempo = state.urgency_tempo
+    if state.just_finished_word:
+        urgency_tempo *= _URGENCY_DECAY
+        w = state.last_completed_word
+        if w:
+            if w in _URGENCY_HURRY:
+                urgency_tempo = min(1.0, urgency_tempo + _URGENCY_HURRY_BUMP)
+            # Imperative at sentence start.
+            if state.words_in_sentence == 1 and w in _URGENCY_IMPERATIVES:
+                urgency_tempo = min(
+                    1.0, urgency_tempo + _URGENCY_IMPERATIVE_BUMP
+                )
+            if w in _URGENCY_MOTION:
+                urgency_tempo = min(1.0, urgency_tempo + _URGENCY_MOTION_BUMP)
+            # Long polysyllabic words slightly dampen (ceremonial).
+            if len(w) >= 10:
+                urgency_tempo = max(
+                    0.0, urgency_tempo + _URGENCY_LONG_WORD_PENALTY
+                )
+    if lc == "!":
+        urgency_tempo = min(1.0, urgency_tempo + _URGENCY_EXCLAIM_BUMP)
+    elif lc in ".?" and 0 < state.words_in_sentence <= 4:
+        # Short-sentence closure: ≤ 4 words.
+        urgency_tempo = min(
+            1.0, urgency_tempo + _URGENCY_SHORT_SENT_BUMP
+        )
+    elif lc in ".?":
+        urgency_tempo *= 0.95
+    if state.consecutive_newlines >= 2 and lc == "\n":
+        urgency_tempo *= 0.35
+
     # --- monosyllabic_run ---
     # Increment on completing a 1-syllable word; reset otherwise.
     # Reset on sentence-end and speaker-turn boundary.
@@ -687,5 +753,6 @@ def update_flow(state: ModelState, token_id: int) -> ModelState:
             "invocation_mode": invocation_mode,
             "sonority_level": sonority_level,
             "monosyllabic_run": monosyllabic_run,
+            "urgency_tempo": urgency_tempo,
         }
     )

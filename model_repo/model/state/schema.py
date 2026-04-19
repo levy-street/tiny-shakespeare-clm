@@ -723,6 +723,44 @@ class ModelState(BaseModel):
     #     words).
     monosyllabic_run: int = 0
 
+    # --- Tier 3: urgency_tempo — action-speed / frantic-vs-languid texture ---
+    # Rolling [0, 1] float capturing the *tempo* of the unfolding scene:
+    # is the speaker in commanding / pursuing / fleeing mode (frantic,
+    # imperatives, "!") or in reflective / ceremonial mode (languid,
+    # long phrasing, measured cadence)?
+    #
+    # This is distinct from:
+    #   * cadence (staccato ↔ flowing — driven by CLAUSE length): cadence
+    #     measures phrase-length rhythm; urgency measures ACTION-demand.
+    #     A long-winded exclamation "O come, thou sweet and gentle friend!"
+    #     is flowing but urgent. A short reflective "I think so." is
+    #     staccato but languid.
+    #   * invocation_mode (rhetorical declamation): invocation is about
+    #     grand apostrophe; urgency is about hurry / action.
+    #   * emotional_intensity (overall emotive): emotion may be sorrow
+    #     or awe (languid); urgency is specifically "go/do/now".
+    #
+    # Bumps on completed word:
+    #   * Hurry adverbs (now, anon, straight, quick, quickly, hence,
+    #     hither, haste, swift, swiftly, presently, soon, fast, speedy,
+    #     speedily, fly, flee, hie) — strong.
+    #   * Imperative action verbs when first word of sentence (come, go,
+    #     stand, stay, hold, strike, run, speak, tell, hark, look, rouse,
+    #     away, up, down, forth, off) — strong.
+    #   * Motion / pursuit verbs (chase, pursue, seize, catch, rush,
+    #     follow, attack, defend) — moderate.
+    # Bumps on punctuation:
+    #   * "!" — strong bump (a shout is inherently urgent).
+    #   * Short-sentence close (≤ 4 words since last sentence-end) — mild.
+    # Dampers:
+    #   * Decay 0.94 per completed word (fast fade when scene stays calm).
+    #   * Long words (≥ 10 letters) subtract a little (polysyllabic
+    #     Latinate = ceremonial, not urgent).
+    #   * Speaker-turn boundary (consecutive_newlines ≥ 2, \n) — *0.35.
+    #
+    # Consumed by predict/urgency.py at word-end / sentence-close positions.
+    urgency_tempo: float = 0.0
+
     # --- Tier 2: per-word phonotactic red-flag accumulator ---
     # Count of phonotactic "red flags" observed in the current word
     # buffer so far. A red flag is a non-English-like substructure
