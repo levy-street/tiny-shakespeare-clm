@@ -206,7 +206,7 @@ def predict(state: ModelState) -> list[float]:
         tg = trigram_bias(state.prev_char, state.last_char)
         if tg is not None:
             for i in range(VOCAB_SIZE):
-                logits[i] += tg[i]
+                logits[i] += tg[i] * 3.0
 
     # Layer 3b2: letter-trigram bias (last 3 letters → next). Apply
     # only off-trie, where the word_trie doesn't already give signal.
@@ -214,7 +214,7 @@ def predict(state: ModelState) -> list[float]:
         l3 = letter3_bias(state.word_buffer)
         if l3 is not None:
             for i in range(VOCAB_SIZE):
-                logits[i] += l3[i]
+                logits[i] += l3[i] * 3.0
 
     # Layer 3b2b: word-form mid-word bias. When WFE_PAST_PART is
     # active, tilt letters 3-5 of the word toward -en/-n/-ed ending
