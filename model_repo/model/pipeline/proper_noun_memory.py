@@ -44,7 +44,7 @@ from __future__ import annotations
 
 from ..state import ModelState
 from ..vocab import VOCAB
-from .linguistic import UPPER
+from .linguistic import NEWLINE, SPACE, UPPER
 
 # Lowercased forms of single-letter / short capitalized words that
 # appear capitalized for REASONS OTHER than proper-noun status:
@@ -69,8 +69,32 @@ def update_proper_noun_memory(state: ModelState, token_id: int) -> ModelState:
         # Inside a speaker label — don't use this machinery for labels.
         new_started_cap = False
     elif state.letter_run_len == 1 and state.last_char_class == UPPER:
-        # First letter of a new letter-run just became UPPER.
-        new_started_cap = True
+        # First letter of a new letter-run just became UPPER. Decide
+        # whether this is a MID-SENTENCE capital (a likely proper
+        # noun) or a FORCED capital (line-initial, sentence-initial,
+        # or in speaker-label residue). Only mid-sentence counts.
+        #
+        # The previous char (just before this letter) identifies the
+        # context. We read `prev_char` (the char before last_char).
+        pc = state.prev_char
+        if pc == "\n":
+            # Line-initial capital — in verse, every line starts cap
+            # regardless of sentence boundary. NOT a proper-noun signal.
+            new_started_cap = False
+        elif pc == " ":
+            # After a space: check if the space was a sentence-start
+            # or just a mid-clause space. chars_since_sentence_end at
+            # the time of the emitted cap tells us: if it's 2 (the
+            # space counted 1, the cap counted 1), then period was
+            # 2 chars back → sentence-start. Otherwise mid-sentence.
+            if state.chars_since_sentence_end <= 2:
+                new_started_cap = False
+            else:
+                new_started_cap = True
+        else:
+            # Other punctuation (quote-open, dash, etc.): treat as
+            # mid-sentence.
+            new_started_cap = True
     elif state.letter_run_len >= 1:
         # Continuing within a letter run: preserve.
         new_started_cap = started_cap
