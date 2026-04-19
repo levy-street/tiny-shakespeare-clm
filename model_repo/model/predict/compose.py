@@ -2528,4 +2528,4 @@ def predict(state: ModelState) -> list[float]:
         T = 1.18
     if T != 1.0:
         logits = [x / T for x in logits]
-    return _log_softmax_smoothed(logits, 1.5e-4)
+    return _log_softmax_smoothed(logits, 1.0e-4)

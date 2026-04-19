@@ -1747,6 +1747,37 @@ class ModelState(BaseModel):
     # names instead of guessing fresh each time.
     proper_nouns_seen: tuple[str, ...] = ()
 
+    # --- Tier 2/3: imperative chain counter ---
+    # Tracks the number of CONSECUTIVE imperative sentences that have
+    # just closed in the current speaker turn. Shakespeare's dramatic
+    # pacing — especially at moments of crisis or command — features
+    # rapid imperative chains:
+    #
+    #   "Speak! Attend! Mark!"
+    #   "Go! Fly! Away!"
+    #   "Hold! Peace! Stand forth!"
+    #   "Bring torches! Call the guard! Rouse all the house!"
+    #
+    # After 2+ consecutive imperatives, the next sentence is much more
+    # likely to open with another imperative-head verb than with a
+    # declarative opener. This field captures that short-range
+    # momentum so the predict layer can reinforce it.
+    #
+    # Update rules (applied at sentence-end punctuation):
+    #   - If saved sentence_type == SENT_IMPER: count += 1
+    #   - Otherwise: count reset to 0
+    #   - On speaker-turn boundary (\n\n): reset to 0
+    # No decay beyond the reset — the signal is structural (either
+    # we're in a chain or we've broken it).
+    #
+    # Consumed by predict/imperative_chain.py at sentence-start when
+    # count >= 2 (post two closed imperatives, before the next one's
+    # first word): boost imperative-opener capitals (G=Go/Give, C=Come/
+    # Call, S=Speak/Stand/Stay/See, T=Tell/Take, H=Hear/Hold/Hark/Help,
+    # A=Away/Attend, L=Let/Look/Live, M=Mark, B=Be/Begone/Bring/Behold,
+    # F=Fly/Forbear/Follow, P=Peace, O=Open/Out, W=Watch).
+    imperative_chain_count: int = 0
+
     # --- Tier 3: gravitas register (moral / philosophical weight) ---
     # A rolling [0, 1] float tracking whether the recent discourse
     # carries moral / philosophical / cosmic weight — distinct from
