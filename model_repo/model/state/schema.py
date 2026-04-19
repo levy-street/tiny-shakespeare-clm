@@ -1072,6 +1072,24 @@ class ModelState(BaseModel):
     red_flag_cluster_fired: bool = False
     red_flag_vowel_fired: bool = False
 
+    # --- Tier 2: phonotactic illegal-bigram count ---
+    # Count of letter-pair bigrams within the current word that are
+    # phonotactically illegal in English — pairs that virtually never
+    # appear adjacent inside a real English/Shakespearean word.
+    # Examples: "tv", "dq", "vs" at word-medial, "jn", "xd", "qk"…
+    #
+    # This catches a class of gibberish that the existing red-flag
+    # counters miss: words like "etvsudqted" or "iaegofag" don't have
+    # 4+ consonant clusters or 3+ vowel runs, and their rare-letter
+    # flags are few, yet they contain outright illegal pairs. One or
+    # two illegal bigrams inside a short word is a near-certain
+    # gibberish signal.
+    #
+    # Reset on word boundary. Runs after update_linguistic so that
+    # `word_buffer` already contains the incoming letter and its
+    # predecessor.
+    bad_bigram_count: int = 0
+
     # --- Tier 2/3: within-line alliteration memory ---
     # The lowercase first letter currently being alliterated on this
     # line (a content-word's first letter). "" when no alliteration

@@ -60,6 +60,7 @@ from .tenderness import update_tenderness
 from .gravitas import update_gravitas
 from .word_shape import update_word_shape
 from .enjambment import update_enjambment
+from .phonotactic import update_phonotactic
 from .polysyllable import update_polysyllable
 from .rhyme import update_rhyme
 from .sensory_charge import update_sensory_charge
@@ -129,6 +130,7 @@ PIPELINE: list[Stage] = [
     update_prosody,         # Tier 3: syllable / cadence tracking
     update_caesura,         # Tier 3: mid-line pause (caesura) tracking
     update_word_shape,      # Tier 2: per-word phonotactic red-flag counter
+    update_phonotactic,     # Tier 2: illegal letter-bigram count within current word
     update_line_break,      # Tier 2: syntactic line-break propriety
     update_flow,            # Tier 3: flow / mood / cadence
 ]

@@ -139,6 +139,7 @@ from .verb_object_class import verb_object_class_start_bias
 from .clause_depth import clause_depth_close_bias
 from .double_cons_start import double_consonant_penalty
 from .red_flags import red_flags_close_bias
+from .phonotactic import phonotactic_close_bias
 from .negation import negation_start_bias
 from .case_slot import case_slot_start_bias
 from .lament import lament_start_bias, lament_sentence_start_bias
@@ -697,6 +698,21 @@ def predict(state: ModelState) -> list[float]:
         if rf is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += rf[i]
+
+        # Phonotactic close-out: illegal-bigram count inside the
+        # current word. Complementary to red_flags (which detects
+        # consonant clusters / vowel runs / rare letters) — this
+        # detects adjacent letter pairs that NEVER appear in real
+        # English words. One illegal bigram in a 3+ letter word is
+        # a strong termination signal; two is essentially diagnostic.
+        pt = phonotactic_close_bias(
+            state.bad_bigram_count,
+            state.letter_run_len,
+            state.speaker_label_state,
+        )
+        if pt is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += pt[i]
 
         # Scene-drift mid-word terminator push. When drift_streak >= 2
         # AND the current word is also off-trie AND has extended 4+
@@ -3082,4 +3098,4 @@ def predict(state: ModelState) -> list[float]:
         T = 1.70
     if T != 1.0:
         logits = [x / T for x in logits]
-    return _log_softmax_smoothed(logits, 0.8e-4)
+    return _log_softmax_smoothed(logits, 0.2e-4)

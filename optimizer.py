@@ -40,10 +40,28 @@ _PROMPT_PATH = _HERE / "optimizer_prompt.md"
 # How often to inject a structural-reflection nudge into the session.
 _NUDGE_INTERVAL_SEC = 1800  # 30 minutes
 
-# Nudge messages rotated through to break the agent out of tuning grooves and
-# push it toward structural moves. Each is phrased as user guidance, not a
-# specific prescription — the agent chooses the concrete action.
-_NUDGES: list[str] = [
+# Path to the live-editable nudge file. Read fresh on every nudge fire so that
+# edits to nudges.txt take effect without restarting the optimizer process.
+_NUDGES_PATH = _HERE / "nudges.txt"
+
+
+def load_nudges() -> list[str]:
+    """Read nudges.txt, split on '---' separators, return non-empty entries.
+
+    Re-read on every call so edits to the file are picked up live. Falls back
+    to the embedded default list if the file is missing or empty.
+    """
+    try:
+        raw = _NUDGES_PATH.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return list(_DEFAULT_NUDGES)
+    entries = [e.strip() for e in raw.split("\n---\n")]
+    entries = [e for e in entries if e]
+    return entries if entries else list(_DEFAULT_NUDGES)
+
+
+# Fallback nudges, used if nudges.txt is missing at runtime.
+_DEFAULT_NUDGES: list[str] = [
     (
         "Pause and zoom out. Look at your last ~10 commits — are they mostly "
         "scale/constant tuning and dictionary expansion, or are they adding "
@@ -241,18 +259,20 @@ async def run_session(log_file) -> None:
             "improvement lands. Run indefinitely. Begin."
         )
 
-        nudge_order = list(range(len(_NUDGES)))
-        random.shuffle(nudge_order)
         nudge_cursor = 0
 
         async def nudge_loop() -> None:
             nonlocal nudge_cursor
             while True:
                 await asyncio.sleep(_NUDGE_INTERVAL_SEC)
-                msg = _NUDGES[nudge_order[nudge_cursor % len(nudge_order)]]
+                # Re-read nudges.txt each fire so edits take effect live.
+                nudges = load_nudges()
+                if not nudges:
+                    continue
+                msg = nudges[nudge_cursor % len(nudges)]
                 nudge_cursor += 1
                 _log_event(log_file, {"type": "nudge_injected", "msg": msg})
-                print(f"[nudge] injecting: {msg[:140]}...")
+                print(f"[nudge] injecting ({nudge_cursor}/{len(nudges)}): {msg[:140]}...")
                 sys.stdout.flush()
                 try:
                     await client.query(msg)
