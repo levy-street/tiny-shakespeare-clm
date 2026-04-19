@@ -2418,9 +2418,23 @@ def predict(state: ModelState) -> list[float]:
 
     # Final temperature calibration: scale logits by 1/T. Values > 1
     # soften the distribution (reduces over-peaked losses on surprises);
-    # values < 1 sharpen. Calibrated to improve BPC under the sum of
-    # all layer biases.
-    T = 1.10
+    # values < 1 sharpen. Context-dependent: different regimes have
+    # different amounts of layer-bias stacking, so we calibrate per
+    # context instead of one-size-fits-all.
+    if state.speaker_label_state != 0:
+        # Inside speaker label: very narrow distribution, bias sums
+        # are meaningful, lighter softening.
+        T = 1.02
+    elif state.letter_run_len == 0:
+        # Word-start: many layer biases stack (startword, next_word,
+        # pos_next, context-class, etc.).
+        T = 1.12
+    elif state.on_word_trie:
+        # Mid-word on trie: word_trie bias dominates and is sharp.
+        T = 1.15
+    else:
+        # Off-trie mid-word: letter n-grams + drift-recovery stack.
+        T = 1.08
     if T != 1.0:
         logits = [x / T for x in logits]
     return _log_softmax(logits)
