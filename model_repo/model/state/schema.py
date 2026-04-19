@@ -1993,3 +1993,46 @@ class ModelState(BaseModel):
     #     line can breathe out to natural length.
     line_ontrie_words: int = 0
     line_offtrie_words: int = 0
+
+    # --- Tier 2: sentence-level tense register ---
+    # Captures the tense / modality of the FIRST finite verb seen in
+    # the current sentence. Once set, it biases later verb-like
+    # word-ends in the same sentence toward tense-consistent suffix
+    # endings so the sentence doesn't mix past and present arbitrarily
+    # ("I walked to the market and am ..." — off-register).
+    #
+    # Values:
+    #   0  TENSE_UNSET   — no finite verb classified yet in this sentence.
+    #   1  TENSE_PAST    — first finite verb was past-tense:
+    #                      - ended in -ed / -d (walked, loved, feared)
+    #                      - suppletive past (was, were, had, did, said,
+    #                        went, came, saw, knew, gave, took, made,
+    #                        told, heard, thought, fell, found, lost,
+    #                        wrote, stood, grew, threw, sat, drew, bore,
+    #                        tore, wore, spoke, spake, rose, broke)
+    #                      - modal past (would, should, could, might)
+    #   2  TENSE_PRESENT — first finite verb was present-tense:
+    #                      - 3sg -s / -eth / -s (speaks, speaketh, loves)
+    #                      - be forms (is, am, are, art)
+    #                      - have forms (have, has, hath)
+    #                      - do forms (do, does, dost, doth)
+    #                      - base present after "we/they/you/I"
+    #   3  TENSE_FUTURE  — first finite verb was modal future:
+    #                      - will, shall (+ bare verb)
+    #
+    # Update rule (pipeline/tense.py):
+    #   - On sentence-end punctuation (. ? !): reset to TENSE_UNSET.
+    #   - On speaker-turn boundary (\n\n): reset to TENSE_UNSET.
+    #   - On every just_finished_word where sentence_tense == UNSET:
+    #     attempt to classify last_completed_word. If classifiable,
+    #     set the tense. Otherwise leave UNSET.
+    #
+    # Age counter `sentence_tense_age` tracks completed words since
+    # the tense was set — decays influence of the bias for very long
+    # sentences where tense can naturally shift in dependent clauses.
+    #
+    # Consumed by predict/tense.py at word-start and at verb-shaped
+    # word-ends: tilts letter choices toward tense-consistent suffix
+    # trajectories (-ed / -eth / -s / -ing branch selection).
+    sentence_tense: int = 0
+    sentence_tense_age: int = 0

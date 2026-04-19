@@ -71,6 +71,7 @@ from .object_word_trie import object_word_trie_bias
 from .post_obj_word_trie import post_obj_word_trie_bias
 from .subject_word_trie import subject_word_trie_bias
 from .subord import subord_midword_bias, subord_word_end_bias
+from .tense import tense_midword_bias, tense_start_bias
 from .caesura import caesura_bias
 from .clause_rhythm import clause_rhythm_comma_bias
 from .urgency import urgency_word_end_bias, urgency_long_word_bias
@@ -781,6 +782,21 @@ def predict(state: ModelState) -> list[float]:
                 logits[i] += fmw[i]
 
 
+    # Layer 3c2-tense: sentence-tense suffix-completion tilt. Reads
+    # sentence_tense and tilts the buffer's suffix decision toward
+    # tense-consistent endings (-ed for PAST, -s/-eth for PRESENT).
+    tmw = tense_midword_bias(
+        state.sentence_tense,
+        state.sentence_tense_age,
+        state.word_buffer,
+        state.letter_run_len,
+        state.speaker_label_state,
+        state.on_word_trie,
+    )
+    if tmw is not None:
+        for i in range(VOCAB_SIZE):
+            logits[i] += tmw[i]
+
     # Layer 3c2: archaic mid-word disambiguation — when buffer matches
     # a prefix shared by archaic and modern words, lean toward the
     # archaic completion in proportion to archaic_density.
@@ -1094,6 +1110,22 @@ def predict(state: ModelState) -> list[float]:
         if tvb is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += tvb[i]
+
+        # Layer 4-TENSE: sentence-level tense register word-start tilt.
+        # Reads sentence_tense (set by pipeline/tense.py at first finite
+        # verb). Biases next verb's first letter toward tense-consistent
+        # choices — keeps PAST-leaning sentences pulling past-tense verbs,
+        # PRESENT-leaning sentences pulling present, etc.
+        tsb = tense_start_bias(
+            state.sentence_tense,
+            state.sentence_tense_age,
+            state.speaker_label_state,
+            state.letter_run_len,
+            state.word_buffer,
+        )
+        if tsb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += tsb[i]
 
         # Layer 4-LIST: list-parallelism first-letter bias. When we're
         # in a comma-separated list, bias toward (a) the same first
@@ -2688,15 +2720,15 @@ def predict(state: ModelState) -> list[float]:
         # across many completions and we can trust it.
         tmc = state.trie_match_count
         if tmc == 1:
-            T = 1.80
+            T = 2.00
         elif tmc == 2:
-            T = 1.68
+            T = 1.80
         elif tmc <= 4:
-            T = 1.55
+            T = 1.60
         elif tmc <= 8:
-            T = 1.45
+            T = 1.48
         elif tmc <= 16:
-            T = 1.38
+            T = 1.40
         else:
             T = 1.32
     else:
