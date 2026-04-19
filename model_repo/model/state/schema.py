@@ -2112,3 +2112,46 @@ class ModelState(BaseModel):
     # register, and prose-argument passages continue their abstract
     # register, rather than drifting between modes mid-passage.
     sensory_charge: float = 0.0
+
+    # -----------------------------------------------------------
+    # Word integrity monitor — targeting gibberish word-runs.
+    # -----------------------------------------------------------
+    # Real Shakespeare contains no gibberish words. Our samples do:
+    # sequences like "etustarse", "daetfaanwetfimnly", "rotxouddfser"
+    # appear when the letter-run drifts off the word-trie and the
+    # n-gram backoff keeps producing phonotactic-ish noise. The
+    # existing `drift_streak` / `offtrie_depart` track departure from
+    # the trie but don't evaluate the shape of the buffer *itself*.
+    #
+    # word_integrity is a running score in [0.0, 1.0] measuring how
+    # word-shaped the current word_buffer is. It combines:
+    #   - Presence of a vowel: true words always have one within the
+    #     first 4 letters (except mono-consonantal "sh", "ps" etc).
+    #   - Longest consonant run: real English words rarely have 4+
+    #     consonant runs mid-word.
+    #   - Recent consonant drought since last vowel: if we're 4+
+    #     letters past the last vowel, the buffer is almost certainly
+    #     broken.
+    #   - Trie match: buffer is a prefix of a known word (already
+    #     reflected in on_word_trie / trie_match_count, but we fold
+    #     the signal in here too).
+    #
+    # Updated in pipeline/word_integrity.py at every character. Resets
+    # to 1.0 when word_buffer is empty (word just ended).
+    #
+    # Consumed by predict/word_integrity.py — when integrity is low
+    # (< 0.5) AND letter_run_len >= 4, strongly boost terminator
+    # characters (space, comma, period, semicolon, newline) so the
+    # model bails out of the nonsense run. When integrity is high
+    # OR letter_run_len < 4, no bias (normal behavior).
+    word_integrity: float = 1.0
+    # Has the current word_buffer contained any vowel (a/e/i/o/u/y)?
+    # Resets to False when word_buffer empties.
+    buffer_has_vowel: bool = False
+    # Position of the most recent vowel within word_buffer (1-indexed,
+    # 0 means "no vowel yet"). Resets when word_buffer empties.
+    buffer_last_vowel_pos: int = 0
+    # Length of the current trailing consonant run (letters since the
+    # last vowel in word_buffer). Resets to 0 at each vowel, growing
+    # by 1 per consonant. Does not increment on apostrophe.
+    buffer_consonant_run: int = 0

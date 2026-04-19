@@ -52,6 +52,7 @@ from .next_word import next_word_bias
 from .word_bigram_continue import word_bigram_continue_bias
 from .phrase_continue import phrase_continue_bias
 from .phrase_trigram_continue import phrase_trigram_continue_bias
+from .word_integrity import word_integrity_bias
 from .sensory_charge import sensory_charge_start_bias
 from .np_head import np_head_start_bias
 from .ornament import ornament_start_bias
@@ -454,6 +455,23 @@ def predict(state: ModelState) -> list[float]:
         if ph3 is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += ph3[i]
+
+    # Layer 3c-WI: word-integrity termination push. When the current
+    # word_buffer has collapsed into phonotactic gibberish (low
+    # word_integrity, no trie match, likely long consonant run or no
+    # vowel), strongly boost terminator chars (space/punct) so the
+    # model bails out of the nonsense run. Structural gibberish-
+    # terminator targeted at the single biggest sample-quality gap.
+    wi = word_integrity_bias(
+        state.word_integrity,
+        state.letter_run_len,
+        state.on_word_trie,
+        state.speaker_label_state,
+        state.buffer_consonant_run,
+    )
+    if wi is not None:
+        for i in range(VOCAB_SIZE):
+            logits[i] += wi[i]
 
     # Layer 3c-MC: graded trie-match-count bias. Complements the
     # binary on_word_trie. Three regimes:
