@@ -533,7 +533,7 @@ def word_bigram_continue_bias(
         return None
     if not word_buffer:
         return None
-    if letter_run_len < 1 or letter_run_len > 4:
+    if letter_run_len < 1 or letter_run_len > 8:
         return None
     if len(word_buffer) != letter_run_len:
         return None
