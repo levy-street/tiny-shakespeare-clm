@@ -6197,6 +6197,65 @@ for _b in _DIS_BASES:
     _add_word("dis" + _b)
 
 
+# --- Frequency-weight boost for the most common Shakespeare/English words ---
+#
+# The trie treats every listed word uniformly (+1 per prefix branch). But
+# "the", "and", "to", "of", "a", "I" occur far more often than rare
+# inflections. Re-adding common words here tilts the prefix-branch vote
+# toward real high-frequency completions: at prefix "t" the branch "h"
+# (the/that/this/thou/thee/they/them/there/these/those/thy) is
+# reinforced; at "th" the branch "e" (the/thee/they/there/these/them)
+# dominates; at word terminators for very common words, the close
+# biases sharpen. Weights come from prior knowledge of Shakespeare /
+# modern-English frequency — no corpus statistics.
+_FREQ_BOOST: tuple[tuple[str, int], ...] = (
+    # Tier 1 — ultra-frequent closed-class words
+    ("the", 30), ("and", 22), ("to", 22), ("of", 20), ("a", 18),
+    ("i", 20), ("in", 14), ("it", 14), ("that", 14), ("is", 14),
+    ("for", 10), ("not", 10), ("with", 9), ("be", 10), ("as", 9),
+    ("but", 9), ("on", 9), ("at", 8), ("by", 8), ("this", 8),
+    ("or", 7), ("an", 6), ("so", 8), ("if", 7), ("do", 7),
+    ("are", 7), ("was", 8), ("have", 8), ("his", 9), ("her", 8),
+    ("he", 11), ("she", 6), ("we", 8), ("you", 10), ("your", 9),
+    ("my", 14), ("me", 10), ("thou", 10), ("thee", 9), ("thy", 8),
+    ("thine", 5), ("him", 8), ("them", 6), ("their", 5), ("they", 6),
+    ("our", 7), ("us", 6), ("all", 7), ("no", 7), ("what", 6),
+    ("who", 6), ("when", 5), ("where", 4), ("why", 4), ("which", 4),
+    ("there", 5), ("here", 5), ("then", 5), ("now", 5), ("more", 4),
+    ("most", 3), ("some", 3), ("like", 4), ("from", 4), ("up", 4),
+    ("shall", 7), ("will", 7), ("would", 5), ("could", 3), ("should", 3),
+    ("may", 5), ("must", 5), ("might", 3), ("can", 4),
+    ("hath", 7), ("hast", 5), ("doth", 4), ("dost", 3), ("art", 5),
+    ("am", 5), ("were", 5), ("been", 4), ("had", 5),
+    # Tier 2 — very frequent content/address words
+    ("lord", 8), ("sir", 6), ("king", 5), ("good", 6),
+    ("man", 4), ("men", 3), ("father", 3), ("son", 2), ("heart", 3),
+    ("life", 2), ("death", 2), ("day", 2), ("night", 2), ("world", 2),
+    ("heaven", 2), ("hand", 2), ("eyes", 2),
+    ("time", 2), ("honour", 2), ("grace", 2), ("noble", 2), ("soul", 2),
+    ("love", 5),
+    # Common verbs
+    ("come", 4), ("go", 4), ("see", 5), ("know", 4), ("say", 3),
+    ("said", 3), ("tell", 3), ("speak", 3), ("hear", 3), ("give", 3),
+    ("take", 3), ("make", 3), ("let", 4), ("think", 3), ("pray", 3),
+    ("look", 2), ("leave", 2), ("live", 2), ("fear", 2),
+    # Interjections / exclamations
+    ("o", 8), ("ay", 4), ("nay", 2), ("well", 3),
+    ("alas", 2), ("fie", 2),
+    # Misc high-freq
+    ("too", 2), ("yet", 3), ("ever", 2), ("never", 3), ("still", 2),
+    ("even", 2), ("than", 4),
+    ("though", 2), ("thus", 3), ("such", 3),
+    ("both", 2), ("one", 2), ("great", 2),
+    ("upon", 3),
+    # Embedded contraction forms (post-apostrophe already stripped by buffer)
+    ("tis", 3), ("twas", 2),
+)
+for _fw, _w in _FREQ_BOOST:
+    for _ in range(_w):
+        _add_word(_fw)
+
+
 # Set of exact words (lowercased) — used by predict to apply an
 # additional terminator boost when the buffer matches a complete known
 # word, regardless of whether the word is also a prefix of other words.
