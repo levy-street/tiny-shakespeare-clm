@@ -138,6 +138,12 @@ _COMPLETE_SUFFIXES: tuple[tuple[str, float], ...] = (
 )
 
 
+# Global scales for the two sub-biases. Tuned alongside letter3/bigram
+# scales so we don't over- or under-weigh the morphological signal.
+_PROGRESSION_SCALE = 1.80
+_COMPLETION_SCALE = 1.40
+
+
 def suffix_completion_bias(
     word_buffer: str,
     letter_run_len: int,
@@ -169,7 +175,7 @@ def suffix_completion_bias(
         if wb.endswith(tail):
             idx = VOCAB_INDEX.get(nxt)
             if idx is not None:
-                vec[idx] += w
+                vec[idx] += w * _PROGRESSION_SCALE
                 nonzero = True
 
     # Completion entries: suffix already complete, gentle terminator.
@@ -177,15 +183,15 @@ def suffix_completion_bias(
         if wb.endswith(suf):
             sp = VOCAB_INDEX.get(" ")
             if sp is not None:
-                vec[sp] += w
+                vec[sp] += w * _COMPLETION_SCALE
                 nonzero = True
             cm = VOCAB_INDEX.get(",")
             if cm is not None:
-                vec[cm] += w * 0.40
+                vec[cm] += w * 0.40 * _COMPLETION_SCALE
                 nonzero = True
             pd = VOCAB_INDEX.get(".")
             if pd is not None:
-                vec[pd] += w * 0.25
+                vec[pd] += w * 0.25 * _COMPLETION_SCALE
                 nonzero = True
 
     if not nonzero:
