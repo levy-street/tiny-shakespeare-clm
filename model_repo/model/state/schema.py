@@ -184,6 +184,17 @@ class ModelState(BaseModel):
     # went off the known-word trie. 0 when still on-trie (or no word).
     # Grows fast when we've drifted into nonsense territory.
     letters_off_trie: int = 0
+    # The letter_run_len at the moment the current word FIRST left the
+    # word-trie. 0 while the word is still on the trie (or no word).
+    # Unlike letters_off_trie (which tracks HOW FAR we've drifted),
+    # this records WHERE THE DEPARTURE HAPPENED. A late departure
+    # (>= 5) means we had a solid real prefix that's now being extended
+    # into nonsense — the trie knows no word of this shape. An early
+    # departure (1-2) means the word was gibberish from the start.
+    # Predict layers use this to modulate word-end pressure and
+    # gibberish-letter penalty with a much sharper signal than the
+    # current-letters-off count alone.
+    offtrie_depart_pos: int = 0
     # Number of consecutive consonant letters since the last vowel in
     # the current word. Real English words rarely allow 4+ consecutive
     # consonants (even "strength" tops out at "str"). Resets on vowel,

@@ -362,6 +362,7 @@ def update_flow(state: ModelState, token_id: int) -> ModelState:
     # vowels_in_word: number of vowels seen in the current word.
     if not wb:
         letters_off_trie = 0
+        offtrie_depart_pos = 0
         consonants_since_vowel = 0
         vowels_in_word = 0
         vowels_since_consonant = 0
@@ -374,10 +375,18 @@ def update_flow(state: ModelState, token_id: int) -> ModelState:
         )
         if on_trie:
             letters_off_trie = 0
+            offtrie_depart_pos = 0
         elif is_letter:
             letters_off_trie = state.letters_off_trie + 1
+            # Record departure position on the letter that took us
+            # off-trie (the first off-trie letter). Persist afterward.
+            if state.letters_off_trie == 0:
+                offtrie_depart_pos = state.letter_run_len
+            else:
+                offtrie_depart_pos = state.offtrie_depart_pos
         else:
             letters_off_trie = state.letters_off_trie
+            offtrie_depart_pos = state.offtrie_depart_pos
         if is_letter:
             if last_ch in _VOWELS_SET:
                 consonants_since_vowel = 0
@@ -661,6 +670,7 @@ def update_flow(state: ModelState, token_id: int) -> ModelState:
             "after_function_word": after_function_word,
             "in_prose_line": in_prose_line,
             "letters_off_trie": letters_off_trie,
+            "offtrie_depart_pos": offtrie_depart_pos,
             "has_seen_complete": has_seen_complete,
             "letters_past_complete": letters_past_complete,
             "consonants_since_vowel": consonants_since_vowel,

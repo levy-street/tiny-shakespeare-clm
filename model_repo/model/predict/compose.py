@@ -63,6 +63,7 @@ from .post_obj_word_trie import post_obj_word_trie_bias
 from .subject_word_trie import subject_word_trie_bias
 from .subord import subord_midword_bias, subord_word_end_bias
 from .clause_rhythm import clause_rhythm_comma_bias
+from .offtrie_depart import offtrie_depart_bias
 from .slot_next import slot_start_bias
 from .speaker_recency import speaker_recency_bias
 from .speaker_trie import speaker_trie_bias
@@ -348,6 +349,22 @@ def predict(state: ModelState) -> list[float]:
         if tr is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += tr[i]
+
+        # Layer 3c1a-depart: departure-position aware bias. Reads
+        # offtrie_depart_pos, the letter_run_len at which the word
+        # LEFT the trie. Late departures (>= 5) mean we had a known
+        # 5-letter prefix and are extending it into nonsense — push
+        # hard toward word-end. Early departures (1-2) mean the word
+        # was gibberish from the start — also push hard, with a
+        # stronger gibberish-letter penalty.
+        od = offtrie_depart_bias(
+            state.offtrie_depart_pos,
+            state.letters_off_trie,
+            state.speaker_label_state,
+        )
+        if od is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += od[i]
         # Word-end bigram plausibility: look at the last 2 letters of
         # the off-trie buffer and decide whether the suffix looks like
         # a real English word ending (boost " ") or clearly mid-word
