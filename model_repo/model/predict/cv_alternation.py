@@ -67,11 +67,11 @@ def _build_cons_push_vec(scale: float) -> list[float]:
 
 
 # Pre-build vectors at different intensity levels.
-_VOWEL_PUSH_WEAK = _build_vowel_push_vec(0.08)
-_VOWEL_PUSH_MED = _build_vowel_push_vec(0.14)
-_VOWEL_PUSH_STRONG = _build_vowel_push_vec(0.24)
-_CONS_PUSH_WEAK = _build_cons_push_vec(0.05)
-_CONS_PUSH_MED = _build_cons_push_vec(0.10)
+_VOWEL_PUSH_WEAK = _build_vowel_push_vec(0.42)
+_VOWEL_PUSH_MED = _build_vowel_push_vec(0.65)
+_VOWEL_PUSH_STRONG = _build_vowel_push_vec(1.10)
+_CONS_PUSH_WEAK = _build_cons_push_vec(0.26)
+_CONS_PUSH_MED = _build_cons_push_vec(0.52)
 
 
 def cv_alternation_bias(
@@ -91,17 +91,20 @@ def cv_alternation_bias(
     applicable."""
     if speaker_label_state != 0:
         return None
-    if letter_run_len < 4:
-        return None
-    if syllables_in_word < 2:
+    if letter_run_len < 2:
         return None
 
     # Consonant-cluster push: drive toward vowel emission when we've
     # accumulated 3+ consecutive consonants inside a polysyllabic word.
-    if consonants_since_vowel >= 3:
+    if consonants_since_vowel >= 2:
         if consonants_since_vowel >= 4:
             return _VOWEL_PUSH_STRONG
-        # Scale escalates with off-trie depth.
+        if consonants_since_vowel == 3:
+            if not on_word_trie and letters_off_trie >= 1:
+                return _VOWEL_PUSH_MED
+            return _VOWEL_PUSH_WEAK
+        # consonants_since_vowel == 2: fire anywhere, gentle on-trie,
+        # stronger off-trie.
         if not on_word_trie and letters_off_trie >= 1:
             return _VOWEL_PUSH_MED
         return _VOWEL_PUSH_WEAK
