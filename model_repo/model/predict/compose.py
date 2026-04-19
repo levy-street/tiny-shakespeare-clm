@@ -342,7 +342,7 @@ def predict(state: ModelState) -> list[float]:
         s4 = start4gram_bias(state.word_buffer)
         if s4 is not None:
             for i in range(VOCAB_SIZE):
-                logits[i] += s4[i]
+                logits[i] += s4[i] * 1.3
 
     # Layer 3b6: word-start 5-gram bias — at letter_run_len == 4, the
     # fifth letter is conditioned on the first four letters of the
@@ -356,7 +356,7 @@ def predict(state: ModelState) -> list[float]:
         s5 = start5gram_bias(state.word_buffer)
         if s5 is not None:
             for i in range(VOCAB_SIZE):
-                logits[i] += s5[i]
+                logits[i] += s5[i] * 1.3
 
     # Layer 3c: word-trie completion bias. Scaled by letter position
     # AND by trie_match_count — when the completion set is tight
