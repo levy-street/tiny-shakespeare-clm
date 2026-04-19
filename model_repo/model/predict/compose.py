@@ -436,6 +436,7 @@ def predict(state: ModelState) -> list[float]:
             for i in range(VOCAB_SIZE):
                 logits[i] += rf[i]
 
+
     # Layer 3c1-verb: verb-word-trie mid-word bias. When the clause
     # has a subject but no verb yet, AND the current word_buffer is
     # a prefix of some verb / aux / modal in our inventory, nudge the
@@ -2045,7 +2046,7 @@ def predict(state: ModelState) -> list[float]:
         # letter extensions.
         if state.letter_run_len >= 2 and state.on_word_trie:
             if state.word_buffer in COMPLETE_WORDS:
-                logits[VOCAB_INDEX[" "]] += 0.35
+                logits[VOCAB_INDEX[" "]] += -0.10
                 # Cadence-texture bias at a genuine word-end. Staccato
                 # register boosts commas/semicolons; flowing register
                 # boosts space. Scaled by |cadence|.
