@@ -2428,13 +2428,13 @@ def predict(state: ModelState) -> list[float]:
     elif state.letter_run_len == 0:
         # Word-start: many layer biases stack (startword, next_word,
         # pos_next, context-class, etc.).
-        T = 1.12
+        T = 1.20
     elif state.on_word_trie:
         # Mid-word on trie: word_trie bias dominates and is sharp.
-        T = 1.15
+        T = 1.20
     else:
         # Off-trie mid-word: letter n-grams + drift-recovery stack.
-        T = 1.08
+        T = 1.10
     if T != 1.0:
         logits = [x / T for x in logits]
     return _log_softmax(logits)
