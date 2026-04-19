@@ -64,6 +64,7 @@ from .post_obj_word_trie import post_obj_word_trie_bias
 from .subject_word_trie import subject_word_trie_bias
 from .subord import subord_midword_bias, subord_word_end_bias
 from .clause_rhythm import clause_rhythm_comma_bias
+from .dependent_clause import dependent_clause_bias
 from .offtrie_depart import offtrie_depart_bias
 from .cv_alternation import cv_alternation_bias
 from .discourse_rhythm import discourse_rhythm_start_bias
@@ -683,6 +684,27 @@ def predict(state: ModelState) -> list[float]:
         if crc is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += crc[i]
+
+    # Layer 3c2b-dep: dependent-clause closer. When inside an active
+    # dependent clause (opened by "if/when/though/which/that/..."),
+    # push comma at word-end (close dep) and penalize sentence-enders
+    # (main clause is still pending).
+    if state.in_dependent_clause and state.speaker_label_state == 0:
+        dc = dependent_clause_bias(
+            state.in_dependent_clause,
+            state.words_in_subordinate,
+            state.clause_slot,
+            state.chars_since_sentence_end,
+            state.chars_since_comma,
+            state.word_buffer,
+            state.on_word_trie,
+            state.letter_run_len,
+            state.speaker_label_state,
+            COMPLETE_WORDS,
+        )
+        if dc is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += dc[i]
 
     # Layer 3c2c: rhyme-position mid-word bias. When we're in a verse
     # run and approaching line-end, nudge the next letter toward the
