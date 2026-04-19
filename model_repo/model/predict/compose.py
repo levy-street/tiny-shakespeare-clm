@@ -70,6 +70,7 @@ from .phrase_trigram import phrase_trigram_bias
 from .pos_next import pos_next_bias
 from .pos_bigram_next import pos_bigram_next_bias
 from .pos_trigram_next import pos_trigram_next_bias
+from .backbone_next import backbone_next_bias
 from .repetition import repetition_start_bias
 from .rhyme import rhyme_midword_bias
 from .rhythm import rhythm_wordend_bias
@@ -1438,6 +1439,17 @@ def predict(state: ModelState) -> list[float]:
             if ptn is not None:
                 for i in range(VOCAB_SIZE):
                     logits[i] += ptn[i]
+
+            # Layer 4b1d: content-backbone next-word bias.  Uses the
+            # function-word-filtered recent_pos_backbone so the signal
+            # comes from the content skeleton (AUX/VERB/NOUN/ADJ/etc.)
+            # regardless of which closed-class glue words intervened.
+            # Complements the positional trigram which catches
+            # closed-class-anchored patterns like (DET, ADJ, NOUN).
+            bnb = backbone_next_bias(state.recent_pos_backbone)
+            if bnb is not None:
+                for i in range(VOCAB_SIZE):
+                    logits[i] += bnb[i]
 
             # Layer 4b2: subject-verb agreement word-start bias.
             # When a thou-subject has been identified and the verb

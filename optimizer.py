@@ -91,6 +91,25 @@ _NUDGES: list[str] = [
         "by less than your recent tweaks, a new capability unlocks future "
         "wins that scale tuning can't."
     ),
+    (
+        "Semantic-coherence gap. Zoom in on a sample line-by-line. You'll "
+        "find phrases like 'my mother is niece', 'throne of treasure', "
+        "'phantom anent there' — locally grammatical but semantically "
+        "absurd. Every word-transition is plausible; the problem is that "
+        "successive words don't belong to compatible semantic frames. No "
+        "amount of bigram/trigram/phrase expansion will fix this, because "
+        "the failure is cross-word semantic incompatibility, not rare word "
+        "co-occurrence. Add state that captures coarse semantic class — "
+        "e.g. noun-class tags (KINSHIP / ROYALTY / BODY / EMOTION / NATURE "
+        "/ ABSTRACT / WEAPON / PLACE / TIME / ...), verb-argument "
+        "expectation (what noun class does the verb want as object?), "
+        "topic-field persistence. Use these to gate next-word biases: "
+        "after a KINSHIP noun, bias toward KINSHIP continuations or "
+        "compatible modifiers, not arbitrary concrete nouns. Even a 10-15 "
+        "class tagger with ~100 dictionary entries each would meaningfully "
+        "reduce semantic drift and improve sample quality substantially — "
+        "this is the gap between 'Shakespeare-shaped' and 'Shakespeare'."
+    ),
 ]
 
 
