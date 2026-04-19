@@ -493,7 +493,7 @@ def predict(state: ModelState) -> list[float]:
         )
         if od is not None:
             for i in range(VOCAB_SIZE):
-                logits[i] += od[i]
+                logits[i] += od[i] * 1.5
 
         # Layer 3c1a-cv: C-V alternation push inside polysyllabic
         # off-trie interiors. When 3+ consonants have been stacked
