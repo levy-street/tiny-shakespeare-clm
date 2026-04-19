@@ -229,6 +229,21 @@ def predict(state: ModelState) -> list[float]:
             for i in range(VOCAB_SIZE):
                 logits[i] += l3[i] * 3.0
 
+    # Layer 3b2-L4: letter-4gram suffix bias (last 4 letters → next).
+    # Only fires for hand-specified high-confidence English suffixes
+    # ("ough→t", "tion→ ", "ness→ ", "ight→ ", etc.). Applied off-trie
+    # to rescue words whose 5+-letter form our trie doesn't carry —
+    # on-trie, the word_trie already dominates and l4 collides with it.
+    if (
+        state.word_buffer
+        and state.letter_run_len >= 4
+        and not state.on_word_trie
+    ):
+        l4 = letter4_bias(state.word_buffer)
+        if l4 is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += l4[i] * 2.5
+
     # Layer 3b2b: word-form mid-word bias. When WFE_PAST_PART is
     # active, tilt letters 3-5 of the word toward -en/-n/-ed ending
     # trajectories (seen/taken/given/borne/drawn/loved/feared).
@@ -2972,7 +2987,7 @@ def predict(state: ModelState) -> list[float]:
     elif state.letter_run_len == 0:
         # Word-start: many layer biases stack (startword, next_word,
         # pos_next, context-class, etc.).
-        T = 1.33
+        T = 1.40
     elif state.on_word_trie:
         # Mid-word on trie: word_trie bias dominates and is sharp.
         # Modulate by trie_match_count — when only 1 known word
@@ -2982,17 +2997,17 @@ def predict(state: ModelState) -> list[float]:
         # across many completions and we can trust it.
         tmc = state.trie_match_count
         if tmc == 1:
-            T = 2.00
+            T = 2.20
         elif tmc == 2:
-            T = 1.80
+            T = 2.00
         elif tmc <= 4:
-            T = 1.60
+            T = 1.80
         elif tmc <= 8:
-            T = 1.48
+            T = 1.64
         elif tmc <= 16:
-            T = 1.40
+            T = 1.56
         else:
-            T = 1.32
+            T = 1.48
     else:
         # Off-trie mid-word: letter n-grams + drift-recovery stack.
         # Higher T than on-trie because many strong negative biases
