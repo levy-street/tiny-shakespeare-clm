@@ -79,6 +79,7 @@ from .turn_opener import TURN_OPENER_START_BIAS
 from .answer_opener import answer_opener_start_bias
 from .start5gram import start5gram_bias
 from .startbigram import startbigram_bias
+from .onset_cluster import onset_cluster_bias
 from .starttrigram import starttrigram_bias
 from .startword import START_BIAS
 from .formula import formula_midword_bias, formula_start_bias
@@ -229,6 +230,24 @@ def predict(state: ModelState) -> list[float]:
         if dc is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += dc[i]
+
+    # Onset-cluster legality (letter_run_len in {1, 2}): penalize
+    # next-letter choices that would produce phonotactically illegal
+    # English word onsets (e.g., "rs-", "mn-", "tb-", "dl-", triple
+    # onsets like "strn-"). Broader coverage than startbigram — fires
+    # at letter 2 AND letter 3 of a consonant-only prefix.
+    if (
+        state.speaker_label_state not in (2,)
+        and state.letter_run_len in (1, 2)
+    ):
+        oc = onset_cluster_bias(
+            state.word_buffer,
+            state.letter_run_len,
+            state.speaker_label_state,
+        )
+        if oc is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += oc[i]
 
     # Extend double-consonant check to mid-cluster positions. Doubling
     # the last consonant inside a consonant cluster is almost always
