@@ -417,6 +417,22 @@ class ModelState(BaseModel):
     # self-repetition (a speaker is very unlikely to produce two
     # adjacent speaker labels with their own name).
     recent_speakers: tuple[str, ...] = ()
+    # Categorical register of the current speaker (recent_speakers[0]),
+    # derived from a hand-curated map over canonical Shakespeare character
+    # names. Used by predict consumers to condition word-start vocabulary:
+    #   0 UNKNOWN         — no match / empty turn
+    #   1 TRAGIC_NOBLE    — Hamlet, Lear, Macbeth, Othello, Romeo, Brutus
+    #   2 COMIC_PROSE     — Fool, Launce, Bottom, Dogberry, Touchstone
+    #   3 ROYAL_FORMAL    — Henry, Richard, Edward, Duke, Prince, Caesar
+    #   4 VILLAIN         — Iago, Edmund, Richard III, Aaron, Angelo
+    #   5 LOVER_FEMININE  — Juliet, Viola, Rosalind, Portia, Miranda, Desdemona
+    #   6 SERVANT_BRIEF   — Messenger, Servant, Citizen, Officer, Soldier
+    #   7 SUPERNATURAL    — Ghost, Witch, Oracle, Fairy, Ariel, Puck
+    speaker_register: int = 0
+    # Number of tokens since speaker_register was last updated. Lets a
+    # consumer taper the bias strength early in a turn (first few tokens
+    # are usually the speaker label itself).
+    register_age: int = 0
     # Rolling tuple of the last 4 completed sentences' types (most-recent
     # LAST). Each entry is a sentence_type integer (SENT_DECL / INTEROG /
     # EXCLAM / IMPER / UNKNOWN). Unlike prev_sentence_type (1-back), this

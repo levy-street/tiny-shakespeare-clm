@@ -55,6 +55,7 @@ from .polysyllable import update_polysyllable
 from .rhyme import update_rhyme
 from .sentence import update_sentence
 from .speaker_memory import update_speaker_memory
+from .speaker_register import update_speaker_register
 from .speaker_offtrie import update_speaker_offtrie
 from .topic_tracker import update_topic_tracker
 from .turn import update_turn_progress
@@ -90,6 +91,7 @@ PIPELINE: list[Stage] = [
     update_vocative,        # Tier 2: vocative-expectation flag
     update_addressee,       # Tier 2/3: vocative-noun memory
     update_speaker_memory,  # Tier 2/3: recent-speakers rolling window
+    update_speaker_register, # Tier 2/3: categorical register from speaker name
     update_referent,        # Tier 2: anaphoric referent gender tracking
     update_topic_tracker,   # Tier 3: scene-topic semantic cluster memory
     update_doubt,           # Tier 3: doubt/assertion register texture

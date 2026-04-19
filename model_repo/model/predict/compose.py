@@ -79,6 +79,7 @@ from .cv_alternation import cv_alternation_bias
 from .discourse_rhythm import discourse_rhythm_start_bias
 from .slot_next import slot_start_bias
 from .speaker_recency import speaker_recency_bias
+from .speaker_register_bias import speaker_register_start_bias
 from .speaker_trie import speaker_trie_bias
 from .start4gram import start4gram_bias
 from .tonal import tonal_start_bias
@@ -1052,6 +1053,22 @@ def predict(state: ModelState) -> list[float]:
         if drb is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += drb[i]
+
+        # Layer 4-SREG: speaker-register word-start tilt. Conditions
+        # vocabulary on the current speaker's dramatic archetype
+        # (tragic-noble, comic-prose, royal-formal, villain, lover,
+        # servant, supernatural). Only fires after the register has
+        # settled (register_age >= 3) so the speaker-label tokens
+        # themselves aren't affected.
+        srb = speaker_register_start_bias(
+            state.speaker_register,
+            state.register_age,
+            state.letter_run_len,
+            state.speaker_label_state,
+        )
+        if srb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += srb[i]
 
         # Layer 4-LIST: list-parallelism first-letter bias. When we're
         # in a comma-separated list, bias toward (a) the same first
