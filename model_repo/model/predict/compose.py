@@ -55,6 +55,7 @@ from .pos_next import pos_next_bias
 from .repetition import repetition_start_bias
 from .rhyme import rhyme_midword_bias
 from .sonority import sonority_midword_bias
+from .suffix_completion import suffix_completion_bias
 from .slot_next import slot_start_bias
 from .speaker_recency import speaker_recency_bias
 from .speaker_trie import speaker_trie_bias
@@ -355,6 +356,22 @@ def predict(state: ModelState) -> list[float]:
         if web is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += web[i]
+
+        # Morphological-suffix completion: when the off-trie tail
+        # matches the early part of a productive suffix (-ing, -eth,
+        # -ness, -ment, -tion, -ly, -ous, -ful, -less, -able, ...),
+        # nudge the next letter toward the suffix-completing letter,
+        # and once the suffix is complete, gently boost terminators.
+        sc = suffix_completion_bias(
+            state.word_buffer,
+            state.letter_run_len,
+            state.on_word_trie,
+            state.letters_off_trie,
+            state.speaker_label_state,
+        )
+        if sc is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += sc[i]
 
         # Phonotactic red-flag closure: when word_shape has counted
         # 2+ phonotactic warnings in the current word (persistent
