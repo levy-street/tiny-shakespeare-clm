@@ -56,6 +56,7 @@ from .repetition import repetition_start_bias
 from .rhyme import rhyme_midword_bias
 from .sonority import sonority_midword_bias
 from .suffix_completion import suffix_completion_bias
+from .verb_word_trie import verb_word_trie_bias
 from .slot_next import slot_start_bias
 from .speaker_recency import speaker_recency_bias
 from .speaker_trie import speaker_trie_bias
@@ -384,6 +385,33 @@ def predict(state: ModelState) -> list[float]:
         if rf is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += rf[i]
+
+    # Layer 3c1-verb: verb-word-trie mid-word bias. When the clause
+    # has a subject but no verb yet, AND the current word_buffer is
+    # a prefix of some verb / aux / modal in our inventory, nudge the
+    # next letter toward a verb-completion branch. When the buffer
+    # IS a complete verb, gently boost terminators so the verb closes
+    # rather than drifting. This layer rides alongside the general
+    # word_trie and closes the gap between word-start verb-overdue
+    # bias (letter_run_len==0) and word-end drift recovery. Active
+    # both on-trie and off-trie — its signal is about SYNTAX, not
+    # vocabulary coverage.
+    if (
+        state.word_buffer
+        and state.speaker_label_state == 0
+        and state.clause_slot == 1
+        and state.words_since_verb >= 1
+    ):
+        vwt = verb_word_trie_bias(
+            state.word_buffer,
+            state.letter_run_len,
+            state.clause_slot,
+            state.words_since_verb,
+            state.speaker_label_state,
+        )
+        if vwt is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += vwt[i]
 
     # Layer 3c1-trans: transitivity mid-word bias. When an object is
     # expected AND the current buffer is a short determiner-prefix
