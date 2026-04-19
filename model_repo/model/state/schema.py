@@ -1454,3 +1454,46 @@ class ModelState(BaseModel):
     # attract "but"/"nor" more broadly). Reset to "" on sentence-end /
     # speaker-turn.
     last_negation_word: str = ""
+
+    # --- Tier 2: pronoun case slot (syntactic role for upcoming pronoun) ---
+    # When the next word is a pronoun, its case is determined by the
+    # slot it fills. Shakespeare (EME) is strict about this:
+    #   SUBJECT  (nominative):  I, thou, ye, he, she, we, they, who
+    #   OBJECT   (accusative):  me, thee, you, him, her, us, them, whom
+    #   POSSESS  (genitive):    my/mine, thy/thine, his, her, our, your,
+    #                            their, whose
+    #
+    # No existing field identifies which case to expect. clause_slot
+    # tells us FRESH/HAS_SUBJ/HAS_VERB/POST_OBJ (too coarse), and
+    # verb_transitivity fires object-slot only after specific verbs.
+    # This field fires for ANY slot — after ANY preposition, after
+    # ANY transitive verb, at clause start — and specifies the
+    # expected pronoun case. Values:
+    #
+    #   0  CASE_NONE — no active case expectation
+    #   1  CASE_SUBJ — nominative slot. Expected pronoun first letters:
+    #                   I, h (he), s (she), t (thou/they), w (we), y (ye)
+    #   2  CASE_OBJ  — accusative slot. Expected first letters:
+    #                   m (me), t (thee/them), h (him/her),
+    #                   u (us), y (you)
+    #
+    # Triggers:
+    #   CASE_SUBJ:
+    #     - clause_slot becomes FRESH (post-sentence-break) → 1
+    #     - after a subordinator / conjunction opens a new clause
+    #       (last_completed_word == coordinating conj AND clause_slot
+    #       was POST_OBJ or a sentence-start hasn't been reached)
+    #   CASE_OBJ:
+    #     - last_completed_word POS == PREPOSITION → 2
+    #     - verb_transitivity == VT_DO_EXPECTED on a fresh completion
+    #
+    # Resets to CASE_NONE on:
+    #   - pronoun / noun / proper-noun / adjective / article completion
+    #     (the slot got filled or NP modifier began)
+    #   - sentence-end punctuation
+    #   - speaker-turn boundary
+    #   - wait >= 3 (expectation stale)
+    case_slot: int = 0
+    # Words elapsed since case_slot became non-NONE; 0 on trigger.
+    # Capped at 5. Reset with case_slot.
+    case_wait_words: int = 0

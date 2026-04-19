@@ -108,6 +108,7 @@ from .clause_depth import clause_depth_close_bias
 from .double_cons_start import double_consonant_penalty
 from .red_flags import red_flags_close_bias
 from .negation import negation_start_bias
+from .case_slot import case_slot_start_bias
 from .line_break_bias import line_break_newline_bias
 from .trigram import trigram_bias
 from .vocative import VOCATIVE_START_BIAS
@@ -1152,6 +1153,22 @@ def predict(state: ModelState) -> list[float]:
         if nsb is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += nsb[i]
+
+        # Layer 4b3c-case: pronoun case-slot word-start bias. After a
+        # preposition or transitive verb (CASE_OBJ) or at clause start
+        # (CASE_SUBJ), bias pronoun-starter letters toward the expected
+        # case: subject (I, h-e, s-he, t-hou/they, w-e, y-e) vs
+        # object (m-e, t-hee/them, h-im/her, u-s, y-ou). Signals are
+        # modest because many of these letters open non-pronoun words
+        # too; the relative lift is what matters.
+        csb = case_slot_start_bias(
+            state.case_slot,
+            state.case_wait_words,
+            state.speaker_label_state,
+        )
+        if csb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += csb[i]
 
         # Layer 4b3b2: 2nd-person addressing-register word-start bias.
         # When the register is established (|register| > 0.5), nudge

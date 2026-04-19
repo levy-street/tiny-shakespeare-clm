@@ -18,6 +18,7 @@ from ..state import ModelState
 from .addressee import update_addressee
 from .alliteration import update_alliteration
 from .anaphora import update_anaphora
+from .case_slot import update_case_slot
 from .clause import update_clause
 from .clause_slot import update_clause_slot
 from .line_break import update_line_break
@@ -68,6 +69,7 @@ PIPELINE: list[Stage] = [
     update_verb_agreement,  # Tier 2: subject-verb agreement expectation
     update_np_head,         # Tier 2: NP-head expectation (np_open, np_wait_words)
     update_transitivity,    # Tier 2: verb transitivity / object-expectation
+    update_case_slot,       # Tier 2: pronoun case slot (SUBJ/OBJ)
     update_verb_class,      # Tier 2: verb semantic class (9-way)
     update_word_form,       # Tier 2: morphological-form expectation FSM
     update_vocative,        # Tier 2: vocative-expectation flag
