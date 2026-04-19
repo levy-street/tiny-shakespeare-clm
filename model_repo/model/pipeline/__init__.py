@@ -22,6 +22,7 @@ from .case_slot import update_case_slot
 from .clause import update_clause
 from .clause_slot import update_clause_slot
 from .line_break import update_line_break
+from .line_coherence import update_line_coherence
 from .verb_agreement import update_verb_agreement
 from .np_head import update_np_head
 from .transitivity import update_transitivity
@@ -72,6 +73,7 @@ PIPELINE: list[Stage] = [
     update_linguistic,      # Tier 2: linguistic structure
     update_word_matches,    # Tier 2: graded trie-completion count for word_buffer
     update_drift,           # Tier 2/3: consecutive-off-trie word streak
+    update_line_coherence,  # Tier 2: per-line on-trie vs off-trie word counts
     update_speaker_offtrie, # Tier 2: speaker-buffer off-trie run
     update_pos,             # Tier 2: POS tag of last completed word
     update_proper_noun,     # Tier 2: proper-noun expectation slot

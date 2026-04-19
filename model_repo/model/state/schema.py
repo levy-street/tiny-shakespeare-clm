@@ -1958,3 +1958,38 @@ class ModelState(BaseModel):
     #   - boost "!" over "." at sentence-end when fury > 0.35
     #   - mildly discourage tender-lexicon starters (l, s)
     fury_register: float = 0.0
+
+    # --- Tier 2: per-line coherence tracking ---
+    # Counts of words completed on the CURRENT line, bucketed by
+    # trie status. "On-trie" means the word as completed is a member
+    # of COMPLETE_WORDS (i.e., a recognizable English/Shakespearean
+    # word). "Off-trie" means the word drifted off the trie before
+    # completion — i.e., it's a letter-n-gram hallucination with
+    # no vocabulary grounding.
+    #
+    # Why this is a structural signal:
+    #   Real Shakespeare lines are overwhelmingly composed of real
+    #   words. The sampler's dominant quality defect is lines like
+    #   "Yield, iegeohbe awaostr. observe bear ghost" where most
+    #   tokens are garbage. Per-word drift_streak captures whether
+    #   we're mid-run of gibberish, but NOT whether the current line
+    #   has already become unsalvageable. A line with 2+ off-trie
+    #   words and only a token or two of real vocabulary is dead
+    #   weight — the predict layer should push hard to end it with
+    #   a newline (close the line and restart on a cleaner basis).
+    #
+    # Update rule (in pipeline/line_coherence.py, runs AFTER
+    # update_basic_counters and update_drift):
+    #   - On every just_finished_word: classify last_completed_word
+    #     against COMPLETE_WORDS. Increment on-trie or off-trie count.
+    #   - Reset BOTH counters to 0 on newline (chars_since_newline == 0).
+    #
+    # Consumed by predict/line_coherence.py at word-end-on-trie
+    # positions AND at off-trie-with-short-buffer positions:
+    #   - If line_offtrie_words >= 2 AND line_ontrie_words <= 1:
+    #     line is failing — boost \n (end the line now).
+    #   - If line_ontrie_words >= 3 AND line_offtrie_words == 0:
+    #     line is healthy — mild anti-newline nudge so a well-formed
+    #     line can breathe out to natural length.
+    line_ontrie_words: int = 0
+    line_offtrie_words: int = 0
