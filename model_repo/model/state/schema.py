@@ -1726,3 +1726,23 @@ class ModelState(BaseModel):
     in_dash_aside: bool = False
     chars_since_dash_open: int = 0
     words_since_dash_open: int = 0
+
+    # --- Tier 2: proper-noun scene rolodex ---
+    # Whether the currently-building word's first letter was an
+    # uppercase letter. Reset to False at word termination; set to
+    # True when the first character of a new letter run is UPPER.
+    # Lets us decide at word-completion whether this was a
+    # capitalized word (proper noun / sentence-starter / vocative).
+    current_word_started_cap: bool = False
+    # Rolling tuple of recently-seen CAPITALIZED content words
+    # (lowercased for lookup). Excludes:
+    #   - sentence-first words (capital is forced by position)
+    #   - speaker-label words (tracked separately)
+    #   - 1-letter capitals ("I", "O")
+    #   - common capitalized interjections ("Ay", "Nay")
+    # Up to 10 entries, most-recent first. Shakespeare reuses proper
+    # nouns heavily once introduced ("Rome", "Volsces", "Coriolanus",
+    # "Antium", "Northumberland"); this field lets predict bias
+    # future word-starts and mid-word letters toward these recurring
+    # names instead of guessing fresh each time.
+    proper_nouns_seen: tuple[str, ...] = ()

@@ -51,6 +51,10 @@ from .np_head import np_head_start_bias
 from .ornament import ornament_start_bias
 from .parallel import parallel_start_bias
 from .proper_noun import proper_noun_start_bias
+from .proper_noun_memory import (
+    proper_noun_memory_mid_bias,
+    proper_noun_memory_start_bias,
+)
 from .phrase_bigram import phrase_bigram_bias
 from .phrase_trigram import phrase_trigram_bias
 from .pos_next import pos_next_bias
@@ -367,6 +371,24 @@ def predict(state: ModelState) -> list[float]:
                 wt_scale = 1.10
             for i in range(VOCAB_SIZE):
                 logits[i] += wt[i] * wt_scale
+
+    # Layer 3c-PNM: proper-noun rolodex mid-word continuation bias.
+    # When we're inside a capitalized word that started mid-sentence
+    # (a probable proper noun) AND the buffer matches a prefix of a
+    # rolodex entry, strongly bias the next letter to continue that
+    # name. This is where the rolodex earns its keep: "Ro" -> "m" to
+    # continue "Rome"; "Cor" -> "i" to continue "Coriolanus".
+    if state.proper_nouns_seen and state.current_word_started_cap:
+        pnm_mid = proper_noun_memory_mid_bias(
+            state.proper_nouns_seen,
+            state.speaker_label_state,
+            state.current_word_started_cap,
+            state.word_buffer,
+            state.letter_run_len,
+        )
+        if pnm_mid is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += pnm_mid[i]
 
     # Layer 3c1: topic-midword bias — when content_words indicate an
     # active topical cluster (DARK/LIGHT/ROYAL), tilt mid-word letter
@@ -971,6 +993,24 @@ def predict(state: ModelState) -> list[float]:
         if pnb is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += pnb[i]
+
+        # Layer 4-PNM: proper-noun scene rolodex bias. Recently-seen
+        # capitalized content words (Rome, Coriolanus, Volsces, etc.)
+        # get their initial letter boosted when a proper-noun context
+        # is plausible, collapsing the huge first-letter uncertainty
+        # over unknown names into the handful the scene has already
+        # introduced.
+        pnm = proper_noun_memory_start_bias(
+            state.proper_nouns_seen,
+            state.speaker_label_state,
+            state.proper_noun_slot,
+            state.sentence_start_pending,
+            state.letter_run_len,
+            state.word_buffer,
+        )
+        if pnm is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += pnm[i]
 
         # Layer 4-DR: discourse-rhythm sentence-first-letter bias. Reads
         # recent_sentence_types (rolling tuple of last 4 closed sentence

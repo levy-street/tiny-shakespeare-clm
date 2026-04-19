@@ -40,6 +40,7 @@ from .list_structure import update_list_structure
 from .negation import update_negation
 from .pos import update_pos
 from .proper_noun import update_proper_noun
+from .proper_noun_memory import update_proper_noun_memory
 from .caesura import update_caesura
 from .prosody import update_prosody
 from .referent import update_referent
@@ -67,6 +68,7 @@ PIPELINE: list[Stage] = [
     update_speaker_offtrie, # Tier 2: speaker-buffer off-trie run
     update_pos,             # Tier 2: POS tag of last completed word
     update_proper_noun,     # Tier 2: proper-noun expectation slot
+    update_proper_noun_memory,  # Tier 2: rolodex of recent capitalized words
     update_list_structure,  # Tier 2: list-parallelism progress
     update_repetition,      # Tier 2: short-range word-repetition memory
     update_formula,         # Tier 2: formulaic-phrase trie position
