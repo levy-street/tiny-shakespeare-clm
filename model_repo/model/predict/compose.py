@@ -62,6 +62,7 @@ from .object_word_trie import object_word_trie_bias
 from .post_obj_word_trie import post_obj_word_trie_bias
 from .subject_word_trie import subject_word_trie_bias
 from .subord import subord_midword_bias, subord_word_end_bias
+from .clause_rhythm import clause_rhythm_comma_bias
 from .slot_next import slot_start_bias
 from .speaker_recency import speaker_recency_bias
 from .speaker_trie import speaker_trie_bias
@@ -620,6 +621,31 @@ def predict(state: ModelState) -> list[float]:
         if rh is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += rh[i]
+
+    # Layer 3c2d-rhythm: clause-rhythm comma-pressure. When the current
+    # comma-less run has grown long AND we're sitting at a clean
+    # word-end boundary on the word trie, nudge toward comma to
+    # reproduce Shakespeare's comma-heavy clausal cadence. Fires only
+    # at on-trie complete-word positions so we don't inject punctuation
+    # into gibberish.
+    if (
+        state.word_buffer
+        and state.speaker_label_state == 0
+        and state.chars_since_comma >= 20
+    ):
+        crc = clause_rhythm_comma_bias(
+            state.chars_since_comma,
+            state.chars_since_sentence_end,
+            state.word_buffer,
+            state.on_word_trie,
+            state.letter_run_len,
+            state.speaker_label_state,
+            state.has_seen_complete,
+            state.letters_past_complete,
+        )
+        if crc is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += crc[i]
 
     # Layer 3c2c: rhyme-position mid-word bias. When we're in a verse
     # run and approaching line-end, nudge the next letter toward the
