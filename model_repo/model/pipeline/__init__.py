@@ -74,6 +74,7 @@ from .rhyme import update_rhyme
 from .sensory_charge import update_sensory_charge
 from .sentence import update_sentence
 from .sentence_backbone import update_sentence_backbone
+from .sentence_sem import update_sentence_sem
 from .speaker_memory import update_speaker_memory
 from .speaker_register import update_speaker_register
 from .speaker_offtrie import update_speaker_offtrie
@@ -108,6 +109,7 @@ PIPELINE: list[Stage] = [
     update_question_answer, # Tier 3: cross-turn WH-class answer expectation
     update_sentence,        # Tier 2/3: sentence-type FSM
     update_sentence_backbone,  # Tier 2: subject + finite-verb presence per sentence
+    update_sentence_sem,    # Tier 2/3: sentence-scoped semantic-field lock
     update_clause,          # Tier 2: clause-structure (clauses, subj pronoun)
     update_clause_slot,     # Tier 2: syntactic-slot state machine
     update_subord,          # Tier 2: subordinate-clause depth tracker

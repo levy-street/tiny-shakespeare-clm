@@ -2643,3 +2643,26 @@ class ModelState(BaseModel):
     # punctuation at word-end decision points.
     sentence_has_subject: bool = False
     sentence_has_verb: bool = False
+
+    # --- Tier 2/3: sentence-scoped semantic field lock ---
+    # Once a sentence has introduced TWO content nouns of the same
+    # noun_class (e.g. two BODY nouns: "heart" and "tongue"), that
+    # noun_class is LOCKED as the sentence's semantic field. At
+    # subsequent word-start positions within the same sentence, the
+    # predict layer can tilt the first-letter distribution toward
+    # letters that begin in-field noun / adjective words.
+    #
+    # This is orthogonal to last_noun_class (single-step bias) and
+    # scene_topic (cross-turn topic) — it tracks within-sentence
+    # semantic field stability, which real Shakespeare nearly always
+    # respects at the clause level: "His heart, his tongue, his very
+    # pulse" (all BODY); "The crown, the throne, the sceptre" (all
+    # ROYALTY); "Sorrow, grief, despair" (all EMOTION).
+    #
+    # Fields:
+    #  - sentence_sem_field: the locked class id, or 0 = none.
+    #  - sentence_sem_strength: number of in-field noun hits seen this
+    #    sentence (cap 3). Lock engages at strength >= 2.
+    # Both reset on sentence-end and speaker-turn boundary.
+    sentence_sem_field: int = 0
+    sentence_sem_strength: int = 0

@@ -124,6 +124,7 @@ from .meter import pentameter_wordend_bias, meter_word_start_bias
 from .word_length_cadence import word_length_cadence_bias
 from .confessional import confessional_word_start_bias
 from .noun_class import noun_class_bias
+from .sentence_sem import sentence_sem_bias
 from .imagery import imagery_start_bias
 from .scene_topic import scene_topic_midword_bias, scene_topic_start_bias
 from .invocation import (
@@ -2166,6 +2167,25 @@ def predict(state: ModelState) -> list[float]:
         if ncb is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += ncb[i]
+
+        # Layer 4b3-ssem: sentence-scoped semantic-field bias. Reads
+        # the LOCKED sentence field (established when two nouns of the
+        # same class appeared in the current sentence). Applies a
+        # pervasive low-magnitude first-letter tilt across the
+        # remaining word-starts of the sentence. Complements
+        # noun_class_bias (per-step, POS-gated) with a sentence-wide
+        # coherence pressure.
+        ssb = sentence_sem_bias(
+            state.sentence_sem_field,
+            state.sentence_sem_strength,
+            state.speaker_label_state,
+            state.letter_run_len,
+            state.chars_since_sentence_end,
+            state.words_in_sentence,
+        )
+        if ssb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += ssb[i]
 
         # Layer 4b3c: formulaic-phrase word-start bias. When we're
         # inside a known multi-word formula, boost first letters of
