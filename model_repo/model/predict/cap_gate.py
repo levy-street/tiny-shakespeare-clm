@@ -81,14 +81,14 @@ def cap_gate_start_bias(
     # caps (chars_since_sentence_end 12-25) get a soft nudge; deep
     # caps (>= 45) get a firm push away.
     if chars_since_sentence_end < 25:
-        pen_nonrolodex = -0.35
+        pen_nonrolodex = -0.85
         pen_rolodex = -0.05  # still slightly negative, not zero
     elif chars_since_sentence_end < 45:
-        pen_nonrolodex = -0.60
+        pen_nonrolodex = -1.30
         pen_rolodex = -0.10
     else:
-        pen_nonrolodex = -0.90
-        pen_rolodex = -0.15
+        pen_nonrolodex = -1.85
+        pen_rolodex = -0.20
 
     vec = [0.0] * VOCAB_SIZE
     for ch in _UPPER:
