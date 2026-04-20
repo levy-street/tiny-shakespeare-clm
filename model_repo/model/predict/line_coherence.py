@@ -105,6 +105,43 @@ def line_coherence_wordend_bias(
             vec[VOCAB_INDEX[" "]] -= 0.5 * scale
         return vec
 
+    # "Too-short line" — strong anti-newline push when the line has
+    # only 0 or 1 complete words before the current one AND we're not
+    # close to a sentence terminator (so this isn't a legit "Ay." type
+    # interjection). Shakespeare verse lines run 4-12 words; single-
+    # word lines are almost always sentence-terminated ("Marry!" or
+    # "Well." after a speaker label).
+    #
+    # Gates:
+    #   - letter_run_len >= 2 (we're past word-start; the decision
+    #     here matters for whether the word/line closes)
+    #   - chars_since_sentence_end >= 5 (not right after ". ", "? ",
+    #     "! " — those are legitimate short reply lines)
+    #   - speaker label territory excluded above
+    total_words = line_ontrie_words + line_offtrie_words
+    if (
+        total_words <= 1
+        and chars_since_sentence_end >= 5
+        and is_complete_word
+    ):
+        # Scale by how severely short we are:
+        # total_words == 0: current is first word → very strong
+        # total_words == 1: current is second word → moderate
+        if total_words == 0:
+            nl_pen = 1.8
+        else:
+            nl_pen = 0.9
+        vec = [0.0] * VOCAB_SIZE
+        if "\n" in VOCAB_INDEX:
+            vec[VOCAB_INDEX["\n"]] -= nl_pen
+        # Slight boost to space (continue the line with another word).
+        if " " in VOCAB_INDEX:
+            vec[VOCAB_INDEX[" "]] += 0.20 * nl_pen / 1.8
+        # Slight boost to comma/semicolon (clause extension).
+        if "," in VOCAB_INDEX:
+            vec[VOCAB_INDEX[","]] += 0.12 * nl_pen / 1.8
+        return vec
+
     # "Healthy line" — mild anti-newline, slight extension nudge.
     # Only at on-trie complete-word positions so we don't cling to a
     # bad line just because the current word happened to close well.
