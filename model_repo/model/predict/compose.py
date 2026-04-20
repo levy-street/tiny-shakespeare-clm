@@ -3488,6 +3488,6 @@ def predict(state: ModelState) -> list[float]:
 
     if any(forbid_mask):
         return _log_softmax_smoothed_masked(
-            logits, 0.2e-4, 1e-6, forbid_mask
+            logits, 1.2e-4, 1e-6, forbid_mask
         )
-    return _log_softmax_smoothed(logits, 0.2e-4)
+    return _log_softmax_smoothed(logits, 1.2e-4)
