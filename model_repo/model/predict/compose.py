@@ -537,7 +537,7 @@ def predict(state: ModelState) -> list[float]:
         )
         if phc is not None:
             for i in range(VOCAB_SIZE):
-                logits[i] += phc[i]
+                logits[i] += phc[i] * 0.8
 
     # Layer 3c-PHC3: three-word phrase CONTINUATION bias. Conditions the
     # next char on (prev_prev, prev, last) completed words plus the
