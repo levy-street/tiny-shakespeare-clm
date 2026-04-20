@@ -37,6 +37,7 @@ from .address import address_midword_bias, address_start_bias
 from .alliteration import alliteration_start_bias
 from .anaphora import anaphora_midword_bias, anaphora_start_bias
 from .antithesis import antithesis_closure_bias, antithesis_pivot_bias
+from .antithesis_pair import antithesis_pair_bias
 from .archaic import archaic_midword_bias, archaic_start_bias
 from .meditative import meditative_midword_bias, meditative_start_bias
 from .bigram import bigram_bias
@@ -1010,6 +1011,22 @@ def predict(state: ModelState) -> list[float]:
         ap = antithesis_pivot_bias(state.antithesis_words_since_opener)
         for i in range(VOCAB_SIZE):
             logits[i] += ap[i]
+        # Opener-specific pivot bias — sharper than the generic
+        # antithesis_pivot_bias because the paired pivot word is
+        # determined by the specific opener (neither→nor, either→or,
+        # both→and, more/less→than, not→but, whether→or, though→yet,
+        # rather→than).
+        app = antithesis_pair_bias(
+            state.antithesis_state,
+            state.antithesis_opener_type,
+            state.antithesis_words_since_opener,
+            state.letter_run_len,
+            state.speaker_label_state,
+            state.last_char,
+        )
+        if app is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += app[i]
     if (
         state.letter_run_len == 0
         and state.speaker_label_state == 0

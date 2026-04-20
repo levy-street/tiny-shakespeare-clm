@@ -56,6 +56,22 @@ ANT_NONE = 0
 ANT_OPENER = 1
 ANT_PIVOTED = 2
 
+
+# Specific opener-type codes (match state.antithesis_opener_type comments).
+_OPENER_TYPE: dict[str, int] = {
+    "neither": 1,
+    "either": 2,
+    "both": 3,
+    "more": 4,
+    "less": 4,
+    "not": 5,
+    "whether": 6,
+    "though": 7,
+    "although": 7,
+    "albeit": 7,
+    "rather": 8,
+}
+
 _OPENER_DECAY_AFTER = 7  # words without a pivot
 _PIVOT_DECAY_AFTER = 6   # words after pivot
 
@@ -67,12 +83,14 @@ def update_antithesis(state: ModelState, token_id: int) -> ModelState:
             state.antithesis_state != ANT_NONE
             or state.antithesis_words_since_opener != 0
             or state.antithesis_words_since_pivot != 0
+            or state.antithesis_opener_type != 0
         ):
             return state.model_copy(
                 update={
                     "antithesis_state": ANT_NONE,
                     "antithesis_words_since_opener": 0,
                     "antithesis_words_since_pivot": 0,
+                    "antithesis_opener_type": 0,
                 }
             )
         return state
@@ -83,12 +101,14 @@ def update_antithesis(state: ModelState, token_id: int) -> ModelState:
             state.antithesis_state != ANT_NONE
             or state.antithesis_words_since_opener != 0
             or state.antithesis_words_since_pivot != 0
+            or state.antithesis_opener_type != 0
         ):
             return state.model_copy(
                 update={
                     "antithesis_state": ANT_NONE,
                     "antithesis_words_since_opener": 0,
                     "antithesis_words_since_pivot": 0,
+                    "antithesis_opener_type": 0,
                 }
             )
         return state
@@ -104,6 +124,7 @@ def update_antithesis(state: ModelState, token_id: int) -> ModelState:
     st = state.antithesis_state
     so = state.antithesis_words_since_opener
     sp = state.antithesis_words_since_pivot
+    ot = state.antithesis_opener_type
 
     if st == ANT_PIVOTED:
         sp += 1
@@ -111,6 +132,7 @@ def update_antithesis(state: ModelState, token_id: int) -> ModelState:
             # Complement half is played out — return to neutral.
             st = ANT_NONE
             sp = 0
+            ot = 0
         # A second pivot while already pivoted keeps state but resets
         # the counter (new contrast within the complement).
         if w in _ANT_PIVOTS:
@@ -120,30 +142,37 @@ def update_antithesis(state: ModelState, token_id: int) -> ModelState:
             st = ANT_OPENER
             so = 0
             sp = 0
+            ot = _OPENER_TYPE.get(w, 0)
     elif st == ANT_OPENER:
         if w in _ANT_PIVOTS:
             st = ANT_PIVOTED
             sp = 0
             so = 0
+            # Opener type clears when the pivot resolves.
+            ot = 0
         else:
             so += 1
             if w in _ANT_OPENERS:
                 # Fresh opener replaces the old one, resetting the clock.
                 so = 0
+                ot = _OPENER_TYPE.get(w, 0)
             if so >= _OPENER_DECAY_AFTER:
                 st = ANT_NONE
                 so = 0
                 sp = 0
+                ot = 0
     else:  # ANT_NONE
         if w in _ANT_OPENERS:
             st = ANT_OPENER
             so = 0
             sp = 0
+            ot = _OPENER_TYPE.get(w, 0)
 
     if (
         st == state.antithesis_state
         and so == state.antithesis_words_since_opener
         and sp == state.antithesis_words_since_pivot
+        and ot == state.antithesis_opener_type
     ):
         return state
     return state.model_copy(
@@ -151,5 +180,6 @@ def update_antithesis(state: ModelState, token_id: int) -> ModelState:
             "antithesis_state": st,
             "antithesis_words_since_opener": so,
             "antithesis_words_since_pivot": sp,
+            "antithesis_opener_type": ot,
         }
     )

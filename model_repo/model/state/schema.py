@@ -401,6 +401,22 @@ class ModelState(BaseModel):
     # Zero unless antithesis_state == PIVOTED.
     antithesis_words_since_pivot: int = 0
 
+    # Specific opener-type that fired. Lets the predict layer bias
+    # the EXACT paired pivot letter rather than a generic "any pivot"
+    # set. English correlatives pair:
+    #   0 = NONE            — no specific opener
+    #   1 = NEITHER         → expects "nor"       (letter n)
+    #   2 = EITHER          → expects "or"        (letter o)
+    #   3 = BOTH            → expects "and"       (letter a)
+    #   4 = MORE_LESS       → expects "than"      (letter t)
+    #   5 = NOT             → expects "but"       (letter b)
+    #   6 = WHETHER         → expects "or"        (letter o)
+    #   7 = THOUGH_ALBEIT   → expects "yet"       (letter y)
+    #   8 = RATHER          → expects "than"      (letter t)
+    # Generic antithesis_state already provides a catch-all bias; this
+    # type enables a sharper, more targeted pivot-letter elevation.
+    antithesis_opener_type: int = 0
+
     # --- Tier 2: clause slot state machine ---
     # Coarse syntactic-slot tracker for the current clause:
     #   0 = FRESH       — sentence start / post-clause-break; expect
