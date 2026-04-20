@@ -3075,7 +3075,7 @@ def predict(state: ModelState) -> list[float]:
         # single newlines (verse line starts), biases are also sharp.
         # Continuation word-starts keep the default.
         if state.sentence_start_pending or state.consecutive_newlines >= 1:
-            T = 1.28
+            T = 1.20
         else:
             T = 1.40
     elif state.on_word_trie:
