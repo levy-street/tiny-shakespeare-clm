@@ -731,6 +731,35 @@ class ModelState(BaseModel):
     # Shakespeare uses occasionally, not a dense prior.
     recent_line_end_words: tuple[str, ...] = ()
 
+    # --- Tier 2/3: cross-turn rhythm memory (stichomythia axis) ---
+    # Rolling tuple of up to 4 recent COMPLETED speaker-turn line-counts,
+    # most-recent first. A "turn" is the block between two blank-line
+    # separators. Captured at the same moment dialogue_adjacency takes
+    # its snapshot (the consecutive_newlines 1→2 transition).
+    #
+    # This complements dialogue_adjacency's 1-back snapshot: we hold a
+    # short HISTORY of turn shapes so predict layers can see patterns
+    # across multiple exchanges, not just the immediately prior turn.
+    # Examples the rolling tuple captures that 1-back can't:
+    #   (1, 1, 1) → stichomythia: three terse turns in a row → the
+    #       current turn is likely also a short quick retort.
+    #   (8, 7, 6) → sustained declamatory exchange → current turn
+    #       more likely to run multi-line.
+    #   (12, 1) → monologue followed by one-word reaction → current
+    #       turn is likely the start of a fresh topic swing.
+    recent_turn_line_counts: tuple[int, ...] = ()
+
+    # Categorical derivation from recent_turn_line_counts, computed in
+    # the same stage that updates it:
+    #   0 UNKNOWN   — fewer than 2 completed turns in history, or
+    #                 ambiguous pattern.
+    #   1 RAPID     — last 2+ turns each had ≤ 2 lines (rapid exchange,
+    #                 stichomythia). Boosts early turn-end terminators.
+    #   2 SUSTAINED — last completed turn had ≥ 6 lines (declamatory
+    #                 mode). Suppresses early turn-end during current
+    #                 turn's first sentence.
+    stichomythia_mode: int = 0
+
     # --- Tier 2: short-range word-repetition memory ---
     # Tuple of up to 6 completed-word lowercased forms, most-recent
     # first, since the last strong boundary. Reset on sentence-ending

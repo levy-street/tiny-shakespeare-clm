@@ -88,6 +88,7 @@ from .speaker_vowels import update_speaker_vowels
 from .topic_tracker import update_topic_tracker
 from .turn import update_turn_progress
 from .turn_content import update_turn_content
+from .turn_shape import update_turn_shape
 from .vocative import update_vocative
 
 Stage = Callable[[ModelState, int], ModelState]
@@ -149,6 +150,7 @@ PIPELINE: list[Stage] = [
     update_confessional,    # Tier 3: confessional vs public register
     update_sensory_charge,  # Tier 3: corporeal ↔ abstract charge (lyric vs argument register)
     update_dialogue_adjacency,  # Tier 2/3: snapshot prev-turn shape before turn counters reset
+    update_turn_shape,      # Tier 2/3: cross-turn rhythm tuple + stichomythia_mode (must run BEFORE turn_progress reset)
     update_turn_progress,   # Tier 2/3: words/sentences/lines in current turn
     update_turn_content,    # Tier 3: per-turn content-word echo cache
     update_anaphora,        # Tier 2: line-starter anaphora tracking

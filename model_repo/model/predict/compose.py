@@ -123,6 +123,7 @@ from .starttrigram import starttrigram_bias
 from .startword import START_BIAS
 from .formula import formula_midword_bias, formula_start_bias
 from .word_commit import word_commit_bias
+from .turn_shape import stichomythia_bias
 from .iambic import iambic_word_start_bias
 from .meter import pentameter_wordend_bias, meter_word_start_bias
 from .word_length_cadence import word_length_cadence_bias
@@ -2739,6 +2740,22 @@ def predict(state: ModelState) -> list[float]:
     if dpb is not None:
         for i in range(VOCAB_SIZE):
             logits[i] += dpb[i]
+
+    # Layer 4b6f: stichomythia cross-turn rhythm bias. Reads the rolling
+    # tuple of recent turn line-counts derived in pipeline/turn_shape.py
+    # and applies RAPID (close-quickly) or SUSTAINED (continue declaiming)
+    # pressure. Very mild — this is texture, not an enforcer.
+    sbx = stichomythia_bias(
+        state.stichomythia_mode,
+        state.sentences_in_turn,
+        state.letter_run_len,
+        len(state.word_buffer),
+        state.speaker_label_state,
+        state.last_char_class,
+    )
+    if sbx is not None:
+        for i in range(VOCAB_SIZE):
+            logits[i] += sbx[i]
 
     # Layer 4d: verb-agreement bias based on subject pronoun.
     # When the clause's subject is "thou", Shakespearean agreement
