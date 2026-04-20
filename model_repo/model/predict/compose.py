@@ -63,6 +63,7 @@ from .np_head import np_head_start_bias
 from .ornament import ornament_start_bias
 from .parallel import parallel_start_bias
 from .proper_noun import proper_noun_start_bias
+from .cap_gate import cap_gate_start_bias
 from .proper_noun_memory import (
     proper_noun_memory_mid_bias,
     proper_noun_memory_start_bias,
@@ -1453,6 +1454,26 @@ def predict(state: ModelState) -> list[float]:
         if pnm is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += pnm[i]
+
+        # Layer 4-CG: rolodex-gated capital-letter penalty. Complements
+        # the proper-noun rolodex boost: mid-sentence caps NOT in the
+        # scene rolodex get a stiffer penalty than rolodex-matching
+        # caps, sharpening the phantom-vs-legit cap distinction.
+        cgb = cap_gate_start_bias(
+            state.proper_nouns_seen,
+            state.proper_noun_slot,
+            state.speaker_label_state,
+            state.sentence_start_pending,
+            state.consecutive_newlines,
+            state.chars_since_sentence_end,
+            state.words_in_sentence,
+            state.letter_run_len,
+            state.word_buffer,
+            state.last_char,
+        )
+        if cgb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += cgb[i]
 
         # Layer 4-DR: discourse-rhythm sentence-first-letter bias. Reads
         # recent_sentence_types (rolling tuple of last 4 closed sentence
