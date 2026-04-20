@@ -6334,6 +6334,27 @@ def _build_prefix_complete_count() -> dict[str, int]:
 PREFIX_COMPLETE_COUNT: dict[str, int] = _build_prefix_complete_count()
 
 
+def _build_prefix_unique_completion() -> dict[str, str]:
+    """For each prefix where exactly one complete known word has that
+    prefix, map the prefix to that completing word.
+
+    Used by `predict/trie_completion_hint.py` to apply a mild mid-word
+    directional bias toward the unique target — the "if the word is in
+    my lexicon, it's this one" signal, gentler than the formula-commit
+    path.
+    """
+    out: dict[str, str] = {}
+    for w in COMPLETE_WORDS:
+        for i in range(len(w) + 1):
+            prefix = w[:i]
+            if PREFIX_COMPLETE_COUNT.get(prefix, 0) == 1 and prefix not in out:
+                out[prefix] = w
+    return out
+
+
+PREFIX_UNIQUE_COMPLETION: dict[str, str] = _build_prefix_unique_completion()
+
+
 def prefix_completion_count(buffer: str) -> int:
     """Number of COMPLETE known words that start with `buffer`. Returns
     0 if the prefix is not a prefix of any known word.

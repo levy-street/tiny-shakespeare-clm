@@ -126,6 +126,7 @@ from .starttrigram import starttrigram_bias
 from .startword import START_BIAS
 from .formula import formula_midword_bias, formula_start_bias
 from .word_commit import word_commit_bias
+from .trie_completion_hint import trie_completion_hint_bias
 from .turn_shape import stichomythia_bias
 from .line_word_cadence import line_word_cadence_bias
 from .archaic_density import archaic_density_bias
@@ -1059,7 +1060,7 @@ def predict(state: ModelState) -> list[float]:
     )
     if va is not None:
         for i in range(VOCAB_SIZE):
-            logits[i] += va[i]
+            logits[i] += va[i] * 2.0
 
     # Layer 3c1-addr: addressee-memory mid-word bias. When vocative
     # expectation is active AND the current buffer is a prefix of the
@@ -1129,6 +1130,30 @@ def predict(state: ModelState) -> list[float]:
         if wcb is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += wcb[i]
+
+    # Layer 3c1d: trie-unique completion hint. Gentle mid-word boost
+    # toward the unique word-trie completion when the trie has narrowed
+    # to exactly one candidate and we're near the word's end.
+    # Complementary to word_commit_bias (formula-trie commits) and
+    # word_trie_bias (graded completion distribution): targets the
+    # specific "only one member of our lexicon matches this prefix"
+    # regime with a single-letter directional nudge.
+    if (
+        state.speaker_label_state == 0
+        and state.on_word_trie
+        and state.trie_match_count == 1
+        and state.letter_run_len >= 4
+    ):
+        tch = trie_completion_hint_bias(
+            state.word_buffer,
+            state.letter_run_len,
+            state.speaker_label_state,
+            state.on_word_trie,
+            state.trie_match_count,
+        )
+        if tch is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += tch[i]
 
 
     # Layer 3c2-tense: sentence-tense suffix-completion tilt. Reads
