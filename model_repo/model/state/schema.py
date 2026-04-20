@@ -2318,3 +2318,37 @@ class ModelState(BaseModel):
     # the mode is hot, and toward a closing comma once the oath-object
     # has been completed.
     oath_mode: float = 0.0
+
+    # --- Tier 2: syntactic-frame role projection ---
+    # `expected_next_role` names the syntactic role we project for the
+    # NEXT word to complete, given the current two-word POS context
+    # (last_word_pos, prev_word_pos), clause_slot, and np_open. The
+    # motivation is that existing per-word POS-tagging is BACKWARD-
+    # LOOKING (tag the word that just completed); trigram failures in
+    # samples come from having no forward expectation at word-start.
+    # A role projection lets the predict layer sharpen first-letter
+    # mass toward a few plausible next roles instead of the full
+    # 19-way POS distribution.
+    #
+    # Values are a small frame-role enum (see
+    # pipeline/syntactic_frame.py for the canonical list):
+    #   0 = FRAME_ANY        — no strong projection (default)
+    #   1 = FRAME_NOUN       — bare noun
+    #   2 = FRAME_ADJ_OR_NOUN — adjective or bare noun
+    #   3 = FRAME_NOUN_ONLY  — strongly noun (DET+ADJ → NOUN, POSS+ADJ → NOUN)
+    #   4 = FRAME_DET_OR_POSS — article/possessive at phrase start
+    #   5 = FRAME_VERB_FAMILY — verb, aux, modal (after subject pronoun)
+    #   6 = FRAME_VERB_ONLY  — main verb (after modal/aux)
+    #   7 = FRAME_PREP_OR_CONJ — preposition / conjunction (after verb+obj)
+    #   8 = FRAME_OBJ        — noun/pronoun/det (object position after verb)
+    #   9 = FRAME_SUBJ       — subject pronoun / det / proper noun
+    #  10 = FRAME_ADV_OR_PREP — adverbial / prepositional phrase start
+    #
+    # Resets to FRAME_ANY on sentence-end, turn boundary, and whenever
+    # the FSM can't confidently project (e.g., after an unknown-POS
+    # word).
+    expected_next_role: int = 0
+    # Confidence in the projection, in [0.0, 1.0]. Low conf → weak
+    # predict-layer bias; high conf → sharp first-letter bias. Allows
+    # the predict consumer to scale its push cleanly.
+    frame_confidence: float = 0.0

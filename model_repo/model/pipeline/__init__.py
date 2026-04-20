@@ -55,6 +55,7 @@ from .referent import update_referent
 from .register_commit import update_register_commit
 from .repetition import update_repetition
 from .subord import update_subord
+from .syntactic_frame import update_syntactic_frame
 from .tense import update_tense
 from .tenderness import update_tenderness
 from .gravitas import update_gravitas
@@ -101,6 +102,7 @@ PIPELINE: list[Stage] = [
     update_verb_agreement,  # Tier 2: subject-verb agreement expectation
     update_tense,           # Tier 2: sentence-level tense register
     update_np_head,         # Tier 2: NP-head expectation (np_open, np_wait_words)
+    update_syntactic_frame, # Tier 2: forward role projection for next word
     update_transitivity,    # Tier 2: verb transitivity / object-expectation
     update_case_slot,       # Tier 2: pronoun case slot (SUBJ/OBJ)
     update_verb_class,      # Tier 2: verb semantic class (9-way)

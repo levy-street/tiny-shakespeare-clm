@@ -95,6 +95,7 @@ from .speaker_recency import speaker_recency_bias
 from .register_commit_bias import register_commit_start_bias
 from .speaker_register_bias import speaker_register_start_bias
 from .sentence_length_prior import sentence_length_prior_bias
+from .syntactic_frame import syntactic_frame_start_bias
 from .speaker_trie import speaker_trie_bias
 from .start4gram import start4gram_bias
 from .tonal import tonal_start_bias
@@ -1535,6 +1536,25 @@ def predict(state: ModelState) -> list[float]:
                 up = w[0].upper()
                 if up != w[0] and up in VOCAB_INDEX:
                     logits[VOCAB_INDEX[up]] += 1.4
+
+        # Layer 4b1a0: syntactic-frame role projection. Reads the
+        # forward role expectation set by pipeline/syntactic_frame and
+        # applies a positive-only first-letter bias toward that role's
+        # typical vocabulary. Captures three-word phrase coherence
+        # (DET+ADJ → NOUN, PRON+MODAL → VERB, PREP+DET → NOUN) that
+        # next_word / startword miss because they condition only on
+        # the single most-recent word.
+        sf = syntactic_frame_start_bias(
+            state.expected_next_role,
+            state.frame_confidence,
+            state.letter_run_len,
+            state.speaker_label_state,
+            state.last_char,
+            state.consecutive_newlines,
+        )
+        if sf is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += sf[i]
 
         # Layer 4b1a: verb-overdue bias. When the clause has a subject
         # but no verb yet, and we're at a word-start position, bias
