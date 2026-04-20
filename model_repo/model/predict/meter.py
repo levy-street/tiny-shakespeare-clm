@@ -187,11 +187,11 @@ def meter_word_start_bias(
         return None
 
     mc = meter_confidence
-    # Ramp: 0.30 → 0.18; 0.60 → 0.32; 1.0 → 0.42.
+    # Ramp: 0.30 → 0.32; 0.60 → 0.52; 1.0 → 0.70.
     if mc >= 0.60:
-        scale = 0.32 + (mc - 0.60) * 0.25  # 0.32 .. 0.42
+        scale = 0.52 + (mc - 0.60) * 0.45  # 0.52 .. 0.70
     else:
-        scale = 0.18 + (mc - 0.30) * 0.47  # 0.18 .. 0.32
+        scale = 0.32 + (mc - 0.30) * 0.67  # 0.32 .. 0.52
 
     src = _CONTENT_VEC if expected_stress == 1 else _FUNCTION_VEC
 
