@@ -251,7 +251,13 @@ for _s in _SPEAKERS:
     _add(_s)
 
 
-def _bias_for(prefix: str) -> list[float] | None:
+def _bias_for(prefix: str, lower: bool) -> list[float] | None:
+    """Build the bias vector for ``prefix``. If ``lower`` is True, the
+    positive bias is applied to LOWERCASE letter variants (for mixed-
+    case speakers like "First Citizen"). Negative bias on non-next-set
+    CASE-MATCHED letters is applied similarly. The ":" terminator is
+    always boosted in its canonical single-codepoint form.
+    """
     if prefix not in _TRIE:
         return None
     nexts = _TRIE[prefix]
@@ -261,31 +267,60 @@ def _bias_for(prefix: str) -> list[float] | None:
     scale = min(0.3 + 0.6 * n, 3.5)
     total = sum(nexts.values())
     vec = [0.0] * VOCAB_SIZE
-    # Slight negative on any upper-case letter not in our next-set.
+    # Mild negative on any case-matched letter not in our next-set.
     neg = -0.4 * min(scale, 2.0)
-    for ch in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
+    alphabet = (
+        "abcdefghijklmnopqrstuvwxyz" if lower
+        else "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    )
+    for ch in alphabet:
         if ch in VOCAB_INDEX:
             vec[VOCAB_INDEX[ch]] = neg
     for ch, w in nexts.items():
-        if ch not in VOCAB_INDEX:
-            continue
         frac = w / total
         bias = scale * math.log((frac + 0.02) / 0.05)
-        vec[VOCAB_INDEX[ch]] = bias
+        # Trie keys are uppercase letters or ":" / " ". Route letters
+        # to the case-matched vocab entry; route ":" / " " unchanged.
+        if ch.isalpha():
+            key = ch.lower() if lower else ch.upper()
+            if key in VOCAB_INDEX:
+                vec[VOCAB_INDEX[key]] = bias
+        else:
+            if ch in VOCAB_INDEX:
+                vec[VOCAB_INDEX[ch]] = bias
     return vec
 
 
-def _precompute() -> dict[str, list[float]]:
-    return {p: _bias_for(p) for p in _TRIE if _bias_for(p) is not None}
+def _precompute() -> tuple[dict[str, list[float]], dict[str, list[float]]]:
+    upper = {}
+    lower = {}
+    for p in _TRIE:
+        u = _bias_for(p, lower=False)
+        if u is not None:
+            upper[p] = u
+        l = _bias_for(p, lower=True)
+        if l is not None:
+            lower[p] = l
+    return upper, lower
 
 
-_PREFIX_BIAS: dict[str, list[float]] = _precompute()
+_PREFIX_BIAS_UPPER, _PREFIX_BIAS_LOWER = _precompute()
 
 
-def speaker_trie_bias(buffer: str) -> list[float] | None:
+def speaker_trie_bias(
+    buffer: str, saw_lower: bool = False
+) -> list[float] | None:
     if not buffer:
         return None
-    return _PREFIX_BIAS.get(buffer)
+    # When the label has already emitted a lowercase letter (e.g.,
+    # "First Cit" — the 'irst' and 'it' were lowercase), route the
+    # positive continuation bias to LOWERCASE letter variants. This
+    # closes the long-standing mismatch where the trie biased only
+    # uppercase letters even though mixed-case speaker labels
+    # ("First Citizen", "Third Servingman") append lowercase chars.
+    if saw_lower:
+        return _PREFIX_BIAS_LOWER.get(buffer)
+    return _PREFIX_BIAS_UPPER.get(buffer)
 
 
 def is_speaker_prefix(buffer: str) -> bool:

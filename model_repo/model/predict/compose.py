@@ -1317,7 +1317,9 @@ def predict(state: ModelState) -> list[float]:
 
     # Layer 3d: speaker-label trie bias.
     if state.speaker_buffer:
-        st = speaker_trie_bias(state.speaker_buffer)
+        st = speaker_trie_bias(
+            state.speaker_buffer, state.speaker_label_saw_lower
+        )
         if st is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += st[i]
