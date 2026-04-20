@@ -55,6 +55,8 @@ from .next_word import next_word_bias
 from .word_bigram_continue import word_bigram_continue_bias
 from .phrase_continue import phrase_continue_bias
 from .phrase_trigram_continue import phrase_trigram_continue_bias
+from .apostrophe_elision import apostrophe_elision_bias
+from .word_cap_integrity import word_cap_integrity_bias
 from .word_integrity import word_integrity_bias
 from .sensory_charge import sensory_charge_start_bias
 from .oath_mode import oath_mode_start_bias, oath_mode_close_bias
@@ -185,6 +187,45 @@ def _log_softmax_smoothed(logits: list[float], floor: float) -> list[float]:
     z = sum(exps)
     c = 1.0 - V * floor
     return [math.log(c * (e / z) + floor) for e in exps]
+
+
+def _log_softmax_smoothed_masked(
+    logits: list[float],
+    floor: float,
+    forbid_floor: float,
+    forbid_mask: list[bool],
+) -> list[float]:
+    """Log-softmax with a per-token floor.
+
+    Tokens with forbid_mask[i] True get `forbid_floor` as their minimum
+    probability; others get `floor`. Total floor mass is
+    sum(forbid_floor for forbid tokens) + sum(floor for rest);
+    the model distribution fills the remaining (1 - total_floor).
+
+    Used to lock down orthographically-impossible characters (mid-word
+    uppercase, post-apostrophe impossible letters) so the sampler
+    cannot stumble onto them via cumulative-residual floor mass.
+
+    Invariants:
+      * forbid_floor < floor (so forbidden tokens get LESS mass).
+      * total floor mass < 1.
+    """
+    V = len(logits)
+    if floor <= 0.0 and forbid_floor <= 0.0:
+        return _log_softmax(logits)
+    m = max(logits)
+    exps = [math.exp(x - m) for x in logits]
+    z = sum(exps)
+    # Precompute per-token floor.
+    total_floor = 0.0
+    for i in range(V):
+        total_floor += forbid_floor if forbid_mask[i] else floor
+    c = 1.0 - total_floor
+    out = [0.0] * V
+    for i in range(V):
+        f = forbid_floor if forbid_mask[i] else floor
+        out[i] = math.log(c * (exps[i] / z) + f)
+    return out
 
 
 def predict(state: ModelState) -> list[float]:
@@ -500,6 +541,33 @@ def predict(state: ModelState) -> list[float]:
     if wi is not None:
         for i in range(VOCAB_SIZE):
             logits[i] += wi[i]
+
+    # Layer 3c-CAPI: mid-word capitalization integrity. After the
+    # first letter of a word (letter_run_len >= 1), uppercase letters
+    # are orthographically near-impossible. This hard-blocks sample
+    # noise like "thHlo", "heLl", "IAEBOF" that character-ngram
+    # backoff occasionally produces.
+    wci = word_cap_integrity_bias(
+        state.letter_run_len,
+        state.current_word_started_cap,
+        state.speaker_label_state,
+    )
+    if wci is not None:
+        for i in range(VOCAB_SIZE):
+            logits[i] += wci[i]
+
+    # Layer 3c-APOS: post-apostrophe elision bias. Right after an
+    # apostrophe inside a word, the next letter is drawn from a tiny
+    # set (s/d/t/l/r/v/e/n/m) corresponding to 's/'d/'t/'ll/'re/'ve/'er/
+    # 'en/'em. Sharp bias toward this set, strong penalty on the rest.
+    ae = apostrophe_elision_bias(
+        state.letters_since_apostrophe,
+        state.word_buffer,
+        state.speaker_label_state,
+    )
+    if ae is not None:
+        for i in range(VOCAB_SIZE):
+            logits[i] += ae[i]
 
     # Layer 3c-MC: graded trie-match-count bias. Complements the
     # binary on_word_trie. Three regimes:
@@ -3188,4 +3256,43 @@ def predict(state: ModelState) -> list[float]:
         T = 1.70
     if T != 1.0:
         logits = [x / T for x in logits]
+
+    # Orthographic-impossibility mask: characters that, given the
+    # current state, are effectively prohibited by orthography. Using
+    # the MASKED smoothing variant gives these tokens a much smaller
+    # floor than the default (3e-7 vs 2e-5), closing the "floor
+    # cumulative mass" gap through which the sampler would otherwise
+    # occasionally draw a stray upper-case or impossible char.
+    # BPC-safe: real text almost never has these tokens at these
+    # positions, so lowering their floor-mass is a near-free win for
+    # sample quality.
+    forbid_mask = [False] * VOCAB_SIZE
+    sp = state.speaker_label_state
+    if sp == 0:
+        # Rule: mid-word uppercase. Once a word has at least TWO
+        # letters emitted (letter_run_len >= 2), uppercase A-Z is
+        # effectively impossible in Shakespeare. We allow the single-
+        # letter-then-uppercase case to cover rare forms like "O'Neill"
+        # or compound "MacBeth" (where position 2 is uppercase after
+        # apostrophe / lowercase prefix). At letter_run_len >= 2 the
+        # word is committed to a case regime and subsequent uppercase
+        # is an orthographic violation.
+        if state.letter_run_len >= 2:
+            for ch in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
+                idx = VOCAB_INDEX.get(ch)
+                if idx is not None:
+                    forbid_mask[idx] = True
+        elif state.letter_run_len == 1 and not state.current_word_started_cap:
+            # Position 2 of a lowercase-started word: uppercase here
+            # is orthographically impossible ("speak" never becomes
+            # "sPeak"). Apply the same lock as letter_run_len >= 2.
+            for ch in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
+                idx = VOCAB_INDEX.get(ch)
+                if idx is not None:
+                    forbid_mask[idx] = True
+
+    if any(forbid_mask):
+        return _log_softmax_smoothed_masked(
+            logits, 0.2e-4, 2e-6, forbid_mask
+        )
     return _log_softmax_smoothed(logits, 0.2e-4)

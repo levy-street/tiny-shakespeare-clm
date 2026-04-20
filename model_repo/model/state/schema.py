@@ -2436,3 +2436,29 @@ class ModelState(BaseModel):
     clause_opener_letter: str = ""
     prev_clause_opener_letter: str = ""
     clauses_in_sentence_index: int = 0
+
+    # --- Word-orthographic integrity (apostrophe + cap state) ---------
+    # Shakespeare's word-buffers are tightly constrained orthographically
+    # within a single word:
+    #   * Once a word has started lowercase, no uppercase letter ever
+    #     appears until the word ends (punctuation or space).
+    #   * Once a word has emitted its capital first letter, subsequent
+    #     letters are nearly always lowercase — mid-word caps only in
+    #     rare compound proper nouns (O'Neill, McBeth) and even those
+    #     use an apostrophe or prefix before the second cap.
+    #   * After an apostrophe inside a word, the following letter is
+    #     drawn from a very small set: s / d / t / l / r / v / e / n / m
+    #     (covering 's, 'd, 't, 'll, 're, 've, 'er, 'en, 'em and a few
+    #     archaic forms like 'twas, 'twere, o'er). Any other letter
+    #     after an apostrophe is almost certainly gibberish.
+    #
+    # Fields:
+    #  - letters_since_apostrophe: distance (in letters) since the last
+    #    apostrophe IN the current word_buffer. 0 = no apostrophe yet in
+    #    this word; 1 = just emitted an apostrophe, next char is the
+    #    first letter after it; 2 = one letter past apostrophe; etc.
+    #    Resets to 0 whenever word_buffer empties.
+    #  - had_apostrophe_this_word: has the current word contained an
+    #    apostrophe? True between apostrophe emission and word end.
+    letters_since_apostrophe: int = 0
+    had_apostrophe_this_word: bool = False
