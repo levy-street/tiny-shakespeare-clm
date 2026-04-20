@@ -155,6 +155,7 @@ from .turn_punct_texture import (
 )
 from .word_form import word_form_midword_bias, word_form_start_bias
 from .trie_recovery import trie_recovery_bias
+from .word_length_prior import word_length_prior_bias
 from .word_end_bigram import word_end_bigram_bias
 from .referent import referent_start_bias
 from .verb_agreement import verb_agreement_bias, verb_agreement_start_bias
@@ -698,6 +699,26 @@ def predict(state: ModelState) -> list[float]:
         if pte_m is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += pte_m[i]
+
+    # Layer 3c1-wlp: absolute word-length prior. Independent of trie
+    # status — once letter_run_len crosses 10, apply termination
+    # pressure that escalates to a hard cap at length 15+. Targets
+    # the visible sample failure where invented "words" extend to
+    # 10-18 chars ("etustarted", "rytsapiosen", "inafulnyeer") even
+    # when the off-trie recovery layers are already firing. Dampens
+    # when on_word_trie and !has_seen_complete so legitimate long
+    # words ("importunately") can still form.
+    if state.speaker_label_state == 0 and state.letter_run_len >= 12:
+        wlp = word_length_prior_bias(
+            state.letter_run_len,
+            state.on_word_trie,
+            state.has_seen_complete,
+            state.letters_off_trie,
+            state.speaker_label_state,
+        )
+        if wlp is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += wlp[i]
 
     # Layer 3c1a: trie-drift recovery. When the buffer has drifted
     # OFF the word-trie AND had a complete-word prefix earlier in
