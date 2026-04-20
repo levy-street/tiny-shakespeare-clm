@@ -43,7 +43,6 @@ from .meditative import meditative_midword_bias, meditative_start_bias
 from .bigram import bigram_bias
 from .cadence import cadence_wordend_bias
 from .enjambment import enjambment_wordend_bias
-from .meter import pentameter_wordend_bias
 from .polysyllable import polysyllable_midword_bias
 from .context import CTX_BIAS_VECTORS, context_key
 from .letter3 import letter3_bias
@@ -117,6 +116,7 @@ from .starttrigram import starttrigram_bias
 from .startword import START_BIAS
 from .formula import formula_midword_bias, formula_start_bias
 from .iambic import iambic_word_start_bias
+from .meter import pentameter_wordend_bias, meter_word_start_bias
 from .word_length_cadence import word_length_cadence_bias
 from .confessional import confessional_word_start_bias
 from .imagery import imagery_start_bias
@@ -2028,6 +2028,26 @@ def predict(state: ModelState) -> list[float]:
         if ib is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += ib[i]
+
+        # Layer 4b3-meter: iambic meter-confidence word-start bias.
+        # Reads the rolling meter_confidence, expected_stress, and
+        # syllables_until_line_end maintained by pipeline/meter.py.
+        # Broader coverage than iambic_word_start_bias (which requires
+        # strict verse gates): fires on any rolling-confident iambic
+        # passage, including line-start and late-line positions. Stacks
+        # additively with iambic when both fire (reinforcement on the
+        # canonical pentameter cases) and fires solo when meter
+        # confidence is present but verse_score / verse_line_run
+        # haven't yet caught up.
+        mws = meter_word_start_bias(
+            state.meter_confidence,
+            state.expected_stress,
+            state.syllables_until_line_end,
+            state.speaker_label_state,
+        )
+        if mws is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += mws[i]
 
         # Layer 4b3-cadence: word-length rhythm bias. Reads the rolling
         # tuple of recent word lengths to detect mono-run / poly-run

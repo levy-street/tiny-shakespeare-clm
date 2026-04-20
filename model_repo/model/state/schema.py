@@ -2515,3 +2515,42 @@ class ModelState(BaseModel):
     #    apostrophe? True between apostrophe emission and word end.
     letters_since_apostrophe: int = 0
     had_apostrophe_this_word: bool = False
+
+    # --- Tier 2/3: iambic meter tracking ---
+    # Shakespeare's dramatic verse is dominantly iambic pentameter:
+    # ten-syllable lines with an alternating weak–STRONG foot pattern
+    # (xX xX xX xX xX). Content words (nouns, verbs, adjectives) tend
+    # to start on the STRONG ictus; monosyllabic function words (a,
+    # the, to, of, and, but, in, on, with) tend to occupy the WEAK
+    # offbeats. Line-end pressure spikes at syllable 10 (masculine
+    # close) and syllable 11 (feminine ending).
+    #
+    # These fields expose that structure to predict layers so the next
+    # word-start can be biased by expected stress, not just by syntactic
+    # role.
+    #
+    # Fields:
+    #  - meter_confidence: rolling [0.0, 1.0] estimate that the current
+    #    passage is iambic verse. Bumped when a closing line lands in
+    #    the 9–11 syllable window; decayed when a line overshoots (>13)
+    #    or undershoots (<6 on a non-blank line). Also decayed per word
+    #    so long prose passages drift the confidence to 0 even if we
+    #    stopped seeing explicit line signals.
+    #  - expected_stress: 0 (weak / offbeat) or 1 (strong / ictus) —
+    #    the predicted metrical weight of the NEXT syllable onset,
+    #    assuming iambic. Computed from `syllables_in_line` parity:
+    #    iambic pentameter has strong beats at syllables 2, 4, 6, 8, 10
+    #    (1-indexed). Next syllable index is `syllables_in_line + 1`;
+    #    if that is even → STRONG, else WEAK.
+    #  - syllables_until_line_end: projected syllables remaining before
+    #    a pentameter line-end closure. Clamped to [0, 10]. Zero means
+    #    a line-end is immediately plausible (syllables_in_line >= 10).
+    #    Only meaningful when `meter_confidence` is elevated.
+    #
+    # Consumed by:
+    #  - predict/meter.py — word-start bias tilting toward content-word
+    #    opener letters on strong beats and function-word opener letters
+    #    on weak beats when meter_confidence is committed.
+    meter_confidence: float = 0.0
+    expected_stress: int = 0
+    syllables_until_line_end: int = 10

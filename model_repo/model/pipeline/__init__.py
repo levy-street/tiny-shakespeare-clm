@@ -54,6 +54,7 @@ from .proper_noun import update_proper_noun
 from .proper_noun_memory import update_proper_noun_memory
 from .question_answer import update_question_answer
 from .caesura import update_caesura
+from .meter import update_meter
 from .prosody import update_prosody
 from .referent import update_referent
 from .register_commit import update_register_commit
@@ -138,6 +139,7 @@ PIPELINE: list[Stage] = [
     update_enjambment,      # Tier 3: enjambed vs. end-stopped line density
     update_polysyllable,    # Tier 3: polysyllable density rolling memory
     update_prosody,         # Tier 3: syllable / cadence tracking
+    update_meter,           # Tier 2/3: iambic meter (expected_stress, confidence)
     update_caesura,         # Tier 3: mid-line pause (caesura) tracking
     update_word_shape,      # Tier 2: per-word phonotactic red-flag counter
     update_phonotactic,     # Tier 2: illegal letter-bigram count within current word

@@ -98,3 +98,106 @@ def pentameter_wordend_bias(
         return None
 
     return vec
+
+
+# ---------------------------------------------------------------------
+# Word-start bias from meter_confidence + expected_stress.
+# ---------------------------------------------------------------------
+# Reads the rolling meter_confidence, expected_stress (0 weak / 1
+# strong for the NEXT syllable onset), and syllables_until_line_end
+# maintained by pipeline/meter.py. Tilts the next word's opening
+# letter toward content-word openers on the ictus and function-word
+# openers on the offbeat.
+
+# Content-word opener letters — strong metrical onsets (plosives,
+# nasals, fricatives, liquids) and emotional content vowels.
+_CONTENT_START: dict[str, float] = {
+    "b": 0.42,  # blood, battle, breath, beauty, brave, bright
+    "c": 0.35,  # come, courage, crown, care, cruel
+    "d": 0.40,  # death, dear, doubt, dream, dark, deed
+    "g": 0.32,  # grace, good, god, grave, grief, glory
+    "k": 0.22,  # king, keep, knave, kiss, knee
+    "p": 0.36,  # power, peace, prince, pride, pain, part
+    "m": 0.30,  # man, maid, mercy, mother, might, mind
+    "n": 0.24,  # noble, night, nature
+    "f": 0.35,  # fear, fair, fool, faith, father, fire
+    "s": 0.38,  # soul, sword, shame, silent, sleep, speak, son
+    "v": 0.20,  # virtue, valour, victory, voice
+    "w": 0.32,  # word, world, wife, war, wrath, wound, wonder
+    "l": 0.36,  # love, life, lord, light, liberty, loss
+    "r": 0.30,  # right, rage, reason, revenge, rose
+    "h": 0.26,  # heart, heaven, hope, honour, hour, hate
+    "t": 0.20,  # time, true, truth, treason (weaker — also function)
+    # Emotional content-vowel openers (softer).
+    "a": 0.16,  # anger, arms, angel, agony
+    "e": 0.18,  # earth, enemy, eye, ear, England
+    # Capital mirrors for line openers (stage directions / imperatives).
+    "B": 0.30, "C": 0.24, "D": 0.28, "G": 0.24, "K": 0.16,
+    "P": 0.26, "M": 0.22, "N": 0.18, "F": 0.26, "S": 0.28,
+    "L": 0.26, "R": 0.22, "H": 0.20, "T": 0.14, "W": 0.26,
+    "A": 0.14, "E": 0.14, "V": 0.16, "O": 0.12,
+}
+
+# Function-word opener letters — monosyllabic closed-class onsets.
+_FUNCTION_START: dict[str, float] = {
+    "t": 0.50,  # the, to, thy, thou, this, that, their, these, those
+    "a": 0.40,  # a, an, and, at, as, all, any
+    "o": 0.42,  # of, or, on, our, o'er, out
+    "i": 0.38,  # in, is, if, it, into
+    "b": 0.26,  # but, by, be, been
+    "m": 0.30,  # my, me, may, must
+    "w": 0.32,  # with, when, where, while, who, we, will, would
+    "h": 0.28,  # his, her, have, hath, he, has, had
+    "n": 0.24,  # not, now, no, nor, ne'er
+    "s": 0.18,  # so, shall, she, should, some, such
+    "y": 0.20,  # you, your, yet, ye
+    "f": 0.22,  # for, from, 'fore
+    "u": 0.16,  # unto, upon, under
+    # Capital mirrors (weaker — line openers skew content/imperative).
+    "T": 0.28, "A": 0.20, "O": 0.18, "I": 0.35,
+    "M": 0.18, "W": 0.22, "H": 0.18, "Y": 0.16,
+    "N": 0.16, "S": 0.12, "F": 0.14,
+}
+
+
+def _build_vec(src: dict[str, float]) -> list[float]:
+    vec = [0.0] * VOCAB_SIZE
+    for ch, w in src.items():
+        idx = VOCAB_INDEX.get(ch)
+        if idx is not None:
+            vec[idx] += w
+    return vec
+
+
+_CONTENT_VEC = _build_vec(_CONTENT_START)
+_FUNCTION_VEC = _build_vec(_FUNCTION_START)
+
+
+def meter_word_start_bias(
+    meter_confidence: float,
+    expected_stress: int,
+    syllables_until_line_end: int,
+    speaker_label_state: int,
+) -> list[float] | None:
+    """Return a word-start bias vec from the iambic meter state, or
+    None if confidence is below deadband or inside speaker label."""
+    if speaker_label_state != 0:
+        return None
+    if meter_confidence < 0.30:
+        return None
+
+    mc = meter_confidence
+    # Ramp: 0.30 → 0.18; 0.60 → 0.32; 1.0 → 0.42.
+    if mc >= 0.60:
+        scale = 0.32 + (mc - 0.60) * 0.25  # 0.32 .. 0.42
+    else:
+        scale = 0.18 + (mc - 0.30) * 0.47  # 0.18 .. 0.32
+
+    src = _CONTENT_VEC if expected_stress == 1 else _FUNCTION_VEC
+
+    # Near pentameter close, meter-stress tilt matters less than the
+    # orthogonal line-end pressure. Halve the magnitude.
+    if syllables_until_line_end <= 1:
+        scale *= 0.50
+
+    return [v * scale for v in src]
