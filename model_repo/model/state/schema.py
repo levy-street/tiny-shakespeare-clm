@@ -2352,3 +2352,39 @@ class ModelState(BaseModel):
     # predict-layer bias; high conf → sharp first-letter bias. Allows
     # the predict consumer to scale its push cleanly.
     frame_confidence: float = 0.0
+
+    # -- Conditional / concessive discourse FSM (apodosis expectation)
+    #
+    # Shakespeare (and English generally) builds conditional and
+    # concessive sentences with a PROTASIS → APODOSIS structure:
+    # "If thou lovest me, then say so", "Though he be honest, he is
+    # rash". The protasis opens with a subordinator (if / though /
+    # when / since / unless / lest / albeit / whereas) and CLOSES
+    # typically with a comma. The APODOSIS — the main clause — then
+    # follows, almost always with a subject pronoun, a modal, a bare
+    # imperative verb, or the adverbs "then"/"so".
+    #
+    # No existing state fires a signal specifically at the start of
+    # the apodosis. subord_depth tracks nesting but doesn't project
+    # what kind of constituent must come AFTER the subord closes.
+    # conditional_mode closes that gap.
+    #
+    # Values:
+    #   0 = NONE        — not inside a conditional/concessive structure
+    #   1 = PROTASIS    — opened with a subordinator; no comma yet
+    #   2 = APODOSIS    — protasis-closing comma has fired; awaiting
+    #                    main-clause opener (pronoun / modal / imperative)
+    #   3 = RESOLVED    — the main clause has started; register the
+    #                    fact (some predict layers may still want to
+    #                    know we came from a conditional)
+    #
+    # Resets to NONE on sentence-end (. ? !) and on turn boundary.
+    conditional_mode: int = 0
+    # The subordinator that opened the protasis (0 = none).
+    #   1 = if, 2 = though, 3 = when, 4 = since, 5 = unless,
+    #   6 = lest, 7 = whereas, 8 = albeit, 9 = although, 10 = while
+    conditional_opener: int = 0
+    # Words emitted since the conditional_mode last changed. Useful
+    # for scale decay (apodosis bias should be strongest at its very
+    # first word and decay thereafter).
+    conditional_age: int = 0

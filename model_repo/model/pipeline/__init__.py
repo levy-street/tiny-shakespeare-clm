@@ -22,6 +22,7 @@ from .antithesis import update_antithesis
 from .case_slot import update_case_slot
 from .clause import update_clause
 from .clause_slot import update_clause_slot
+from .conditional import update_conditional
 from .line_break import update_line_break
 from .line_coherence import update_line_coherence
 from .verb_agreement import update_verb_agreement
@@ -98,6 +99,7 @@ PIPELINE: list[Stage] = [
     update_clause,          # Tier 2: clause-structure (clauses, subj pronoun)
     update_clause_slot,     # Tier 2: syntactic-slot state machine
     update_subord,          # Tier 2: subordinate-clause depth tracker
+    update_conditional,     # Tier 2: conditional/concessive protasis→apodosis FSM
     update_negation,        # Tier 2: negation-scope polarity tracker
     update_verb_agreement,  # Tier 2: subject-verb agreement expectation
     update_tense,           # Tier 2: sentence-level tense register

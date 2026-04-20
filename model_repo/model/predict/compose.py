@@ -97,6 +97,7 @@ from .speaker_register_bias import speaker_register_start_bias
 from .sentence_length_prior import sentence_length_prior_bias
 from .syntactic_frame import syntactic_frame_start_bias
 from .frame_adj_trie import frame_adj_midword_bias
+from .conditional import apodosis_opener_bias
 from .speaker_trie import speaker_trie_bias
 from .start4gram import start4gram_bias
 from .tonal import tonal_start_bias
@@ -1579,6 +1580,26 @@ def predict(state: ModelState) -> list[float]:
         if sf is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += sf[i]
+
+        # Layer 4b1a0b: apodosis-opener bias. When the sentence opened
+        # with a conditional / concessive subordinator (if / though /
+        # when / since / unless / lest / albeit / whereas / while) and
+        # a comma has closed the protasis, the next word is almost
+        # always a subject pronoun, a modal, a bare imperative verb,
+        # or the adverb "then" / "so". This layer biases the first
+        # letter of that first apodosis word toward those opener
+        # families.
+        apo = apodosis_opener_bias(
+            state.conditional_mode,
+            state.conditional_age,
+            state.letter_run_len,
+            state.speaker_label_state,
+            state.last_char,
+            state.consecutive_newlines,
+        )
+        if apo is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += apo[i]
 
         # Layer 4b1a: verb-overdue bias. When the clause has a subject
         # but no verb yet, and we're at a word-start position, bias
