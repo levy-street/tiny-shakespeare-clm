@@ -698,6 +698,39 @@ class ModelState(BaseModel):
     # the next speaker's opening.
     recent_line_opener_pos: tuple[int, ...] = ()
 
+    # --- Tier 2: line-TERMINAL word memory (mirror of recent_line_starters) ---
+    # Rolling tuple of up to 4 completed-word lowercased forms that
+    # TERMINATED recent verse-plausible lines, most-recent first. This
+    # is the mirror of `recent_line_starters`: that field tracks line
+    # BEGINNINGS for anaphora; this field tracks line ENDINGS for
+    # EPISTROPHE (word-identity rhyme) and closing-word parallelism.
+    #
+    # Shakespeare uses epistrophe rhetorically:
+    #   "I'll have my bond, and therefore speak no more.
+    #    I will not be made a soft and dull-eyed fool,
+    #    To shake the head, relent, and sigh, and yield
+    #    To Christian intercessors. Follow not;
+    #    I'll have no speaking; I will have my bond."
+    # Note the repeated "bond" at line-end. Or in couplets, the SAME
+    # ending word sometimes echoes ("... vain ... vain ... pain").
+    #
+    # Captured at newline when:
+    #   - consecutive_newlines == 1 (not a blank-line turn boundary)
+    #   - prev_line_length in [1, 80] (not a huge prose run)
+    #   - the line didn't end in ":" (speaker labels don't epistrophize)
+    #   - last_completed_word is non-empty and all-lowercase letters
+    #     (skip proper nouns, numerals, etc.)
+    #
+    # Reset on speaker-turn change (blank-line block).
+    #
+    # Consumed by predict/line_end_echo.py: at a word-start late in a
+    # verse-plausible line (syllables_until_line_end small, line_length
+    # moderate, meter_confidence non-trivial), boost the first letter
+    # of each remembered line-ender to support rhetorical closing-word
+    # recurrence. Mild strength — epistrophe is a stylistic choice
+    # Shakespeare uses occasionally, not a dense prior.
+    recent_line_end_words: tuple[str, ...] = ()
+
     # --- Tier 2: short-range word-repetition memory ---
     # Tuple of up to 6 completed-word lowercased forms, most-recent
     # first, since the last strong boundary. Reset on sentence-ending

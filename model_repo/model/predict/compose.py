@@ -36,6 +36,7 @@ from ..vocab import VOCAB, VOCAB_INDEX, VOCAB_SIZE
 from .address import address_midword_bias, address_start_bias
 from .alliteration import alliteration_start_bias
 from .anaphora import anaphora_midword_bias, anaphora_start_bias
+from .line_end_echo import line_end_echo_bias
 from .line_opener_pos_bias import line_opener_pos_bias
 from .antithesis import antithesis_closure_bias, antithesis_pivot_bias
 from .antithesis_pair import antithesis_pair_bias
@@ -1171,6 +1172,23 @@ def predict(state: ModelState) -> list[float]:
         )
         for i in range(VOCAB_SIZE):
             logits[i] += ac[i]
+
+    # Layer 3c-LEE: line-end-word echo bias (epistrophe). At a word-
+    # start late in a verse-plausible line, boost first letters of
+    # recent line-terminal words. Supports Shakespeare's rhetorical
+    # closing-word recurrence (epistrophe).
+    lee = line_end_echo_bias(
+        state.recent_line_end_words,
+        state.letter_run_len,
+        state.last_char_class,
+        state.speaker_label_state,
+        state.meter_confidence,
+        state.syllables_until_line_end,
+        state.chars_since_newline,
+    )
+    if lee is not None:
+        for i in range(VOCAB_SIZE):
+            logits[i] += lee[i]
 
     # Layer 3c3: meditative-register word-start bias. Reads the flow-tier
     # meditative_register (rises on philosophical/abstract vocabulary like

@@ -29,6 +29,7 @@ from .confessional import update_confessional
 from .clause_parallel import update_clause_parallel
 from .line_break import update_line_break
 from .line_coherence import update_line_coherence
+from .line_end_memory import update_line_end_memory
 from .verb_agreement import update_verb_agreement
 from .np_head import update_np_head
 from .transitivity import update_transitivity
@@ -154,6 +155,7 @@ PIPELINE: list[Stage] = [
     update_line_opener_pos, # Tier 2: line-opener POS pattern memory
     update_alliteration,    # Tier 2/3: within-line alliteration memory
     update_rhyme,           # Tier 2/3: line-tail rhyme memory
+    update_line_end_memory, # Tier 2: line-TERMINAL word memory (epistrophe)
     update_enjambment,      # Tier 3: enjambed vs. end-stopped line density
     update_polysyllable,    # Tier 3: polysyllable density rolling memory
     update_sentence_syllables,  # Tier 2/3: per-sentence syllable counter (runs before prosody)
