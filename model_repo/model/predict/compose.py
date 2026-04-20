@@ -641,7 +641,7 @@ def predict(state: ModelState) -> list[float]:
         )
         if pnm_mid is not None:
             for i in range(VOCAB_SIZE):
-                logits[i] += pnm_mid[i]
+                logits[i] += pnm_mid[i] * 5.0
 
     # Layer 3c1: topic-midword bias — when content_words indicate an
     # active topical cluster (DARK/LIGHT/ROYAL), tilt mid-word letter
