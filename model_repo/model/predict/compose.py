@@ -1081,7 +1081,7 @@ def predict(state: ModelState) -> list[float]:
         )
         if amw is not None:
             for i in range(VOCAB_SIZE):
-                logits[i] += amw[i]
+                logits[i] += amw[i] * 5.0
 
     # Layer 3c1-adj: adjacent-word-repeat blocker. "of of", "the the",
     # "and and" never happen. Narrow rule; fires at word-start, mid-
