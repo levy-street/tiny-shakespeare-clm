@@ -677,6 +677,27 @@ class ModelState(BaseModel):
     # at the next line-start.
     recent_line_starters: tuple[str, ...] = ()
 
+    # --- Tier 2: line-opener POS pattern memory ---
+    # Rolling tuple of up to 4 POS tags of the FIRST word of each of
+    # the most recent completed lines (most-recent LAST). Captured at
+    # the same moment as `recent_line_starters` — the moment a word
+    # completes while `words_completed_on_line` transitions 0 → 1.
+    #
+    # Motivation: anaphora bias currently fires only on matching
+    # line-starter WORDS. Verse anaphora also operates at the POS
+    # level — Shakespeare opens successive lines with the same POS
+    # class even when the actual word differs ("I know... I cannot...
+    # I would..."  = three PRONOUN openers; "Hard... Sharp... Cold..."
+    # = three ADJECTIVE openers). A POS-level opener memory lets the
+    # predict layer boost openers of the same class without requiring
+    # a literal word match, which the existing word-tuple bias cannot
+    # do when it only has one or zero matching letters.
+    #
+    # Reset rule: cleared on speaker-turn change (consecutive_newlines
+    # >= 2) to avoid letting one speaker's rhythmic anaphora leak into
+    # the next speaker's opening.
+    recent_line_opener_pos: tuple[int, ...] = ()
+
     # --- Tier 2: short-range word-repetition memory ---
     # Tuple of up to 6 completed-word lowercased forms, most-recent
     # first, since the last strong boundary. Reset on sentence-ending

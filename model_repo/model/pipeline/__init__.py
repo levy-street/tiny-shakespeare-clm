@@ -18,6 +18,7 @@ from ..state import ModelState
 from .addressee import update_addressee
 from .alliteration import update_alliteration
 from .anaphora import update_anaphora
+from .line_opener_pos import update_line_opener_pos
 from .antithesis import update_antithesis
 from .case_slot import update_case_slot
 from .clause import update_clause
@@ -138,6 +139,7 @@ PIPELINE: list[Stage] = [
     update_turn_progress,   # Tier 2/3: words/sentences/lines in current turn
     update_turn_content,    # Tier 3: per-turn content-word echo cache
     update_anaphora,        # Tier 2: line-starter anaphora tracking
+    update_line_opener_pos, # Tier 2: line-opener POS pattern memory
     update_alliteration,    # Tier 2/3: within-line alliteration memory
     update_rhyme,           # Tier 2/3: line-tail rhyme memory
     update_enjambment,      # Tier 3: enjambed vs. end-stopped line density

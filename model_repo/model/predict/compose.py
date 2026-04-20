@@ -36,6 +36,7 @@ from ..vocab import VOCAB, VOCAB_INDEX, VOCAB_SIZE
 from .address import address_midword_bias, address_start_bias
 from .alliteration import alliteration_start_bias
 from .anaphora import anaphora_midword_bias, anaphora_start_bias
+from .line_opener_pos_bias import line_opener_pos_bias
 from .antithesis import antithesis_closure_bias, antithesis_pivot_bias
 from .antithesis_pair import antithesis_pair_bias
 from .archaic import archaic_midword_bias, archaic_start_bias
@@ -2475,6 +2476,20 @@ def predict(state: ModelState) -> list[float]:
             if ab is not None:
                 for i in range(VOCAB_SIZE):
                     logits[i] += ab[i]
+            # POS-level line-opener anaphora: boost first-letters
+            # typical for the POS class shared by recent line-openers,
+            # even when the words themselves don't share a letter.
+            lop = line_opener_pos_bias(
+                state.recent_line_opener_pos,
+                state.speaker_label_state,
+                state.consecutive_newlines,
+                state.last_char,
+                state.letter_run_len,
+                state.word_buffer,
+            )
+            if lop is not None:
+                for i in range(VOCAB_SIZE):
+                    logits[i] += lop[i]
         # Additionally, at BOTH sentence-start and verse-line-start,
         # bias specific common starting capitals: T, A, W, I, O, B, H,
         # S, M, N, F, C, L, P, G, D, R, Y. Skip speaker-label context.
