@@ -386,7 +386,7 @@ def predict(state: ModelState) -> list[float]:
         sb = startbigram_bias(state.last_char)
         if sb is not None:
             for i in range(VOCAB_SIZE):
-                logits[i] += sb[i] * 1.2
+                logits[i] += sb[i] * 1.5
         # Double-consonant word-start penalty: "f" → "ff", "r" → "rr",
         # etc. are all implausible English word-starts. Suppresses
         # gibberish like "frr-", "tt-", "ss-".
