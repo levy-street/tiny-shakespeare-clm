@@ -161,6 +161,7 @@ from .case_slot import case_slot_start_bias
 from .lament import lament_start_bias, lament_sentence_start_bias
 from .tenderness import tenderness_start_bias, tenderness_sentence_start_bias
 from .mirth import mirth_start_bias, mirth_sentence_start_bias
+from .apostrophe import apostrophe_start_bias, apostrophe_terminator_bias
 from .fury import fury_end_bias, fury_start_bias
 from .gravitas import gravitas_start_bias, gravitas_sentence_start_bias
 from .drift_recovery import drift_recovery_bias, drift_recovery_midword_bias
@@ -2003,6 +2004,24 @@ def predict(state: ModelState) -> list[float]:
                 for i in range(VOCAB_SIZE):
                     logits[i] += mssb[i]
 
+        # Layer 4b3c-apostrophe: apostrophe-mode word-start bias. When
+        # the speaker has opened with "O" / "Oh" / "Ye" / "Alas" at
+        # sentence-start (apostrophe_mode >= 1), tilt the next
+        # word-start letter toward abstract-noun targets (heaven, love,
+        # night, death, fortune, grief, time, earth, soul, ...).
+        # Distinct from mood registers (lament/fury/mirth/etc.) — those
+        # capture EMOTION; this captures RHETORICAL ADDRESS to a
+        # non-present abstract entity.
+        asb = apostrophe_start_bias(
+            state.apostrophe_mode,
+            state.letter_run_len,
+            int(state.last_char_class),
+            state.speaker_label_state,
+        )
+        if asb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += asb[i]
+
         # Layer 4b3c-gravitas: gravitas-register word-start bias. A
         # Tier 3 flow axis capturing moral / philosophical / cosmic
         # weight — distinct from lament (grief), tenderness (love),
@@ -2050,6 +2069,20 @@ def predict(state: ModelState) -> list[float]:
         if feb is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += feb[i]
+
+        # Apostrophe-mode terminator tilt: when addressing an abstract
+        # entity ("O heavens!", "Ye gods, stand fast!"), exclamation is
+        # far more natural than period. Fires mid-body; kept small so
+        # it only tips the balance when the base distribution is close.
+        atb = apostrophe_terminator_bias(
+            state.apostrophe_mode,
+            int(state.last_char_class),
+            state.speaker_label_state,
+            state.chars_since_newline,
+        )
+        if atb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += atb[i]
 
         if (
             state.words_in_sentence == 0

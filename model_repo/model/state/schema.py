@@ -2718,3 +2718,73 @@ class ModelState(BaseModel):
     # Read by predict/mirth.py to gently tilt word-start letters
     # toward mirth-lexicon starters when the register is elevated.
     mirth_register: float = 0.0
+
+    # --- Tier 3: apostrophe / figurative-address mode ---
+    # A rhetorical-figure axis distinct from:
+    #   - vocative_expectation (adjective-slot before addressee noun)
+    #   - last_addressee / recent_addressees (character in scene)
+    #   - speaker_register (formal/informal commitment)
+    #   - doubt / lament / fury / etc. (emotional register)
+    #
+    # Apostrophe is the Shakespearean figure of ADDRESSING a non-present,
+    # abstract, or inanimate entity: "O Fortune!", "Ye gods!", "O love!",
+    # "O night!", "O death!", "O earth!", "O hell!", "O heart!", "Sweet
+    # love, remember!", "Come, night! Come, Romeo!". It is a LYRIC mode —
+    # its lexicon is abstract-nouns, its verbs are imperatives directed
+    # at the apostrophized entity, its rhythm is exclamatory, and it
+    # tolerates long expansive clauses with interjections.
+    #
+    # Representation:
+    #   apostrophe_mode (int 0..3)
+    #     0 — off / normal discourse. Default.
+    #     1 — primed. Sentence opened with an "O"/"Oh"/"Ah"/"Alas" and
+    #         we are in the vocative expansion (first 1-3 words after
+    #         the invocation particle).
+    #     2 — active. An abstract/figurative entity has been named as
+    #         the apostrophe target (heaven, fortune, love, night,
+    #         death, hell, earth, heart, gods, stars, time, soul,
+    #         beauty, grief, nature). Lexicon bias should fire.
+    #     3 — locked. A second apostrophe cue (another "O ___" or a
+    #         follow-up imperative to the same target) has reinforced.
+    #         Full effect.
+    #
+    # Update rules (pipeline/apostrophe.py):
+    #   - Entry to mode 1 fires when:
+    #       * Sentence-start (chars_since_sentence_end small and
+    #         words_in_sentence == 0-1) AND
+    #       * last_completed_word in {"o","oh","ah","alas","ye",
+    #         "yea","hark","lo","fie","alack"}.
+    #     "O" alone is ambiguous (could be interjection filler), so we
+    #     use the follow-up noun to promote 1 -> 2.
+    #   - Promotion 1 -> 2 fires when the next completed content word
+    #     is in the APOSTROPHE_TARGETS lexicon (abstract / figurative
+    #     addressable nouns). See pipeline for list.
+    #   - Promotion 2 -> 3 fires on a SECOND apostrophe invocation
+    #     within the same sentence/turn, or on an imperative verb
+    #     directed at the target ("come night, hide thyself", "speak,
+    #     heaven").
+    #   - Reset to 0 on:
+    #       * turn boundary (consecutive_newlines >= 2), OR
+    #       * sentence-end PUNCT_END followed by 2+ completed non-
+    #         apostrophe sentences, OR
+    #       * explicit address to a CONCRETE character ("my lord",
+    #         "Hamlet, ..., ") which shifts address-target away from
+    #         abstract.
+    #
+    # Read by predict layers (future) to:
+    #   - Boost abstract-noun word-starters after "O"/"Ye"/"Alas".
+    #   - Boost imperative verbs after apostrophe_mode >= 2.
+    #   - Prefer "!" over "." at sentence-end when mode >= 2.
+    #   - Tolerate longer lines / resist premature newline when locked.
+    apostrophe_mode: int = 0
+    # Words consumed since the most recent apostrophe cue. Used by the
+    # pipeline to decay mode 1 -> 0 if the target noun doesn't land
+    # within a small window (the "O" was just filler, not apostrophe).
+    # Resets to 0 each time mode transitions upward.
+    apostrophe_words_since_cue: int = 0
+    # Which apostrophe target (lowercased lexicon entry) is currently
+    # being addressed, if any. Empty string when no target locked.
+    # Informs downstream lexicon biasing by target family (celestial:
+    # heaven/stars/sun/moon; mortality: death/grave/fate; affective:
+    # love/heart/beauty; natural: night/earth/sea).
+    apostrophe_target: str = ""

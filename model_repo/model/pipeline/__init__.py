@@ -17,6 +17,7 @@ from typing import Callable
 from ..state import ModelState
 from .addressee import update_addressee
 from .alliteration import update_alliteration
+from .apostrophe import update_apostrophe
 from .anaphora import update_anaphora
 from .line_opener_pos import update_line_opener_pos
 from .antithesis import update_antithesis
@@ -140,6 +141,7 @@ PIPELINE: list[Stage] = [
     update_gravitas,        # Tier 3: gravitas/moral-weight texture register
     update_fury,            # Tier 3: fury/rage/curse texture register
     update_mirth,           # Tier 3: mirth/merry/comic texture register
+    update_apostrophe,      # Tier 3: figurative-address mode (O Fortune!)
     update_confessional,    # Tier 3: confessional vs public register
     update_sensory_charge,  # Tier 3: corporeal ↔ abstract charge (lyric vs argument register)
     update_dialogue_adjacency,  # Tier 2/3: snapshot prev-turn shape before turn counters reset
