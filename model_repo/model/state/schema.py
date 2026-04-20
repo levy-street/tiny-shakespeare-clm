@@ -567,6 +567,46 @@ class ModelState(BaseModel):
     #   6 SERVANT_BRIEF   — Messenger, Servant, Citizen, Officer, Soldier
     #   7 SUPERNATURAL    — Ghost, Witch, Oracle, Fairy, Ariel, Puck
     speaker_register: int = 0
+    # --- Tier 2/3: play-family lock ---
+    # Shakespeare scenes never mix characters from different plays. Our
+    # samples do: a HAMLET-prefixed turn will introduce NERISSA (Merchant
+    # of Venice), LEONATO (Much Ado), AUMERLE (Richard II), etc. This
+    # field captures WHICH PLAY-FAMILY the current scene belongs to,
+    # inferred from `last_speaker_label` / `recent_speakers`:
+    #   0 UNKNOWN           — no family-defining speaker seen yet
+    #   1 HAMLET_DANE       — Hamlet, Horatio, Ophelia, Polonius, Laertes,
+    #                         Claudius, Gertrude, Fortinbras, Rosencrantz,
+    #                         Guildenstern, Osric, Marcellus, Bernardo
+    #   2 ROMAN             — Caesar, Brutus, Cassius, Antony, Cleopatra,
+    #                         Coriolanus, Menenius, Volumnia, Aufidius,
+    #                         Titus, Tamora, Aaron, Enobarbus, Octavius
+    #   3 ENGLISH_HISTORY   — Henry, Richard, Hal, Hotspur, Falstaff,
+    #                         York, Warwick, Gloucester, Buckingham,
+    #                         Bolingbroke, Northumberland, Aumerle,
+    #                         Mowbray, Percy, Margaret, Catesby, Stanley
+    #   4 OTHER_TRAGEDY     — Lear, Cordelia, Edmund, Macbeth, Banquo,
+    #                         Othello, Iago, Desdemona, Romeo, Juliet,
+    #                         Mercutio, Tybalt, Friar, Timon, Apemantus
+    #   5 COMEDY_PROSE      — Beatrice, Benedick, Leonato, Portia,
+    #                         Nerissa, Bassanio, Shylock, Rosalind, Celia,
+    #                         Orsino, Viola, Malvolio, Bottom, Puck,
+    #                         Petruchio, Launce, Dogberry, Touchstone,
+    #                         Demetrius, Hermia, Helena, Oberon, Titania
+    #   6 ROMANCE           — Prospero, Miranda, Caliban, Ariel, Leontes,
+    #                         Hermione, Perdita, Autolycus, Cymbeline,
+    #                         Imogen, Posthumus, Pericles, Marina
+    #
+    # Lock semantics: updated by pipeline/play_family.py at the moment
+    # a new speaker label closes (FSM 2→3 with ":"). If the new speaker
+    # maps to a family, it OVERWRITES (most recent wins — Shakespeare
+    # scene-changes can happen). Unknown speakers (SERVANT, MESSENGER,
+    # LORD, CITIZEN, GENTLEMAN, etc.) are NEUTRAL — they do not
+    # overwrite. Cleared only at simulation start (default 0).
+    #
+    # Consumed by predict/play_family.py at speaker_label_state in
+    # {1, 2} to tilt letter distributions toward in-family speaker
+    # names and away from out-of-family ones.
+    play_family: int = 0
     # Number of tokens since speaker_register was last updated. Lets a
     # consumer taper the bias strength early in a turn (first few tokens
     # are usually the speaker label itself).

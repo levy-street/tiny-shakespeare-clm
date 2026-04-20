@@ -103,6 +103,7 @@ from .speaker_register_bias import speaker_register_start_bias
 from .sentence_length_prior import sentence_length_prior_bias
 from .sentence_backbone import sentence_backbone_bias
 from .sentence_pressure import sentence_pressure_bias
+from .play_family import play_family_bias
 from .sentence_syllable_parallel import sentence_syllable_parallel_bias
 from .syntactic_frame import syntactic_frame_start_bias
 from .frame_adj_trie import frame_adj_midword_bias
@@ -1450,6 +1451,22 @@ def predict(state: ModelState) -> list[float]:
     if svg is not None:
         for i in range(VOCAB_SIZE):
             logits[i] += svg[i]
+
+    # Play-family bias — when a prior speaker has locked the play
+    # family (HAMLET_DANE / ROMAN / ENGLISH_HISTORY / OTHER_TRAGEDY /
+    # COMEDY_PROSE / ROMANCE), tilt the first-letter distribution of
+    # the NEXT speaker label toward in-family cast members. Targets
+    # the visible sample bug where a HAMLET turn introduces NERISSA /
+    # LEONATO / AUMERLE from unrelated plays. Fires only at FSM
+    # states 1 and 2 with buffer length 0-1 (first-letter window).
+    pfb = play_family_bias(
+        state.play_family,
+        state.speaker_label_state,
+        state.speaker_buffer,
+    )
+    if pfb is not None:
+        for i in range(VOCAB_SIZE):
+            logits[i] += pfb[i]
 
     # Layer 4: start-of-word bias (after space or single newline).
     if last_cls == SPACE or (

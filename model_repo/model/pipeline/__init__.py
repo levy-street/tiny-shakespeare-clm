@@ -55,6 +55,7 @@ from .mid_departure import update_mid_departure
 from .list_structure import update_list_structure
 from .negation import update_negation
 from .noun_class import update_noun_class
+from .play_family import update_play_family
 from .pos import update_pos
 from .proper_noun import update_proper_noun
 from .proper_noun_memory import update_proper_noun_memory
@@ -141,6 +142,7 @@ PIPELINE: list[Stage] = [
     update_addressee,       # Tier 2/3: vocative-noun memory
     update_speaker_memory,  # Tier 2/3: recent-speakers rolling window
     update_speaker_register, # Tier 2/3: categorical register from speaker name
+    update_play_family,     # Tier 2/3: play-family lock from speaker name (runs AFTER speaker_memory which writes last_speaker_label)
     update_register_commit, # Tier 2: thou/you address-form commit (per-turn)
     update_referent,        # Tier 2: anaphoric referent gender tracking
     update_topic_tracker,   # Tier 3: scene-topic semantic cluster memory
