@@ -124,6 +124,8 @@ from .startword import START_BIAS
 from .formula import formula_midword_bias, formula_start_bias
 from .word_commit import word_commit_bias
 from .turn_shape import stichomythia_bias
+from .line_word_cadence import line_word_cadence_bias
+from .archaic_density import archaic_density_bias
 from .iambic import iambic_word_start_bias
 from .meter import pentameter_wordend_bias, meter_word_start_bias
 from .word_length_cadence import word_length_cadence_bias
@@ -2756,6 +2758,43 @@ def predict(state: ModelState) -> list[float]:
     if sbx is not None:
         for i in range(VOCAB_SIZE):
             logits[i] += sbx[i]
+
+    # Layer 4b6g: line-word-count cadence. Reads recent_line_word_counts
+    # (maintained in pipeline/line_word_cadence.py) and the in-progress
+    # line_word_count. Within a speech, blank-verse lines cluster around
+    # a shared word count; once we have 2+ line samples, bias newline
+    # at word-end positions as the current line reaches/exceeds that mean.
+    lwcb = line_word_cadence_bias(
+        state.recent_line_word_counts,
+        state.line_word_count,
+        state.speaker_label_state,
+        state.letter_run_len,
+        len(state.word_buffer),
+        state.consecutive_newlines,
+        state.chars_since_newline,
+    )
+    if lwcb is not None:
+        for i in range(VOCAB_SIZE):
+            logits[i] += lwcb[i]
+
+    # Layer 4b6h: archaic-density Tier-3 flow register. Reads
+    # state.archaic_density (0..1 smoothed over recent completed
+    # words in pipeline/archaic_density.py). When hot, tilts mid-
+    # word suffix choices (ha->s/t, do->t/s, wil->t, shal->t) and
+    # word-start letters (t/h/y/m/p/w/a/e/o) toward the archaic
+    # lexicon (thou/hath/doth/hither/methinks/prithee/etc).
+    adb = archaic_density_bias(
+        state.archaic_density,
+        state.word_buffer,
+        state.letter_run_len,
+        state.speaker_label_state,
+        state.consecutive_newlines,
+        state.chars_since_sentence_end,
+        state.last_char_class,
+    )
+    if adb is not None:
+        for i in range(VOCAB_SIZE):
+            logits[i] += adb[i]
 
     # Layer 4d: verb-agreement bias based on subject pronoun.
     # When the clause's subject is "thou", Shakespearean agreement

@@ -760,6 +760,57 @@ class ModelState(BaseModel):
     #                 turn's first sentence.
     stichomythia_mode: int = 0
 
+    # --- Tier 2/3: within-turn line-word-count cadence ---
+    # Rolling tuple of up to 3 recently-completed body-line word counts,
+    # most-recent first. Captured at the body-newline boundary
+    # (consecutive_newlines becomes 1) BEFORE turn_progress resets the
+    # in-line counter. Never captures the turn-terminator blank line.
+    #
+    # Used by predict/line_word_cadence.py to derive a target length
+    # for the in-progress line: when a speaker has just completed 2-3
+    # lines of ~7 words each, the current line likely targets ~7 words
+    # too, so as line_word_count approaches the running mean, boost the
+    # newline terminator; below mean, softly suppress it.
+    #
+    # Complements `recent_turn_line_counts` (cross-turn shape) and
+    # `prev_line_length` (in chars, single value) by adding a
+    # *per-line word-count* history at turn-internal scale.
+    #
+    # Reset on speaker-turn boundary (consecutive_newlines >= 2).
+    recent_line_word_counts: tuple[int, ...] = ()
+
+    # Count of completed words in the CURRENT body line, since the last
+    # body \n (consecutive_newlines == 1) or since the turn started.
+    # Incremented at just_finished_word when speaker_label_state == 0
+    # and consecutive_newlines == 0. Reset to 0 at body \n and at
+    # turn boundary (consecutive_newlines >= 2).
+    line_word_count: int = 0
+
+    # --- Tier 3 FLOW: archaic-density texture ---
+    # A smoothed float in [0.0, 1.0] tracking how archaic the
+    # speaker's current diction feels. This is a true *flow* register —
+    # it tries to capture idiom-texture rather than a structural
+    # fact. Decays with a per-word multiplicative factor and bumps up
+    # on each archaic-lexicon hit (thou/thee/thy/thine, hath/doth/
+    # hast/dost, wilt/shalt/art, ere/oft/anon, hither/thither/whither/
+    # whence/hence/thence, yon/yonder, methinks/prithee/wherefore/
+    # forsooth/troth/marry/aye/nay, and apostrophe-elided 'tis/'twas/
+    # 'twere/'gainst/o'er).
+    #
+    # Shakespeare speakers are reasonably consistent within a
+    # passage: once a character starts using "thou hast", they tend
+    # to continue using archaic forms; once another speaker is
+    # established in modern usage, they stay modern. This field
+    # captures that autocorrelation without committing to a hard
+    # categorical split (which speaker_register already does
+    # on a coarse categorical axis).
+    #
+    # Updated by pipeline/archaic_density.py on each completed word;
+    # reset to 0.0 on turn boundary (consecutive_newlines >= 2).
+    # Consumed by predict/archaic_density.py to tilt mid-word
+    # suffix choices and word-start letters when density is hot.
+    archaic_density: float = 0.0
+
     # --- Tier 2: short-range word-repetition memory ---
     # Tuple of up to 6 completed-word lowercased forms, most-recent
     # first, since the last strong boundary. Reset on sentence-ending

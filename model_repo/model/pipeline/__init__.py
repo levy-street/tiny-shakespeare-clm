@@ -89,6 +89,8 @@ from .topic_tracker import update_topic_tracker
 from .turn import update_turn_progress
 from .turn_content import update_turn_content
 from .turn_shape import update_turn_shape
+from .line_word_cadence import update_line_word_cadence
+from .archaic_density import update_archaic_density
 from .vocative import update_vocative
 
 Stage = Callable[[ModelState, int], ModelState]
@@ -152,6 +154,8 @@ PIPELINE: list[Stage] = [
     update_dialogue_adjacency,  # Tier 2/3: snapshot prev-turn shape before turn counters reset
     update_turn_shape,      # Tier 2/3: cross-turn rhythm tuple + stichomythia_mode (must run BEFORE turn_progress reset)
     update_turn_progress,   # Tier 2/3: words/sentences/lines in current turn
+    update_line_word_cadence,  # Tier 2/3: per-line word-count history within turn (cadence)
+    update_archaic_density, # Tier 3 FLOW: rolling archaic-lexicon density
     update_turn_content,    # Tier 3: per-turn content-word echo cache
     update_anaphora,        # Tier 2: line-starter anaphora tracking
     update_line_opener_pos, # Tier 2: line-opener POS pattern memory
