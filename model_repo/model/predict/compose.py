@@ -3290,6 +3290,34 @@ def predict(state: ModelState) -> list[float]:
                 idx = VOCAB_INDEX.get(ch)
                 if idx is not None:
                     forbid_mask[idx] = True
+    elif sp == 2:
+        # Speaker-label off-trie closeout (SOFT bias only, no hard
+        # mask). Legitimate compound names the trie doesn't know
+        # ("DUKE VINCENTIO", "THIRD SERVINGMAN", etc.) can have 10+
+        # chars of off-trie drift in real Shakespeare, so hard
+        # forbidding would cost significant training BPC. Instead,
+        # apply linearly-scaling ":" and "\n" boosts once drift has
+        # exceeded a forgiving threshold, plus a mild per-letter
+        # penalty that ramps with drift depth.
+        run = state.speaker_label_offtrie_run
+        if run >= 3:
+            colon_idx = VOCAB_INDEX.get(":")
+            nl_idx = VOCAB_INDEX.get("\n")
+            # Colon boost: starts gentle, ramps with depth, caps at
+            # +3.5 by run==10. Training text rarely reaches run==10
+            # inside a real speaker, so effective only on phantoms.
+            c_boost = min(0.5 * (run - 2), 3.5)
+            if colon_idx is not None:
+                logits[colon_idx] += c_boost
+            if nl_idx is not None and run >= 5:
+                logits[nl_idx] += min(0.3 * (run - 4), 1.8)
+            # Mild broad letter penalty to crowd out phantom letters.
+            # Ramps from -0.15 at run==3 to -0.8 at run==10.
+            pen = -min(0.1 * (run - 2), 0.8)
+            for ch in "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz":
+                idx = VOCAB_INDEX.get(ch)
+                if idx is not None:
+                    logits[idx] += pen
 
     if any(forbid_mask):
         return _log_softmax_smoothed_masked(
