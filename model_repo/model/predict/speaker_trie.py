@@ -244,7 +244,7 @@ def _add(word: str) -> None:
             _TRIE[prefix][word[i]] = _TRIE[prefix].get(word[i], 0) + 1
         else:
             # Terminator: ":" ends the label.
-            _TRIE[prefix][":"] = _TRIE[prefix].get(":", 0) + 5
+            _TRIE[prefix][":"] = _TRIE[prefix].get(":", 0) + 2
 
 
 for _s in _SPEAKERS:
