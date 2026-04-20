@@ -3436,20 +3436,21 @@ def predict(state: ModelState) -> list[float]:
         # exceeded a forgiving threshold, plus a mild per-letter
         # penalty that ramps with drift depth.
         run = state.speaker_label_offtrie_run
-        if run >= 3:
+        if run >= 2:
             colon_idx = VOCAB_INDEX.get(":")
             nl_idx = VOCAB_INDEX.get("\n")
-            # Colon boost: starts gentle, ramps with depth, caps at
-            # +3.5 by run==10. Training text rarely reaches run==10
-            # inside a real speaker, so effective only on phantoms.
-            c_boost = min(0.5 * (run - 2), 3.5)
+            # Colon boost: starts gentle at run==2 (where 3-letter
+            # phantom labels close), ramps linearly, caps at +4.0.
+            # Legitimate compound names ("DUKE VINCENTIO") can run
+            # 10+ chars off-trie, so the cap is forgiving.
+            c_boost = min(0.35 * (run - 1), 4.0)
             if colon_idx is not None:
                 logits[colon_idx] += c_boost
             if nl_idx is not None and run >= 5:
                 logits[nl_idx] += min(0.3 * (run - 4), 1.8)
             # Mild broad letter penalty to crowd out phantom letters.
-            # Ramps from -0.15 at run==3 to -0.8 at run==10.
-            pen = -min(0.1 * (run - 2), 0.8)
+            # Ramps from -0.08 at run==2 to -1.0 at run==10.
+            pen = -min(0.08 * (run - 1), 1.0)
             for ch in "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz":
                 idx = VOCAB_INDEX.get(ch)
                 if idx is not None:
