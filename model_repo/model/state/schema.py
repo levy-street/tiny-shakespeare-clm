@@ -2824,3 +2824,38 @@ class ModelState(BaseModel):
     # sample-noise regime where the inline +1.2/-0.5 sometimes loses
     # to the ~2.5-nat unigram advantage of lowercase.
     cap_required_mode: int = 0
+
+    # --- Committed-next-word identity commitment ---
+    #
+    # When the bigram/trigram context strongly predicts a specific next
+    # word (e.g. "my good ___" → "lord"; "I pray ___" → "thee"; "to be
+    # or not to ___" → "be"), commit to that word's IDENTITY and let
+    # downstream predict layers bias each subsequent letter toward the
+    # target's letters rather than re-deciding letter-by-letter via
+    # independent n-gram signals.
+    #
+    # Without this, the chain of per-letter biases produces gibberish
+    # even when the word-level n-gram context is near-deterministic: the
+    # first letter lands correctly (from next_word / phrase bigram), but
+    # letter 2, 3, 4, ... are picked independently by letter-ngram
+    # momentum and drift into nonsense shapes like "etustartec".
+    #
+    # State:
+    #   committed_word    — lowercase target ("" if no commit)
+    #   committed_word_pos — how many of its letters have been emitted
+    #
+    # Lifecycle:
+    #   - At word-start (post-space), `pipeline/word_commit.py` consults
+    #     recent_completed_words + sentence/line context. If a hand-
+    #     curated trigger matches unambiguously, sets committed_word to
+    #     the target and committed_word_pos to 0.
+    #   - At each letter step, if last emitted char matches
+    #     committed_word[committed_word_pos], pos += 1.
+    #   - On any letter mismatch, or on word completion (space/punct),
+    #     or on speaker-turn/sentence boundaries, commit clears.
+    #
+    # Predict layer reads (committed_word, committed_word_pos,
+    # letter_run_len) and applies a strong +boost on the target letter.
+    # No corpus stats — targets are hand-written Shakespeare formulas.
+    committed_word: str = ""
+    committed_word_pos: int = 0

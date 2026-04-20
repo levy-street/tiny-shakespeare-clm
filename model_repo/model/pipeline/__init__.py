@@ -35,6 +35,7 @@ from .transitivity import update_transitivity
 from .verb_class import update_verb_class
 from .verb_complement import update_verb_complement
 from .word_cap_apos import update_word_cap_apos
+from .word_commit import update_word_commit
 from .word_form import update_word_form
 from .word_integrity import update_word_integrity
 from .word_matches import update_word_matches
@@ -110,6 +111,7 @@ PIPELINE: list[Stage] = [
     update_antithesis,      # Tier 2/3: antithesis / rhetorical-contrast state
     update_repetition,      # Tier 2: short-range word-repetition memory
     update_formula,         # Tier 2: formulaic-phrase trie position
+    update_word_commit,     # Tier 2: commit to next-word identity when formula uniquely predicts it
     update_question_answer, # Tier 3: cross-turn WH-class answer expectation
     update_sentence,        # Tier 2/3: sentence-type FSM
     update_sentence_backbone,  # Tier 2: subject + finite-verb presence per sentence

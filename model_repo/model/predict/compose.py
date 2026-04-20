@@ -121,6 +121,7 @@ from .dash_aside import dash_aside_open_bias, dash_aside_close_bias
 from .starttrigram import starttrigram_bias
 from .startword import START_BIAS
 from .formula import formula_midword_bias, formula_start_bias
+from .word_commit import word_commit_bias
 from .iambic import iambic_word_start_bias
 from .meter import pentameter_wordend_bias, meter_word_start_bias
 from .word_length_cadence import word_length_cadence_bias
@@ -1081,6 +1082,24 @@ def predict(state: ModelState) -> list[float]:
         if fmw is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += fmw[i]
+
+
+    # Layer 3c1c: word-identity commitment. When pipeline/word_commit.py
+    # has committed us to a unique target next-word (from formula trie),
+    # strongly bias each subsequent letter toward the target's letter at
+    # the current position. Active at BOTH word-start (pos 0) and
+    # mid-word (pos >= 1). Complements formula_midword_bias by holding
+    # the identity explicitly in state across positions rather than
+    # re-deriving letter-by-letter.
+    if state.speaker_label_state == 0:
+        wcb = word_commit_bias(
+            state.committed_word,
+            state.committed_word_pos,
+            state.letter_run_len,
+        )
+        if wcb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += wcb[i]
 
 
     # Layer 3c2-tense: sentence-tense suffix-completion tilt. Reads
