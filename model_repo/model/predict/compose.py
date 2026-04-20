@@ -3542,6 +3542,30 @@ def predict(state: ModelState) -> list[float]:
                 if idx is not None:
                     forbid_mask[idx] = True
     elif sp == 2:
+        # All-caps label lock: once a speaker label has committed to
+        # ALL-CAPS mode (no lowercase seen yet AND current upper-run
+        # length >= 2 without any space yet), lowercase letters are
+        # orthographically wrong. Shakespeare speaker labels come in
+        # two flavors:
+        #   (a) ALL CAPS: "HAMLET", "KING HENRY", "FIRST CITIZEN"
+        #   (b) Title-Case-per-word: "First Lord", "Third Murderer"
+        # In flavor (b) the lowercase appears at the 2nd char of each
+        # word — i.e., after upper_run_len == 1 transitions to the
+        # lowercase. Flavor (a) never interleaves lowercase within
+        # a single uppercase-started word once the run has reached 2+.
+        # Apply a strong (but soft, not hard-masked) penalty to
+        # lowercase in that regime, catching "REIGNIjmhnytr"-style
+        # derailments without breaking legitimate Title-Case labels.
+        if (
+            state.upper_run_len >= 2
+            and not state.speaker_label_saw_lower
+            and state.letter_run_len == state.upper_run_len
+        ):
+            for ch in "abcdefghijklmnopqrstuvwxyz":
+                idx = VOCAB_INDEX.get(ch)
+                if idx is not None:
+                    logits[idx] -= 3.5
+
         # Speaker-label off-trie closeout (SOFT bias only, no hard
         # mask). Legitimate compound names the trie doesn't know
         # ("DUKE VINCENTIO", "THIRD SERVINGMAN", etc.) can have 10+
