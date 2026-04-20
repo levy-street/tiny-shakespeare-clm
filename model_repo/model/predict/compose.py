@@ -3352,7 +3352,7 @@ def predict(state: ModelState) -> list[float]:
         if state.sentence_start_pending or state.consecutive_newlines >= 1:
             T = 1.20
         else:
-            T = 1.40
+            T = 1.60
     elif state.on_word_trie:
         # Mid-word on trie: word_trie bias dominates and is sharp.
         # Modulate by trie_match_count — when only 1 known word
