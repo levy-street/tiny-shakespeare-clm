@@ -3300,6 +3300,39 @@ def predict(state: ModelState) -> list[float]:
             for i in range(VOCAB_SIZE):
                 logits[i] += cd[i]
 
+        # Single-letter orphan UPPER-not-in-{A,I,O} suppression.
+        # Real Shakespeare single-letter words are only "I", "O", "A"
+        # (+ lowercase "a"). A standalone "T", "B", "R", "D", etc. is
+        # never a word — it must grow to a longer form. Fires at
+        # letter_run_len == 1 with uppercase last_char, regardless of
+        # on_word_trie (single letters are always on-trie as prefixes
+        # of common words). Gated to speaker_label_state == 0 so
+        # mid-speaker-label uppercase characters aren't penalized.
+        if (
+            state.letter_run_len == 1
+            and state.speaker_label_state == 0
+            and state.last_char
+            and state.last_char.isupper()
+            and state.last_char not in ("A", "I", "O")
+        ):
+            # Strong penalty on all word-terminators so the letter
+            # extends. Lowercase continuation letters are favored
+            # because The/Be/Run etc. continue lowercase.
+            logits[VOCAB_INDEX[" "]] -= 6.0
+            for ch in ",.;:\n!?":
+                if ch in VOCAB_INDEX:
+                    logits[VOCAB_INDEX[ch]] -= 6.0
+            if "'" in VOCAB_INDEX:
+                logits[VOCAB_INDEX["'"]] -= 4.0
+            if "-" in VOCAB_INDEX:
+                logits[VOCAB_INDEX["-"]] -= 4.0
+            # Boost lowercase continuation letters; specifically
+            # vowels and common second-letter consonants ("h" after
+            # T/C/S/W/P, "r" after T/F/D/B, etc.).
+            for ch in "aeiouhrylmn":
+                if ch in VOCAB_INDEX:
+                    logits[VOCAB_INDEX[ch]] += 0.8
+
         # At word-end-on-trie, space is the most likely next char.
         # Boost it to reflect natural word-break frequency. But only
         # when the buffer is either a complete word OR long enough to
