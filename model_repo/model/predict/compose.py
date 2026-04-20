@@ -110,6 +110,7 @@ from .frame_adj_trie import frame_adj_midword_bias
 from .conditional import apodosis_opener_bias
 from .speaker_trie import speaker_trie_bias
 from .speaker_vowel_gate import speaker_vowel_gate_bias
+from .speaker_onset_gate import speaker_onset_gate_bias
 from .start4gram import start4gram_bias
 from .tonal import tonal_start_bias
 from .turn_opener import TURN_OPENER_START_BIAS
@@ -1452,6 +1453,20 @@ def predict(state: ModelState) -> list[float]:
     if svg is not None:
         for i in range(VOCAB_SIZE):
             logits[i] += svg[i]
+
+    # Layer 3d3: speaker-label onset phonotactic gate. The first two
+    # letters of every real Shakespeare speaker name form a legal
+    # English onset (vowel, CV, CY, VV diphthong, or legal CC cluster
+    # like BR/CH/ST/TH). If the buffer's first two chars violate this
+    # (e.g., "HT", "PM", "NC"), strongly penalize ":" closure and
+    # further letters, boost "\n" to escape.
+    sog = speaker_onset_gate_bias(
+        state.speaker_label_state,
+        state.speaker_buffer,
+    )
+    if sog is not None:
+        for i in range(VOCAB_SIZE):
+            logits[i] += sog[i]
 
     # Play-family bias — when a prior speaker has locked the play
     # family (HAMLET_DANE / ROMAN / ENGLISH_HISTORY / OTHER_TRAGEDY /
