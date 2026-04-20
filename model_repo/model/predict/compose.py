@@ -223,7 +223,7 @@ def predict(state: ModelState) -> list[float]:
         tg = trigram_bias(state.prev_char, state.last_char)
         if tg is not None:
             for i in range(VOCAB_SIZE):
-                logits[i] += tg[i] * 2.7
+                logits[i] += tg[i] * 2.5
 
     # Layer 3b2: letter-trigram bias (last 3 letters → next). Apply
     # only off-trie, where the word_trie doesn't already give signal.
@@ -3103,6 +3103,8 @@ def predict(state: ModelState) -> list[float]:
         # Higher T than on-trie because many strong negative biases
         # (red_flags, gibberish_hardcap, drift recovery) stack and
         # over-sharpen when the actual next char is a vowel-insert.
+        # Escalate softening as we drift further off-trie; at 1 char
+        # off-trie, n-gram backoff is still informative.
         T = 1.70
     if T != 1.0:
         logits = [x / T for x in logits]
