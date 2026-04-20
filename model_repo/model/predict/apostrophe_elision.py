@@ -69,6 +69,9 @@ _LOWER = "abcdefghijklmnopqrstuvwxyz"
 _UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 
+_TERMINATORS = (" ", ",", ".", ";", ":", "!", "?", "\n", "'")
+
+
 def apostrophe_elision_bias(
     letters_since_apostrophe: int,
     word_buffer: str,
@@ -76,12 +79,72 @@ def apostrophe_elision_bias(
 ) -> list[float] | None:
     if speaker_label_state != 0:
         return None
-    if letters_since_apostrophe < 1 or letters_since_apostrophe > 2:
+    if letters_since_apostrophe < 1 or letters_since_apostrophe > 4:
         return None
     if not word_buffer:
         return None
 
     vec = [0.0] * VOCAB_SIZE
+
+    # letters_since_apostrophe == 3 or 4: past the canonical
+    # contraction length. Only 'twas/'twere/'twill family
+    # legitimately continues here ('tw + a/e/i + …). Everything
+    # else should terminate.
+    if letters_since_apostrophe >= 3:
+        # Check if we're in the 'tw- extension path by looking at
+        # the two letters before the current position. word_buffer
+        # contains apostrophe + suffix chars. The suffix chars since
+        # the apostrophe are the last letters_since_apostrophe chars.
+        # Last two non-apos letters before current decision point:
+        if len(word_buffer) >= letters_since_apostrophe + 1:
+            # buffer form: ...'<letters>  — the letters after apos
+            # start at position -letters_since_apostrophe.
+            tail = word_buffer[-letters_since_apostrophe:]
+        else:
+            tail = word_buffer
+        # Is this a 'tw…, 't…, or 'h… extension? Allow the pattern.
+        is_tw_ext = tail.startswith("tw")  # 'twas, 'twere, 'twill, 'twixt
+        is_th_ext = tail.startswith("th")  # 'thou, 'there — rare but attested
+        if is_tw_ext or is_th_ext:
+            # Tolerate extension — apply weak (or zero) bias.
+            # Prefer attested continuation letters for 'tw-:
+            if is_tw_ext and letters_since_apostrophe == 3:
+                # 'twa(s), 'twe(re), 'twi(ll/xt), 'two (none)
+                for ch, w in {"a": 0.6, "e": 0.5, "i": 0.4, "o": 0.2}.items():
+                    idx = VOCAB_INDEX.get(ch)
+                    if idx is not None:
+                        vec[idx] += w
+                return vec
+            if is_th_ext and letters_since_apostrophe == 3:
+                for ch, w in {"o": 0.5, "e": 0.4, "a": 0.3, "i": 0.3}.items():
+                    idx = VOCAB_INDEX.get(ch)
+                    if idx is not None:
+                        vec[idx] += w
+                return vec
+            # letters_since_apostrophe == 4: near-end of those words.
+            # Gentle terminator push.
+            for t in _TERMINATORS:
+                idx = VOCAB_INDEX.get(t)
+                if idx is not None:
+                    vec[idx] += 0.5
+            return vec
+        # Not a 'tw-/'th- extension. We've gone past the canonical
+        # 1-2 char elision. Strong terminator push, soft letter
+        # penalty. This catches "Deep'sakirgl"-style drift where
+        # position 3+ after apostrophe should almost always be a
+        # word-end.
+        scale = 1.0 if letters_since_apostrophe == 3 else 1.6
+        for t in _TERMINATORS:
+            idx = VOCAB_INDEX.get(t)
+            if idx is not None:
+                vec[idx] += 1.4 * scale
+        # Soft broad letter penalty (keep legitimate rare archaic
+        # forms possible but improbable).
+        for ch in _LOWER + _UPPER:
+            idx = VOCAB_INDEX.get(ch)
+            if idx is not None:
+                vec[idx] -= 0.9 * scale
+        return vec
 
     if letters_since_apostrophe == 1:
         # Position 1: strong bias toward elision letters; penalize
