@@ -159,6 +159,7 @@ from .fury import fury_end_bias, fury_start_bias
 from .gravitas import gravitas_start_bias, gravitas_sentence_start_bias
 from .drift_recovery import drift_recovery_bias, drift_recovery_midword_bias
 from .gibberish_hardcap import gibberish_hardcap_bias
+from .syllable_saturation import syllable_saturation_bias
 from .verb_complement import verb_complement_start_bias
 from .line_break_bias import line_break_newline_bias
 from .trigram import trigram_bias
@@ -835,6 +836,24 @@ def predict(state: ModelState) -> list[float]:
         if ghc is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += ghc[i]
+
+        # Layer 3c1a-syl: syllable-saturation termination. When a
+        # mid-word buffer has accumulated 3+ syllables AND drifted
+        # off the word-trie, push toward word-end proportional to
+        # syllable count and letter-run-length. Targets the long
+        # polysyllabic gibberish ("rotyouengoes", "omdcideneel")
+        # that letter-ngram backoff loves to generate once past the
+        # first few on-trie letters.
+        ss = syllable_saturation_bias(
+            state.syllables_in_word,
+            state.letter_run_len,
+            state.letters_off_trie,
+            state.on_word_trie,
+            state.speaker_label_state,
+        )
+        if ss is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += ss[i]
 
 
     # Layer 3c1-verb: verb-word-trie mid-word bias. When the clause
@@ -3393,6 +3412,17 @@ def predict(state: ModelState) -> list[float]:
             # is orthographically impossible ("speak" never becomes
             # "sPeak"). Apply the same lock as letter_run_len >= 2.
             for ch in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
+                idx = VOCAB_INDEX.get(ch)
+                if idx is not None:
+                    forbid_mask[idx] = True
+        # Non-letter orthographic junk: `&`, `$`, `3` never appear
+        # mid-letter-run in English/Shakespeare orthography. `&`
+        # appears only preceded by a space (" &c." / " &C:"),
+        # `$` and `3` never as word-interior characters. Lock them
+        # when we're inside any letter run (even position 1) so the
+        # sampler cannot drop them mid-word.
+        if state.letter_run_len >= 1:
+            for ch in "&$3":
                 idx = VOCAB_INDEX.get(ch)
                 if idx is not None:
                     forbid_mask[idx] = True
