@@ -96,6 +96,7 @@ from .register_commit_bias import register_commit_start_bias
 from .speaker_register_bias import speaker_register_start_bias
 from .sentence_length_prior import sentence_length_prior_bias
 from .syntactic_frame import syntactic_frame_start_bias
+from .frame_adj_trie import frame_adj_midword_bias
 from .speaker_trie import speaker_trie_bias
 from .start4gram import start4gram_bias
 from .tonal import tonal_start_bias
@@ -836,6 +837,29 @@ def predict(state: ModelState) -> list[float]:
         if swt is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += swt[i]
+
+    # Layer 3c1-adj: adjective mid-word bias. Fires when syntactic_frame
+    # projects FRAME_ADJ_OR_NOUN (after DET / POSS / PREP+DET) and the
+    # word_buffer is a prefix of a hand-curated adjective. Covers the
+    # "the fair/gentle/noble ___" completion gap that the verb/obj/subj
+    # tries miss.
+    if (
+        state.word_buffer
+        and state.speaker_label_state == 0
+        and state.expected_next_role == 2  # FRAME_ADJ_OR_NOUN
+        and state.frame_confidence >= 0.4
+        and state.letter_run_len >= 1
+    ):
+        fam = frame_adj_midword_bias(
+            state.expected_next_role,
+            state.frame_confidence,
+            state.word_buffer,
+            state.letter_run_len,
+            state.speaker_label_state,
+        )
+        if fam is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += fam[i]
 
     # Layer 3c1-subord: subordinate-clause mid-word bias. Inside a
     # subord at HAS_SUBJ, lean toward -eth / -est completions.
