@@ -440,7 +440,7 @@ def predict(state: ModelState) -> list[float]:
         stt = starttrigram_bias(state.word_buffer)
         if stt is not None:
             for i in range(VOCAB_SIZE):
-                logits[i] += stt[i] * 1.3
+                logits[i] += stt[i] * 1.5
 
     # Layer 3b5: word-start 4-gram bias — at letter_run_len == 3, the
     # fourth letter is conditioned on the first three letters of the
