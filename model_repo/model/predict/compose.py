@@ -677,7 +677,7 @@ def predict(state: ModelState) -> list[float]:
         crb = content_repeat_bias(state.word_buffer, state.content_words)
         if crb is not None:
             for i in range(VOCAB_SIZE):
-                logits[i] += crb[i]
+                logits[i] += crb[i] * 3.0
 
     # Layer 3c1b: cross-turn content echo (mid-word).  When the current
     # buffer matches a prefix of one of the prior speaker's cached
