@@ -153,7 +153,7 @@ _TABLES: dict[int, dict[str, float]] = {
 
 # Overall scale — kept modest since this STACKS with next_word /
 # startword / startbigram. Stronger would over-narrow the distribution.
-_MAX_SCALE = 0.80
+_MAX_SCALE = 1.20
 
 
 def syntactic_frame_start_bias(
