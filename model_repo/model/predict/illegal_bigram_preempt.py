@@ -57,10 +57,18 @@ _ILLEGAL: frozenset[str] = frozenset({
     "dq", "dp", "dk", "dg",
     "pb", "pd", "pk", "pg", "pm", "pn", "pj",
     "bk", "bd", "bf", "bg", "bj", "bp", "bt", "bv",
-    "gd", "gf", "gj", "gk", "gp", "gt",
+    "gd", "gf", "gj", "gk", "gp", "gt", "gv",
     "kb", "kd", "kf", "kg", "kj", "kp", "kt", "kv",
-    "fb", "fd", "fg", "fj", "fk", "fm", "fn", "fp",
+    "fb", "fd", "fg", "fj", "fk", "fm", "fn", "fp", "fv",
     "cj",
+    # Additional rare mid-word pairs (no real Shakespeare words have
+    # them adjacent): l/m + r, h/m/k + v. "lr" (no English word mid-word),
+    # "mr" (only "Mr." abbreviation), "hv/mv/kv" (none in English).
+    "lr", "mr", "hv", "mv",
+    # "sr" appears in "Israel" — keep off.
+    # "nr" appears in "unready/unrest" via un- prefix — keep off.
+    # "tg" appears in "outgo/outgoing/outgrow" via compound — keep off.
+    # "gv", "fv", "kv" added above in v-row / g-row blocks.
 })
 
 
