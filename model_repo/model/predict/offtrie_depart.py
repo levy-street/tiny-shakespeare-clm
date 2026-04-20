@@ -94,7 +94,23 @@ def _build_vec(depart_pos: int, off_len: int) -> list[float] | None:
         end_scale = 0.08
         gib_scale = 0.25
     elif depart_pos <= 4:
-        return None
+        # Mid-departure: we had a 3-4 letter prefix that matched a real
+        # word-prefix but branched off. Most often this is gibberish
+        # extending an aborted prefix (e.g., "maguberso" from "mag..."
+        # and "hursohfi" from "hur..."). Less aggressive than early/late
+        # because real inflections (reading→readings, feared→fearedst)
+        # also pass through here — but once drift is 3+, the departure
+        # is clearly pathological.
+        if off_len < 2:
+            return None
+        if off_len == 2:
+            term_scale = 0.02
+            end_scale = 0.05
+            gib_scale = 0.15
+        else:
+            term_scale = 0.05
+            end_scale = 0.15
+            gib_scale = 0.35
     else:  # depart_pos >= 5
         if off_len < 2:
             return None
