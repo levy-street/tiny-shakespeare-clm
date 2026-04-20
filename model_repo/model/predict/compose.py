@@ -99,6 +99,7 @@ from .speaker_recency import speaker_recency_bias
 from .register_commit_bias import register_commit_start_bias
 from .speaker_register_bias import speaker_register_start_bias
 from .sentence_length_prior import sentence_length_prior_bias
+from .sentence_backbone import sentence_backbone_bias
 from .syntactic_frame import syntactic_frame_start_bias
 from .frame_adj_trie import frame_adj_midword_bias
 from .conditional import apodosis_opener_bias
@@ -3057,6 +3058,22 @@ def predict(state: ModelState) -> list[float]:
                 _shift_q = min(0.65 * _ques_excess * _tconf, 0.65)
                 ratio_q += ratio_period * _shift_q
                 ratio_period *= (1.0 - _shift_q)
+
+        # Sentence backbone bias — suppress terminal punctuation when
+        # the sentence lacks a finite verb (or subject), boost it when
+        # backbone is complete and sentence is long enough to close.
+        sbb = sentence_backbone_bias(
+            state.sentence_has_subject,
+            state.sentence_has_verb,
+            state.words_in_sentence,
+            state.sentence_type,
+            state.speaker_label_state,
+            state.letter_run_len,
+            state.on_word_trie,
+        )
+        if sbb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += sbb[i]
 
         # Overdue sentence end: at word-end on-trie, boost sentence-end
         # punctuation so the model actually closes sentences. The

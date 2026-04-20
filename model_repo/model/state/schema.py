@@ -2614,3 +2614,32 @@ class ModelState(BaseModel):
     # semantic field really matters ("throne OF ___", "my ROYAL ___").
     last_noun_class: int = 0
     noun_class_age: int = 0
+
+    # --- Tier 2: sentence backbone tracking ---
+    # A well-formed English sentence needs a SUBJECT and a FINITE VERB.
+    # Real Shakespeare nearly always has both before a terminal
+    # punctuation. Tracking this gives the predict layer a principled
+    # reason to suppress ".", "?", "!" when the sentence so far has no
+    # verb (or no subject), and to mildly elevate them once the
+    # backbone is present and the sentence has sufficient material.
+    #
+    # Detection heuristics:
+    #  - Subject: POS_PRONOUN, POS_POSSESSIVE (then noun), POS_ARTICLE
+    #    (then any word), POS_PROPER_NOUN, or a content noun at
+    #    sentence-initial position.
+    #  - Finite verb: POS_AUX_VERB, POS_MODAL, POS_VERB, or POS_VERB_ED
+    #    at a position where it's acting as the main verb (i.e., not
+    #    just following another verb as a participle). Heuristic: any
+    #    of these counts as a finite verb.
+    #
+    # Fields:
+    #  - sentence_has_subject: True once we've seen a subject candidate
+    #    since the last sentence-end punctuation.
+    #  - sentence_has_verb: True once we've seen a finite-verb
+    #    candidate since the last sentence-end punctuation.
+    # Both reset at sentence-end and at speaker-turn boundary.
+    #
+    # Consumed by predict/sentence_backbone.py to bias terminal
+    # punctuation at word-end decision points.
+    sentence_has_subject: bool = False
+    sentence_has_verb: bool = False
