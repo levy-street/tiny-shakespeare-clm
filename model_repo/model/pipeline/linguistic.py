@@ -189,11 +189,22 @@ def update_linguistic(state: ModelState, token_id: int) -> ModelState:
         recent_completed_words = (
             (state.word_buffer,) + state.recent_completed_words
         )[:5]
+        # Rolling 6-deep length window, most-recent LAST. Count only
+        # alpha letters (strip apostrophes the buffer may carry for
+        # 'tis / ne'er / 'd / 's forms).
+        _alpha_len = sum(1 for c in state.word_buffer if c.isalpha())
+        if _alpha_len > 0:
+            recent_word_lengths = (
+                state.recent_word_lengths + (_alpha_len,)
+            )[-6:]
+        else:
+            recent_word_lengths = state.recent_word_lengths
     else:
         last_completed_word = state.last_completed_word
         prev_completed_word = state.prev_completed_word
         prev_prev_completed_word = state.prev_prev_completed_word
         recent_completed_words = state.recent_completed_words
+        recent_word_lengths = state.recent_word_lengths
 
     # speaker_buffer: active inside a speaker label (state 1/2), reset
     # when the label ends or we leave speaker-label territory. The buffer
@@ -256,6 +267,7 @@ def update_linguistic(state: ModelState, token_id: int) -> ModelState:
             "prev_completed_word": prev_completed_word,
             "prev_prev_completed_word": prev_prev_completed_word,
             "recent_completed_words": recent_completed_words,
+            "recent_word_lengths": recent_word_lengths,
             "prev_line_length": prev_line_length,
             "prev_prev_line_length": prev_prev_line_length,
             "prev_line_final_class": prev_line_final_class,

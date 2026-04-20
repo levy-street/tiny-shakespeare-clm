@@ -138,6 +138,24 @@ class ModelState(BaseModel):
     # targets of long formulaic sequences). Reset fields reset this
     # to () where appropriate (e.g., speaker-turn boundary).
     recent_completed_words: tuple[str, ...] = ()
+    # Rolling tuple of the last up-to-6 completed word LENGTHS (in
+    # letters, not counting apostrophe suffixes), most-recent LAST.
+    # This is a cadence/rhythm memory orthogonal to the word identity
+    # tuple: it answers "have we been in a run of short staccato
+    # monosyllables, or a stretch of polysyllabic declamation?"
+    #
+    # Shakespeare famously alternates between monosyllabic runs (for
+    # emphasis: "To be or not to be", "Out, out, brief candle") and
+    # polysyllabic cadences (for elaboration: "The multitudinous
+    # seas incarnadine"). After several very short words a longer
+    # content word often follows; after a long polysyllabic word the
+    # next word is typically short. This field lets a predict layer
+    # observe that prosodic rhythm and bias first-letter and word-end
+    # pressure to match the expected next-word length.
+    #
+    # Cap 6. Consumed by predict/word_length_cadence.py at word-start.
+    # No reset on turn boundary — rhythm persists across speakers.
+    recent_word_lengths: tuple[int, ...] = ()
     # Up to 4 most-recently-completed *content* words (NOUN, VERB,
     # VERB_ING, VERB_ED, ADJECTIVE, ADVERB, PROPER_NOUN, or UNKNOWN),
     # most-recent first. Function words (articles, pronouns, aux,

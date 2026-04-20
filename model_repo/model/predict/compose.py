@@ -117,6 +117,7 @@ from .starttrigram import starttrigram_bias
 from .startword import START_BIAS
 from .formula import formula_midword_bias, formula_start_bias
 from .iambic import iambic_word_start_bias
+from .word_length_cadence import word_length_cadence_bias
 from .imagery import imagery_start_bias
 from .scene_topic import scene_topic_midword_bias, scene_topic_start_bias
 from .invocation import (
@@ -2026,6 +2027,19 @@ def predict(state: ModelState) -> list[float]:
         if ib is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += ib[i]
+
+        # Layer 4b3-cadence: word-length rhythm bias. Reads the rolling
+        # tuple of recent word lengths to detect mono-run / poly-run
+        # cadence pathologies and tilt first-letter mass toward the
+        # balancing word class. Orthogonal to iambic (which uses
+        # syllable position, not word-length history).
+        wlc = word_length_cadence_bias(
+            state.recent_word_lengths,
+            state.speaker_label_state,
+        )
+        if wlc is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += wlc[i]
 
         # Layer 4b3c: formulaic-phrase word-start bias. When we're
         # inside a known multi-word formula, boost first letters of
