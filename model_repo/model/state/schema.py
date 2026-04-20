@@ -2404,3 +2404,35 @@ class ModelState(BaseModel):
     # for scale decay (apodosis bias should be strongest at its very
     # first word and decay thereafter).
     conditional_age: int = 0
+
+    # --- Intra-sentence clause-parallelism ------------------------
+    # Shakespeare often builds parallel clause structures within a
+    # single sentence:
+    #   "I came, I saw, I conquered."
+    #   "She is fair, she is wise, she is true."
+    #   "Speak soft, speak low, speak truly."
+    # When two consecutive clauses (separated by comma or semicolon)
+    # open with the same first word (or first letter), the pattern
+    # tends to continue for at least one more clause. No existing
+    # state tracks clause-level openers within a sentence — anaphora
+    # tracks LINE-starters (newline-boundary anchored), and list_
+    # structure tracks list items but is a coarser FSM.
+    #
+    # At the start of each clause WITHIN a sentence (post-comma or
+    # semicolon), we record the first-letter of that clause-opener
+    # word. At the next clause-start, the predict layer can consult
+    # this to nudge the new opener's first letter toward echoing.
+    #
+    # Fields:
+    #  - clause_opener_letter: first letter of the CURRENT clause's
+    #    opener word (empty until the first word completes).
+    #  - prev_clause_opener_letter: first letter of the PREVIOUS
+    #    clause's opener word within the current sentence.
+    #  - clauses_in_sentence_index: which clause we're in (0 for
+    #    sentence-opening, 1 after first comma, etc.). Helps scale
+    #    the echo pressure — strongest at clause index 2+.
+    #
+    # All three reset on sentence-end (. ? !) and on turn boundary.
+    clause_opener_letter: str = ""
+    prev_clause_opener_letter: str = ""
+    clauses_in_sentence_index: int = 0

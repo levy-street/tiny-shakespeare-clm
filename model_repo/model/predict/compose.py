@@ -3173,21 +3173,29 @@ def predict(state: ModelState) -> list[float]:
         elif tmc == 2:
             T = 2.00
         elif tmc <= 4:
-            T = 1.80
+            T = 1.82
         elif tmc <= 8:
-            T = 1.64
+            T = 1.72
         elif tmc <= 16:
-            T = 1.56
+            T = 1.62
         else:
-            T = 1.48
+            T = 1.54
     else:
         # Off-trie mid-word: letter n-grams + drift-recovery stack.
         # Higher T than on-trie because many strong negative biases
         # (red_flags, gibberish_hardcap, drift recovery) stack and
         # over-sharpen when the actual next char is a vowel-insert.
         # Escalate softening as we drift further off-trie; at 1 char
-        # off-trie, n-gram backoff is still informative.
-        T = 1.70
+        # off-trie, n-gram backoff is still informative, so sharpen
+        # a touch. At 4+ off, recovery biases dominate and can
+        # over-peak, so soften.
+        lot = state.letters_off_trie
+        if lot <= 1:
+            T = 1.60
+        elif lot <= 3:
+            T = 1.70
+        else:
+            T = 1.85
     if T != 1.0:
         logits = [x / T for x in logits]
     return _log_softmax_smoothed(logits, 0.2e-4)
