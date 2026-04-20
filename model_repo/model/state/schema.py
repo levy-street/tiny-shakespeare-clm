@@ -2666,3 +2666,55 @@ class ModelState(BaseModel):
     # Both reset on sentence-end and speaker-turn boundary.
     sentence_sem_field: int = 0
     sentence_sem_strength: int = 0
+
+    # --- Tier 2/3: sentence-scoped syllable budget ---
+    # Complements syllables_in_line (prosody.py) which tracks syllable
+    # count per newline-bounded line. A SENTENCE in Shakespeare often
+    # spans multiple lines of verse (run-on couplets) or is confined
+    # to one long prose breath. Tracking syllables per sentence
+    # captures a *rhythmic breath* that the per-line counter misses.
+    #
+    # Parallel sentences within a turn tend to equalize in syllable
+    # length (Shakespeare's balanced rhetoric: "To be or not to be /
+    # that is the question" — two ~10-syllable halves). When the
+    # current sentence's syllable count approaches the rolling
+    # average of the last two sentences, a terminator becomes
+    # rhythmically appropriate; when it overshoots significantly,
+    # the terminator bias strengthens.
+    #
+    # Fields:
+    #  - syllables_in_sentence: running count within the current
+    #    sentence (resets on PUNCT_END and speaker-turn boundary)
+    #  - prev_sentence_syllables: captured at PUNCT_END of most
+    #    recent closed sentence. Reset on speaker-turn boundary so
+    #    each turn's rhythm is local.
+    #  - prev_prev_sentence_syllables: one step further back. Having
+    #    TWO peers gives a stable local average (k=2 is Shakespeare's
+    #    typical parallel-pair reference).
+    syllables_in_sentence: int = 0
+    prev_sentence_syllables: int = 0
+    prev_prev_sentence_syllables: int = 0
+
+    # --- Tier 3 flow: mirth register ---
+    # Comic / merry / festive texture. Rolling scalar in [0.0, 1.0]
+    # that RISES on mirth-class lexicon (merry, laugh, jest, fool,
+    # feast, song, revel, holiday, wedding, play, cheer, happy) and
+    # FALLS on grief/fury/gravitas lexicon (grief, sorrow, death,
+    # wrath, doom, hell). Decays per completed word so that a single
+    # mirthful word doesn't commit the register for a whole turn;
+    # sustained mirth requires multiple hits. Mostly reset across
+    # speaker turns (soft reset — retain a small residue so a
+    # following-on speaker in the same comic scene can carry some
+    # momentum).
+    #
+    # Orthogonal to existing flow axes:
+    #   - lament_register:   grief (opposite polarity but weaker signal)
+    #   - tenderness:        love (different positive register)
+    #   - fury:              rage (opposite polarity)
+    #   - gravitas:          moral weight (sober, not merry)
+    #   - tonal_weight:      scene dark/light (external; mirth is
+    #                        interpersonal tone)
+    #
+    # Read by predict/mirth.py to gently tilt word-start letters
+    # toward mirth-lexicon starters when the register is elevated.
+    mirth_register: float = 0.0

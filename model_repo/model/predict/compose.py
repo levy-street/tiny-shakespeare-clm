@@ -100,6 +100,7 @@ from .register_commit_bias import register_commit_start_bias
 from .speaker_register_bias import speaker_register_start_bias
 from .sentence_length_prior import sentence_length_prior_bias
 from .sentence_backbone import sentence_backbone_bias
+from .sentence_syllable_parallel import sentence_syllable_parallel_bias
 from .syntactic_frame import syntactic_frame_start_bias
 from .frame_adj_trie import frame_adj_midword_bias
 from .conditional import apodosis_opener_bias
@@ -159,6 +160,7 @@ from .negation import negation_start_bias
 from .case_slot import case_slot_start_bias
 from .lament import lament_start_bias, lament_sentence_start_bias
 from .tenderness import tenderness_start_bias, tenderness_sentence_start_bias
+from .mirth import mirth_start_bias, mirth_sentence_start_bias
 from .fury import fury_end_bias, fury_start_bias
 from .gravitas import gravitas_start_bias, gravitas_sentence_start_bias
 from .drift_recovery import drift_recovery_bias, drift_recovery_midword_bias
@@ -1976,6 +1978,31 @@ def predict(state: ModelState) -> list[float]:
                 for i in range(VOCAB_SIZE):
                     logits[i] += tssb[i]
 
+        # Layer 4b3c-mirth: mirth-register word-start bias. Tier 3
+        # flow axis for comic/merry texture — fools, drinking songs,
+        # wedding feasts, rustic revels. Orthogonal to lament (grief),
+        # tenderness (love), gravitas (moral weight), fury (rage).
+        msb = mirth_start_bias(
+            state.mirth_register,
+            state.speaker_label_state,
+        )
+        if msb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += msb[i]
+
+        if (
+            state.words_in_sentence == 0
+            and not state.word_buffer
+            and state.letter_run_len == 0
+        ):
+            mssb = mirth_sentence_start_bias(
+                state.mirth_register,
+                state.speaker_label_state,
+            )
+            if mssb is not None:
+                for i in range(VOCAB_SIZE):
+                    logits[i] += mssb[i]
+
         # Layer 4b3c-gravitas: gravitas-register word-start bias. A
         # Tier 3 flow axis capturing moral / philosophical / cosmic
         # weight — distinct from lament (grief), tenderness (love),
@@ -3094,6 +3121,27 @@ def predict(state: ModelState) -> list[float]:
         if sbb is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += sbb[i]
+
+        # Sentence-syllable parallelism bias — nudge terminators at
+        # word-end when the current sentence has caught up to the
+        # rolling syllable count of the last 1-2 sentences. Captures
+        # Shakespeare's balanced-rhetoric cadence (parallel halves of
+        # similar syllable length) without requiring identical word
+        # counts. Reads prev_sentence_syllables memory seeded by
+        # pipeline/sentence_syllables.py.
+        sspb = sentence_syllable_parallel_bias(
+            state.syllables_in_sentence,
+            state.prev_sentence_syllables,
+            state.prev_prev_sentence_syllables,
+            state.letter_run_len,
+            state.on_word_trie,
+            state.word_buffer in COMPLETE_WORDS,
+            state.speaker_label_state,
+            state.words_in_sentence,
+        )
+        if sspb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += sspb[i]
 
         # Overdue sentence end: at word-end on-trie, boost sentence-end
         # punctuation so the model actually closes sentences. The

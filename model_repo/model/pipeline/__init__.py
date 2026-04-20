@@ -46,6 +46,7 @@ from .flow import update_flow
 from .formula import update_formula
 from .fury import update_fury
 from .lament import update_lament
+from .mirth import update_mirth
 from .linguistic import update_linguistic
 from .mid_departure import update_mid_departure
 from .list_structure import update_list_structure
@@ -75,6 +76,7 @@ from .sensory_charge import update_sensory_charge
 from .sentence import update_sentence
 from .sentence_backbone import update_sentence_backbone
 from .sentence_sem import update_sentence_sem
+from .sentence_syllables import update_sentence_syllables
 from .speaker_memory import update_speaker_memory
 from .speaker_register import update_speaker_register
 from .speaker_offtrie import update_speaker_offtrie
@@ -137,6 +139,7 @@ PIPELINE: list[Stage] = [
     update_tenderness,      # Tier 3: tenderness/love texture register
     update_gravitas,        # Tier 3: gravitas/moral-weight texture register
     update_fury,            # Tier 3: fury/rage/curse texture register
+    update_mirth,           # Tier 3: mirth/merry/comic texture register
     update_confessional,    # Tier 3: confessional vs public register
     update_sensory_charge,  # Tier 3: corporeal ↔ abstract charge (lyric vs argument register)
     update_dialogue_adjacency,  # Tier 2/3: snapshot prev-turn shape before turn counters reset
@@ -148,6 +151,7 @@ PIPELINE: list[Stage] = [
     update_rhyme,           # Tier 2/3: line-tail rhyme memory
     update_enjambment,      # Tier 3: enjambed vs. end-stopped line density
     update_polysyllable,    # Tier 3: polysyllable density rolling memory
+    update_sentence_syllables,  # Tier 2/3: per-sentence syllable counter (runs before prosody)
     update_prosody,         # Tier 3: syllable / cadence tracking
     update_meter,           # Tier 2/3: iambic meter (expected_stress, confidence)
     update_caesura,         # Tier 3: mid-line pause (caesura) tracking
