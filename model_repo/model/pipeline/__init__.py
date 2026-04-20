@@ -75,6 +75,7 @@ from .sentence import update_sentence
 from .speaker_memory import update_speaker_memory
 from .speaker_register import update_speaker_register
 from .speaker_offtrie import update_speaker_offtrie
+from .speaker_vowels import update_speaker_vowels
 from .topic_tracker import update_topic_tracker
 from .turn import update_turn_progress
 from .turn_content import update_turn_content
@@ -93,6 +94,7 @@ PIPELINE: list[Stage] = [
     update_drift,           # Tier 2/3: consecutive-off-trie word streak
     update_line_coherence,  # Tier 2: per-line on-trie vs off-trie word counts
     update_speaker_offtrie, # Tier 2: speaker-buffer off-trie run
+    update_speaker_vowels,  # Tier 2: speaker-buffer vowel count
     update_pos,             # Tier 2: POS tag of last completed word
     update_noun_class,      # Tier 2/3: coarse semantic noun-class (KINSHIP/BODY/ROYALTY/...)
     update_proper_noun,     # Tier 2: proper-noun expectation slot

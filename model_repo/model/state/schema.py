@@ -1507,6 +1507,24 @@ class ModelState(BaseModel):
     # pushing the model to escape the phantom label via newline.
     speaker_label_offtrie_run: int = 0
 
+    # --- Tier 2: speaker-buffer vowel count ---
+    # Count of vowels (A, E, I, O, U — uppercase, since speaker_buffer
+    # is uppercased) present in the current speaker_buffer. Resets to 0
+    # whenever speaker_label_state leaves {1, 2}.
+    #
+    # Motivation: phantom speaker labels like "TCK:" emerge when the
+    # FSM runs through 3 consonant characters with no vowel and then
+    # the ":" boost fires. Real Shakespeare speaker labels ALWAYS
+    # contain at least one vowel — there is no consonant-only name.
+    # This field lets a predict layer apply an extreme penalty to ":"
+    # and to further consonant letters when buffer length >= 2 and
+    # vowel count == 0, forcing the model to either emit a vowel
+    # (completing what might be a legitimate prefix) or escape via
+    # newline. Unlike speaker_label_offtrie_run (which measures drift
+    # from the known-name trie), this measures a phonotactic
+    # impossibility that applies even to unknown names.
+    speaker_buffer_vowels: int = 0
+
     # --- Tier 2: recent POS trigram (content-word history) ---
     # Rolling tuple of the last up-to-4 POS tags of completed words,
     # most-recent first. Unlike `last_word_pos` / `prev_word_pos` /

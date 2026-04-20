@@ -102,6 +102,7 @@ from .syntactic_frame import syntactic_frame_start_bias
 from .frame_adj_trie import frame_adj_midword_bias
 from .conditional import apodosis_opener_bias
 from .speaker_trie import speaker_trie_bias
+from .speaker_vowel_gate import speaker_vowel_gate_bias
 from .start4gram import start4gram_bias
 from .tonal import tonal_start_bias
 from .turn_opener import TURN_OPENER_START_BIAS
@@ -1387,6 +1388,20 @@ def predict(state: ModelState) -> list[float]:
         if sr is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += sr[i]
+
+    # Layer 3d2: speaker-vowel phonotactic gate. Every real Shakespeare
+    # speaker label contains a vowel. If we're inside a label name
+    # (FSM state 2) with a 2+ char buffer and zero vowels, apply a
+    # strong penalty to ":" and further consonants, boost vowels.
+    svg = speaker_vowel_gate_bias(
+        state.speaker_label_state,
+        state.speaker_buffer,
+        state.speaker_buffer_vowels,
+        state.speaker_label_saw_lower,
+    )
+    if svg is not None:
+        for i in range(VOCAB_SIZE):
+            logits[i] += svg[i]
 
     # Layer 4: start-of-word bias (after space or single newline).
     if last_cls == SPACE or (
