@@ -2788,3 +2788,39 @@ class ModelState(BaseModel):
     # heaven/stars/sun/moon; mortality: death/grave/fate; affective:
     # love/heart/beauty; natural: night/earth/sea).
     apostrophe_target: str = ""
+
+    # --- Capital-required-at-next-word-start gate ---
+    #
+    # A structural axis distinct from the many soft caps-pushes scattered
+    # through compose.py: a single categorical signal capturing "the
+    # next word MUST start with a capital letter because the orthographic
+    # convention of Shakespeare's text demands it here, not because of
+    # any rolling register/topic bias."
+    #
+    # Modes:
+    #   0  NONE   — no capital required; the default everywhere mid-line
+    #              and mid-word.
+    #   1  SENTENCE_START — post ". "/"? "/"! "/"\n\n" with no speaker
+    #              label active. Strong cap requirement; real Shakespeare
+    #              always capitalizes these.
+    #   2  VERSE_LINE  — single-\n terminated a verse-length line that
+    #              was NOT enjambed (ended on punct or function-word ish).
+    #              Verse convention: every new line begins capital.
+    #   3  POST_LABEL  — just past the ":\n" at the end of a speaker
+    #              label. Dialogue almost always opens with a capital.
+    #   4  TURN_START  — post "\n\n" with nothing else yet. Speaker label
+    #              is coming; hard caps required.
+    #
+    # Only valid at the instant letter_run_len == 0 AND we're about to
+    # emit a letter. Cleared to NONE once any character is consumed (the
+    # decision is made at that one letter position).
+    #
+    # Computed by pipeline/cap_required.py which reads last_char,
+    # consecutive_newlines, prev_line_length, prev_line_final_class,
+    # sentence_start_pending, speaker_label_state, prev_char_class.
+    #
+    # Read by predict/cap_required.py which applies a much sharper
+    # UPPER-vs-lower bias than the scattered inline logic can — at the
+    # sample-noise regime where the inline +1.2/-0.5 sometimes loses
+    # to the ~2.5-nat unigram advantage of lowercase.
+    cap_required_mode: int = 0

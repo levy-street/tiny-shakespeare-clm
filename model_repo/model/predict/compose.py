@@ -87,6 +87,7 @@ from .subject_word_trie import subject_word_trie_bias
 from .subord import subord_midword_bias, subord_word_end_bias
 from .tense import tense_midword_bias, tense_start_bias
 from .caesura import caesura_bias
+from .cap_required import cap_required_bias
 from .clause_rhythm import clause_rhythm_comma_bias
 from .urgency import urgency_word_end_bias, urgency_long_word_bias
 from .dependent_clause import dependent_clause_bias
@@ -2422,11 +2423,30 @@ def predict(state: ModelState) -> list[float]:
                 for i in range(VOCAB_SIZE):
                     logits[i] += pt[i]
 
+        # Layer 4b-CAP: structural capital-required gate. Reads the
+        # explicit state.cap_required_mode signal (set by the
+        # pipeline/cap_required.py FSM) which names the orthographic
+        # reason (sentence start, verse line, post-label, turn start)
+        # that the next letter MUST be capital. Unlike the scattered
+        # inline +1.2/-0.5 soft nudges below, this is the single hard-
+        # structural enforcement — strong enough to dominate the ~2.5-
+        # nat unigram advantage of lowercase that was letting samples
+        # like "mouth restore..." and "phebe or is..." slip through as
+        # lowercase verse-line-starts.
+        crb = cap_required_bias(
+            state.cap_required_mode,
+            state.letter_run_len,
+        )
+        if crb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += crb[i]
+
         # Layer 4c: at a sentence start (post ". ", post "? ", post "! "
-        # or post a double-newline blank line), strongly boost capital
-        # letters relative to lowercase. The training corpus always
-        # starts new sentences with a capital (outside of mid-sentence
-        # continuations).
+        # or post a double-newline blank line), various specialized
+        # opener-biases fire (invocation, cross-sentence opener,
+        # anaphora, turn-punct texture). The raw UPPER/lower push is
+        # now centralized in cap_required_bias above (layer 4b-CAP)
+        # which reads state.cap_required_mode.
         is_sentence_start = (
             state.prev_char_class == 6  # PUNCT_END — . ? !
             and last_cls == SPACE
@@ -2435,12 +2455,6 @@ def predict(state: ModelState) -> list[float]:
             and state.chars_since_sentence_end <= 2
         )
         if is_sentence_start:
-            for ch in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
-                if ch in VOCAB_INDEX:
-                    logits[VOCAB_INDEX[ch]] += 1.2
-            for ch in "abcdefghijklmnopqrstuvwxyz":
-                if ch in VOCAB_INDEX:
-                    logits[VOCAB_INDEX[ch]] -= 0.5
             # Invocation-mode sentence-start: when the speaker has been
             # in declamatory voice, tilt first letter toward canonical
             # invocation openers (O/Alas/Hark/Lo/What/Why/Behold).
@@ -2507,15 +2521,10 @@ def predict(state: ModelState) -> list[float]:
             and state.prev_line_final_class == 3
             and state.prev_line_length >= 50
         )
-        if on_verse_line_start and not is_enjambed:
-            for ch in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
-                if ch in VOCAB_INDEX:
-                    logits[VOCAB_INDEX[ch]] += 3.0
-            for ch in "abcdefghijklmnopqrstuvwxyz":
-                if ch in VOCAB_INDEX:
-                    logits[VOCAB_INDEX[ch]] -= 1.2
-        elif is_enjambed:
-            # Invert: favor lowercase continuation, penalize capitals.
+        if is_enjambed:
+            # Enjambed continuation: favor lowercase, penalize capitals.
+            # (Non-enjambed verse-line-start cap push is centralized in
+            # cap_required_bias above.)
             for ch in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
                 if ch in VOCAB_INDEX:
                     logits[VOCAB_INDEX[ch]] -= 1.2
@@ -2523,9 +2532,8 @@ def predict(state: ModelState) -> list[float]:
                 if ch in VOCAB_INDEX:
                     logits[VOCAB_INDEX[ch]] += 0.6
 
-        # Post-speaker-label newline: prev_line_length is small (the
-        # speaker label itself) and the line ended with ":". Dialogue
-        # starts here, almost always with a capital letter.
+        # (Post-speaker-label capital push is centralized in
+        # cap_required_bias above — mode POST_LABEL.)
         on_post_label_start = (
             last_cls == NEWLINE
             and state.consecutive_newlines == 1
@@ -2534,13 +2542,6 @@ def predict(state: ModelState) -> list[float]:
             and 1 < state.prev_line_length < 15
             and state.prev_char_class == 7  # PUNCT_MID (the ":" of the label)
         )
-        if on_post_label_start:
-            for ch in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
-                if ch in VOCAB_INDEX:
-                    logits[VOCAB_INDEX[ch]] += 3.0
-            for ch in "abcdefghijklmnopqrstuvwxyz":
-                if ch in VOCAB_INDEX:
-                    logits[VOCAB_INDEX[ch]] -= 1.2
 
         # Layer 4b5: line-starter anaphora bias. At verse-line-start
         # (NOT sentence-start — anaphora is about repeated line

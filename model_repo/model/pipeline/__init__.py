@@ -58,6 +58,7 @@ from .proper_noun import update_proper_noun
 from .proper_noun_memory import update_proper_noun_memory
 from .question_answer import update_question_answer
 from .caesura import update_caesura
+from .cap_required import update_cap_required
 from .meter import update_meter
 from .prosody import update_prosody
 from .referent import update_referent
@@ -160,6 +161,7 @@ PIPELINE: list[Stage] = [
     update_word_shape,      # Tier 2: per-word phonotactic red-flag counter
     update_phonotactic,     # Tier 2: illegal letter-bigram count within current word
     update_line_break,      # Tier 2: syntactic line-break propriety
+    update_cap_required,    # Tier 2: capital-required-next-word gate (runs near end so prev_line_length/prev_line_final_class are current)
     update_flow,            # Tier 3: flow / mood / cadence
 ]
 
