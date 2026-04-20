@@ -149,6 +149,7 @@ from .clause_depth import clause_depth_close_bias
 from .double_cons_start import double_consonant_penalty
 from .red_flags import red_flags_close_bias
 from .phonotactic import phonotactic_close_bias
+from .illegal_bigram_preempt import illegal_bigram_preempt_bias
 from .negation import negation_start_bias
 from .case_slot import case_slot_start_bias
 from .lament import lament_start_bias, lament_sentence_start_bias
@@ -249,6 +250,20 @@ def predict(state: ModelState) -> list[float]:
         if bi is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += bi[i] * 1.8
+
+    # Layer 3a-pre: preemptive illegal-bigram penalty. Penalize next
+    # letters that would form a phonotactically-illegal bigram with
+    # last_char (tv, dq, pb, vh, jk, …). Reactive close-out fires only
+    # AFTER the illegal pair is committed; this layer prevents commit.
+    ibp = illegal_bigram_preempt_bias(
+        state.last_char,
+        state.speaker_label_state,
+        state.word_buffer,
+        state.letter_run_len,
+    )
+    if ibp is not None:
+        for i in range(VOCAB_SIZE):
+            logits[i] += ibp[i]
 
     # Layer 3a: mid-word uppercase penalty. English / Shakespeare text
     # virtually never has uppercase letters in the interior of a word

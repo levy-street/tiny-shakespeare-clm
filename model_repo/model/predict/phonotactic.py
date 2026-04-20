@@ -47,17 +47,21 @@ def phonotactic_close_bias(
     effective = bad_bigram_count + effective_trigrams
     if effective < 1:
         return None
-    if letter_run_len < 4:
+    # Fire from letter_run_len == 3. A single illegal bigram at
+    # positions 2-3 of a fresh word (e.g., "tvs", "dqr") is already
+    # strong evidence of gibberish and we want to close BEFORE more
+    # nonsense letters accumulate.
+    if letter_run_len < 3:
         return None
 
     # Escalate with count. One violation → moderate; two → hard;
     # three+ → overwhelming.
     if effective == 1:
-        sc = 1.2
+        sc = 2.2
     elif effective == 2:
-        sc = 2.8
+        sc = 3.6
     else:
-        sc = 4.5
+        sc = 5.2
 
     vec = [0.0] * VOCAB_SIZE
     # Primary terminator — strongest.
