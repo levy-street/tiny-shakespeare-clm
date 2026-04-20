@@ -119,6 +119,7 @@ from .iambic import iambic_word_start_bias
 from .meter import pentameter_wordend_bias, meter_word_start_bias
 from .word_length_cadence import word_length_cadence_bias
 from .confessional import confessional_word_start_bias
+from .noun_class import noun_class_bias
 from .imagery import imagery_start_bias
 from .scene_topic import scene_topic_midword_bias, scene_topic_start_bias
 from .invocation import (
@@ -2074,6 +2075,25 @@ def predict(state: ModelState) -> list[float]:
         if cfb is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += cfb[i]
+
+        # Layer 4b3-nclass: semantic-class coherence bias. Reads the
+        # coarse noun-class memory (last_noun_class, noun_class_age)
+        # and the last word's POS; fires only when last POS is
+        # PREP/POSS/ART/CONJ (the word-start positions where the next
+        # content word's semantic field really matters — e.g. "throne
+        # OF ___" or "my ROYAL ___"). Tilts first-letter mass toward
+        # letters opening words semantically compatible with the
+        # primed class. Addresses cross-word semantic drift that
+        # bigram/trigram biases can't see.
+        ncb = noun_class_bias(
+            state.last_noun_class,
+            state.noun_class_age,
+            state.last_word_pos,
+            state.speaker_label_state,
+        )
+        if ncb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += ncb[i]
 
         # Layer 4b3c: formulaic-phrase word-start bias. When we're
         # inside a known multi-word formula, boost first letters of

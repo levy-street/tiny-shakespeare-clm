@@ -49,6 +49,7 @@ from .linguistic import update_linguistic
 from .mid_departure import update_mid_departure
 from .list_structure import update_list_structure
 from .negation import update_negation
+from .noun_class import update_noun_class
 from .pos import update_pos
 from .proper_noun import update_proper_noun
 from .proper_noun_memory import update_proper_noun_memory
@@ -93,6 +94,7 @@ PIPELINE: list[Stage] = [
     update_line_coherence,  # Tier 2: per-line on-trie vs off-trie word counts
     update_speaker_offtrie, # Tier 2: speaker-buffer off-trie run
     update_pos,             # Tier 2: POS tag of last completed word
+    update_noun_class,      # Tier 2/3: coarse semantic noun-class (KINSHIP/BODY/ROYALTY/...)
     update_proper_noun,     # Tier 2: proper-noun expectation slot
     update_proper_noun_memory,  # Tier 2: rolodex of recent capitalized words
     update_list_structure,  # Tier 2: list-parallelism progress

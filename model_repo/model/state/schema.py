@@ -2554,3 +2554,24 @@ class ModelState(BaseModel):
     meter_confidence: float = 0.0
     expected_stress: int = 0
     syllables_until_line_end: int = 10
+
+    # --- Tier 2/3: coarse semantic noun-class tagging ---
+    # Addresses cross-word semantic drift ("throne of treasure", "my
+    # mother is niece"): each transition is locally grammatical but
+    # successive content words belong to incompatible semantic
+    # frames. 12-class tagger lives in state/noun_classes.py.
+    #
+    # - last_noun_class: id of the most recently matched noun class;
+    #   persists across intervening non-noun words so the bias can
+    #   span a short N → (function-word)* → N phrase. 0 = no recent
+    #   noun match, or memory cleared.
+    # - noun_class_age: completed-words since last_noun_class was
+    #   (re-)set. 0 immediately after the noun; incremented on every
+    #   subsequent word completion; memory cleared at age >= 8.
+    #
+    # Consumed by predict/noun_class.py — gated to fire only at
+    # word-start immediately after a preposition / possessive /
+    # article / conjunction, where the upcoming content word's
+    # semantic field really matters ("throne OF ___", "my ROYAL ___").
+    last_noun_class: int = 0
+    noun_class_age: int = 0
