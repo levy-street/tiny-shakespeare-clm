@@ -698,7 +698,7 @@ def predict(state: ModelState) -> list[float]:
         )
         if pte_m is not None:
             for i in range(VOCAB_SIZE):
-                logits[i] += pte_m[i]
+                logits[i] += pte_m[i] * 6.0
 
     # Layer 3c1-wlp: absolute word-length prior. Independent of trie
     # status — once letter_run_len crosses 10, apply termination
