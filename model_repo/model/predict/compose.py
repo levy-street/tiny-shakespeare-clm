@@ -3445,6 +3445,32 @@ def predict(state: ModelState) -> list[float]:
             for i in range(VOCAB_SIZE):
                 logits[i] += cd[i]
 
+        # Single-letter orphan lower suppression (symmetric to UPPER).
+        # Real Shakespeare single-letter lowercase words are "a" and
+        # (very rarely) "i" (pronoun/numeral). A standalone "n", "t",
+        # "s", "m", "b"... is never a word — it must grow. The "m's"
+        # / "n shall" / "t be" fragments in samples come from exactly
+        # this pattern. Milder penalty than UPPER because lowercase
+        # single letters might legitimately appear as the first
+        # character of common words (th-, wh-, st-, br-, pr-, ...).
+        # Gated to speaker_label_state == 0.
+        if (
+            state.letter_run_len == 1
+            and state.speaker_label_state == 0
+            and state.last_char
+            and state.last_char.islower()
+            and state.last_char not in ("a", "i", "o")
+        ):
+            # Suppress word-terminators so the letter extends. The
+            # apostrophe and dash paths are NOT penalized here because
+            # some Shakespeare contractions ('d, 's, 't, 'll) start
+            # with apostrophe not a standalone letter — if we're one
+            # letter in ("d"), apostrophe-extension isn't the danger.
+            logits[VOCAB_INDEX[" "]] -= 1.0
+            for ch in ",.;:\n!?":
+                if ch in VOCAB_INDEX:
+                    logits[VOCAB_INDEX[ch]] -= 1.0
+
         # Single-letter orphan UPPER-not-in-{A,I,O} suppression.
         # Real Shakespeare single-letter words are only "I", "O", "A"
         # (+ lowercase "a"). A standalone "T", "B", "R", "D", etc. is
