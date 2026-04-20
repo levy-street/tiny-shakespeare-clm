@@ -2757,6 +2757,30 @@ class ModelState(BaseModel):
     sentence_has_subject: bool = False
     sentence_has_verb: bool = False
 
+    # --- Tier 2: sentence_pressure — signed completion-readiness score ---
+    # Negative (= "keep going") when the current sentence is structurally
+    # incomplete: missing subject/verb, inside an open NP waiting for a
+    # head, inside a subord clause, or the last completed word is a
+    # function word (conjunction / preposition / article / possessive /
+    # aux / modal) that demands a following word.
+    #
+    # Positive (= "ready to close") when the sentence has a full backbone
+    # (subject AND finite verb) and has already run long.
+    #
+    # Roughly in [-2.0, 2.0]. Updated every token by
+    # pipeline/sentence_pressure.py (after np_head, clause_slot, subord,
+    # pos, sentence_backbone). Consumed by predict/sentence_pressure.py
+    # to suppress terminators (\n, . ? ! ; :) when pressure is strongly
+    # negative, and to give a small positive bump to . when pressure is
+    # strongly positive.
+    #
+    # Structural extension to sentence_backbone_bias (which only fires
+    # on . ? ! at 5+ words with no verb) — this layer covers the full
+    # range of structural incompleteness, operates at every word-end,
+    # and crucially also suppresses newlines (a known sample pain point
+    # where mid-clause \n produces fragment lines).
+    sentence_pressure: float = 0.0
+
     # --- Tier 2/3: sentence-scoped semantic field lock ---
     # Once a sentence has introduced TWO content nouns of the same
     # noun_class (e.g. two BODY nouns: "heart" and "tongue"), that

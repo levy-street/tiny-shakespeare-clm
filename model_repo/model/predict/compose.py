@@ -102,6 +102,7 @@ from .register_commit_bias import register_commit_start_bias
 from .speaker_register_bias import speaker_register_start_bias
 from .sentence_length_prior import sentence_length_prior_bias
 from .sentence_backbone import sentence_backbone_bias
+from .sentence_pressure import sentence_pressure_bias
 from .sentence_syllable_parallel import sentence_syllable_parallel_bias
 from .syntactic_frame import syntactic_frame_start_bias
 from .frame_adj_trie import frame_adj_midword_bias
@@ -3248,6 +3249,23 @@ def predict(state: ModelState) -> list[float]:
         if sbb is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += sbb[i]
+
+        # Sentence-pressure bias — signed completion-readiness signal
+        # that extends sentence_backbone_bias to cover ALL terminators
+        # (including \n) and ALL structural-incompleteness signals
+        # (np_open, subord_depth, last-word-is-conjunction, etc.).
+        # Suppresses terminators when sentence is hanging; mildly
+        # boosts '.' when sentence has run long with full backbone.
+        spb = sentence_pressure_bias(
+            state.sentence_pressure,
+            state.letter_run_len,
+            state.speaker_label_state,
+            state.words_in_sentence,
+            state.chars_since_sentence_end,
+        )
+        if spb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += spb[i]
 
         # Sentence-syllable parallelism bias — nudge terminators at
         # word-end when the current sentence has caught up to the

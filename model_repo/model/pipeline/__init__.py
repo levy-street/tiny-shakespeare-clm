@@ -79,6 +79,7 @@ from .rhyme import update_rhyme
 from .sensory_charge import update_sensory_charge
 from .sentence import update_sentence
 from .sentence_backbone import update_sentence_backbone
+from .sentence_pressure import update_sentence_pressure
 from .sentence_sem import update_sentence_sem
 from .sentence_syllables import update_sentence_syllables
 from .speaker_memory import update_speaker_memory
@@ -129,6 +130,7 @@ PIPELINE: list[Stage] = [
     update_verb_agreement,  # Tier 2: subject-verb agreement expectation
     update_tense,           # Tier 2: sentence-level tense register
     update_np_head,         # Tier 2: NP-head expectation (np_open, np_wait_words)
+    update_sentence_pressure,  # Tier 2: signed completion-readiness score (reads subj/verb/np_open/subord/last_word_pos)
     update_syntactic_frame, # Tier 2: forward role projection for next word
     update_transitivity,    # Tier 2: verb transitivity / object-expectation
     update_case_slot,       # Tier 2: pronoun case slot (SUBJ/OBJ)
