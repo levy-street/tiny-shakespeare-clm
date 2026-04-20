@@ -3409,15 +3409,15 @@ def predict(state: ModelState) -> list[float]:
         # across many completions and we can trust it.
         tmc = state.trie_match_count
         if tmc == 1:
-            T = 2.40
+            T = 2.30
         elif tmc == 2:
-            T = 2.16
+            T = 2.10
         elif tmc <= 4:
-            T = 1.98
+            T = 1.95
         elif tmc <= 8:
-            T = 1.88
+            T = 1.85
         elif tmc <= 16:
-            T = 1.78
+            T = 1.76
         else:
             T = 1.70
     else:
