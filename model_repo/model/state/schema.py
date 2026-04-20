@@ -390,6 +390,41 @@ class ModelState(BaseModel):
     # battlefield-continuation letters when high.
     meditative_register: float = 0.0
 
+    # A rolling float in [-1.0, +1.0] capturing the *confessional-
+    # intimacy* ↔ *public-declamation* register polarity.
+    #
+    #   High positive (≈ +0.4 … +1.0): the speaker is in a confessional/
+    #     soliloquy/intimate-address register. Signaled by 1sg pronouns
+    #     (I / me / my / mine), interior-state verbs (think, feel,
+    #     fear, hope, suspect, doubt, remember, wish, dream), intimate
+    #     2sg address (thou / thee / thy / thine), tender vocabulary
+    #     (heart, soul, breath), contractions (I'm, 'tis, ne'er),
+    #     sigh-interjections ("alas", "ah", "O").
+    #
+    #   High negative (≈ -0.4 … -1.0): the speaker is in a public/
+    #     oratorical/ceremonial register. Signaled by 1pl/2pl pronouns
+    #     (we / our / you / your / ye), plural vocatives (lords,
+    #     friends, gentlemen, countrymen, masters, sirs), imperative
+    #     commands (hear / behold / mark / attend / come / go), titles
+    #     and honorifics (majesty, grace, highness, excellence, lord),
+    #     ceremonial openers (now / hear / witness).
+    #
+    # Bumps happen at word completion based on the completed word. Decays
+    # toward 0 at 0.93 per completed word. Resets toward 0 on speaker-
+    # turn boundary (a new speaker inherits none of the prior register).
+    #
+    # Distinct from every existing register:
+    #   - fury / gravitas / tenderness / lament / doubt: emotional tones;
+    #     a speech can be confessional-AND-tender or public-AND-grave.
+    #   - addressing_register (thou vs. you): pronoun-form commitment,
+    #     not audience size. Thou can be confessional (lover) or public
+    #     (king addressing subject).
+    #   - archaic_density: vocabulary age, orthogonal to audience register.
+    #
+    # Consumed by predict/confessional.py at word-start outside speaker
+    # labels to tilt first-letter mass toward in-register lexicon.
+    confessional_intimacy: float = 0.0
+
     # --- Tier 2/3: antithesis / rhetorical contrast ---
     # Shakespeare's signature antithesis structures — "not X but Y",
     # "to be or not to be", "neither A nor B", "more X than Y" —

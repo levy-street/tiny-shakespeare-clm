@@ -23,6 +23,7 @@ from .case_slot import update_case_slot
 from .clause import update_clause
 from .clause_slot import update_clause_slot
 from .conditional import update_conditional
+from .confessional import update_confessional
 from .clause_parallel import update_clause_parallel
 from .line_break import update_line_break
 from .line_coherence import update_line_coherence
@@ -126,6 +127,7 @@ PIPELINE: list[Stage] = [
     update_tenderness,      # Tier 3: tenderness/love texture register
     update_gravitas,        # Tier 3: gravitas/moral-weight texture register
     update_fury,            # Tier 3: fury/rage/curse texture register
+    update_confessional,    # Tier 3: confessional vs public register
     update_sensory_charge,  # Tier 3: corporeal ↔ abstract charge (lyric vs argument register)
     update_dialogue_adjacency,  # Tier 2/3: snapshot prev-turn shape before turn counters reset
     update_turn_progress,   # Tier 2/3: words/sentences/lines in current turn

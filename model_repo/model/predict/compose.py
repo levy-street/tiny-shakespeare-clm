@@ -118,6 +118,7 @@ from .startword import START_BIAS
 from .formula import formula_midword_bias, formula_start_bias
 from .iambic import iambic_word_start_bias
 from .word_length_cadence import word_length_cadence_bias
+from .confessional import confessional_word_start_bias
 from .imagery import imagery_start_bias
 from .scene_topic import scene_topic_midword_bias, scene_topic_start_bias
 from .invocation import (
@@ -2040,6 +2041,19 @@ def predict(state: ModelState) -> list[float]:
         if wlc is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += wlc[i]
+
+        # Layer 4b3-confess: confessional-intimacy ↔ public-declamation
+        # register bias. Tilts first-letter mass toward the committed
+        # register's lexicon. Orthogonal to fury/tenderness/gravitas
+        # (emotional tone) and addressing_register (pronoun form) —
+        # this axis captures audience size / public vs. private mode.
+        cfb = confessional_word_start_bias(
+            state.confessional_intimacy,
+            state.speaker_label_state,
+        )
+        if cfb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += cfb[i]
 
         # Layer 4b3c: formulaic-phrase word-start bias. When we're
         # inside a known multi-word formula, boost first letters of
