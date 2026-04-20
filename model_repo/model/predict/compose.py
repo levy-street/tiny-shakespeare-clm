@@ -250,7 +250,7 @@ def predict(state: ModelState) -> list[float]:
         bi = bigram_bias(state.last_char)
         if bi is not None:
             for i in range(VOCAB_SIZE):
-                logits[i] += bi[i] * 1.8
+                logits[i] += bi[i] * 2.0
 
     # Layer 3a-pre: preemptive illegal-bigram penalty. Penalize next
     # letters that would form a phonotactically-illegal bigram with
