@@ -517,7 +517,7 @@ def predict(state: ModelState) -> list[float]:
         )
         if wbc is not None:
             for i in range(VOCAB_SIZE):
-                logits[i] += wbc[i]
+                logits[i] += wbc[i] * 1.4
 
     # Layer 3c-PHC: two-word phrase CONTINUATION bias. Conditions the
     # next char on (prev_prev_completed_word, last_completed_word) plus
