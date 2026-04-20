@@ -93,10 +93,54 @@ def update_syntactic_frame(state: ModelState, token_id: int) -> ModelState:
     prev_pos = state.prev_word_pos
     last_word = state.last_completed_word
 
+    pp_pos = state.prev_prev_word_pos
+
+    # --- Three-word-aware transitions (highest specificity) ---------
+
+    # After PREP + DET + NOUN ("of the king", "to the land") → the PP
+    # is complete; the next word is typically a VERB (if clause_slot
+    # HAS_SUBJ with an overdue verb) or a CONJ/PREP continuing.
+    if (
+        pp_pos == POS_PREPOSITION
+        and prev_pos in (POS_ARTICLE, POS_POSSESSIVE)
+        and last_pos in (POS_NOUN, POS_PROPER_NOUN)
+    ):
+        if cs == 1:
+            role, conf = FRAME_VERB_FAMILY, 0.55
+        else:
+            role, conf = FRAME_PREP_OR_CONJ, 0.45
+    # After DET + ADJ + NOUN ("the fair king", "a gentle lord") → NP
+    # complete; expect VERB (if subject) or PREP.
+    elif (
+        pp_pos in (POS_ARTICLE, POS_POSSESSIVE)
+        and prev_pos == POS_ADJECTIVE
+        and last_pos in (POS_NOUN, POS_PROPER_NOUN)
+    ):
+        if cs == 1:
+            role, conf = FRAME_VERB_FAMILY, 0.60
+        else:
+            role, conf = FRAME_PREP_OR_CONJ, 0.45
+    # After SUBJ-PRON + AUX + NEGATION ("I am not", "thou art not") →
+    # verb family (strong).
+    elif (
+        pp_pos == POS_PRONOUN
+        and prev_pos == POS_AUX_VERB
+        and last_pos == POS_NEGATION
+    ):
+        role, conf = FRAME_VERB_FAMILY, 0.75
+    # After SUBJ-PRON + MODAL + NEGATION ("I will not", "thou shalt
+    # not") → bare-infinitive verb (strong).
+    elif (
+        pp_pos == POS_PRONOUN
+        and prev_pos == POS_MODAL
+        and last_pos == POS_NEGATION
+    ):
+        role, conf = FRAME_VERB_ONLY, 0.80
+
     # --- Two-word-aware transitions ---------------------------------
 
     # After DET + ADJECTIVE → strongly expect NOUN.
-    if prev_pos == POS_ARTICLE and last_pos == POS_ADJECTIVE:
+    elif prev_pos == POS_ARTICLE and last_pos == POS_ADJECTIVE:
         role, conf = FRAME_NOUN_ONLY, 0.85
 
     # After POSSESSIVE + ADJECTIVE → strongly expect NOUN.
