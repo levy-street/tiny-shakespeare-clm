@@ -409,15 +409,15 @@ def predict(state: ModelState) -> list[float]:
             # to the residual context-class/bigram priors.
             rl = state.letter_run_len
             if rl <= 1:
-                wt_scale = 1.28
+                wt_scale = 1.60
             elif rl == 2:
-                wt_scale = 1.40
+                wt_scale = 1.72
             elif rl == 3:
-                wt_scale = 1.46
+                wt_scale = 1.78
             elif rl == 4:
-                wt_scale = 1.50
+                wt_scale = 1.82
             else:
-                wt_scale = 1.54
+                wt_scale = 1.86
             for i in range(VOCAB_SIZE):
                 logits[i] += wt[i] * wt_scale
 
@@ -3185,17 +3185,7 @@ def predict(state: ModelState) -> list[float]:
         # Higher T than on-trie because many strong negative biases
         # (red_flags, gibberish_hardcap, drift recovery) stack and
         # over-sharpen when the actual next char is a vowel-insert.
-        # Escalate softening as we drift further off-trie; at 1 char
-        # off-trie, n-gram backoff is still informative, so sharpen
-        # a touch. At 4+ off, recovery biases dominate and can
-        # over-peak, so soften.
-        lot = state.letters_off_trie
-        if lot <= 1:
-            T = 1.60
-        elif lot <= 3:
-            T = 1.70
-        else:
-            T = 1.85
+        T = 1.70
     if T != 1.0:
         logits = [x / T for x in logits]
     return _log_softmax_smoothed(logits, 0.2e-4)
