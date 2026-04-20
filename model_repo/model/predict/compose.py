@@ -181,6 +181,7 @@ from .trigram import trigram_bias
 from .vocative import VOCATIVE_START_BIAS
 from .unigram import UNIGRAM_LOGPROBS
 from .word_trie import COMPLETE_WORDS, FORCE_END_BIAS, is_on_trie, word_trie_bias
+from .post_punct_lock import post_punct_forbid_letters
 
 
 def _log_softmax(logits: list[float]) -> list[float]:
@@ -303,7 +304,7 @@ def predict(state: ModelState) -> list[float]:
         tg = trigram_bias(state.prev_char, state.last_char)
         if tg is not None:
             for i in range(VOCAB_SIZE):
-                logits[i] += tg[i] * 2.3
+                logits[i] += tg[i] * 2.5
 
     # Layer 3b2: letter-trigram bias (last 3 letters → next). Apply
     # only off-trie, where the word_trie doesn't already give signal.
@@ -3773,6 +3774,23 @@ def predict(state: ModelState) -> list[float]:
             idx = VOCAB_INDEX.get(ch)
             if idx is not None:
                 forbid_mask[idx] = True
+
+        # Post-punctuation whitespace lock. After any of `,.;:!?` the
+        # next character in real Shakespeare is always a space, newline,
+        # same-punct run, apostrophe, or dash — never a letter. Add
+        # letters + orthographic junk to the forbid mask AND a strong
+        # logit penalty on those tokens — the forbid mask alone only
+        # affects floor-mass, but strong layer biases could still
+        # override. A direct -7.0 logit push combined with a 1e-6 floor
+        # eliminates sample artifacts like "Enter,eact" or ";orleans".
+        ppl = post_punct_forbid_letters(
+            state.last_char, state.speaker_label_state
+        )
+        if ppl is not None:
+            for i in range(VOCAB_SIZE):
+                if ppl[i]:
+                    forbid_mask[i] = True
+                    logits[i] -= 7.0
     elif sp == 2:
         # All-caps label lock: once a speaker label has committed to
         # ALL-CAPS mode (no lowercase seen yet AND current upper-run
