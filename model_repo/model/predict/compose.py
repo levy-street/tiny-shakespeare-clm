@@ -3762,6 +3762,17 @@ def predict(state: ModelState) -> list[float]:
                 idx = VOCAB_INDEX.get(ch)
                 if idx is not None:
                     forbid_mask[idx] = True
+        # `$` and `3` are vocab tokens but never appear in Shakespeare.
+        # Apply a strong forbid even at word-start positions outside
+        # speaker labels (rare tag-like cases can still slip by via
+        # floor-mass cumulative sampling). The unigram already tanks
+        # these, but letting them into forbid_mask drops their floor
+        # probability from 1.2e-4 to 1e-6 — effectively eliminating
+        # them from sampler draws.
+        for ch in "$3":
+            idx = VOCAB_INDEX.get(ch)
+            if idx is not None:
+                forbid_mask[idx] = True
     elif sp == 2:
         # All-caps label lock: once a speaker label has committed to
         # ALL-CAPS mode (no lowercase seen yet AND current upper-run
