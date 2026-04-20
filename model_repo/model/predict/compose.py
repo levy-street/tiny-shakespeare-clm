@@ -1153,7 +1153,7 @@ def predict(state: ModelState) -> list[float]:
         am = archaic_midword_bias(state.word_buffer, state.archaic_density)
         if am is not None:
             for i in range(VOCAB_SIZE):
-                logits[i] += am[i]
+                logits[i] += am[i] * 6.0
 
     # Layer 3c2e: antithesis pivot / closure bias. Reads the state
     # maintained by pipeline/antithesis.py. At word-start, when we're
