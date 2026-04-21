@@ -64,6 +64,7 @@ from .illegal_vowel_double import illegal_vowel_double_bias
 from .illegal_consonant_double import illegal_consonant_double_bias
 from .illegal_triple_letter import illegal_triple_letter_bias
 from .second_apostrophe_block import second_apostrophe_block_bias
+from .qu_rule import qu_rule_bias
 from .sensory_charge import sensory_charge_start_bias
 from .valence import valence_start_bias
 from .martial import martial_word_start_bias
@@ -752,6 +753,17 @@ def predict(state: ModelState) -> list[float]:
     if sab is not None:
         for i in range(VOCAB_SIZE):
             logits[i] += sab[i]
+
+    # Layer 3c-QU: q-must-be-followed-by-u rule. Near-universal
+    # English orthographic constraint — boost 'u' sharply after 'q'
+    # and penalize all other letters / terminators.
+    qur = qu_rule_bias(
+        state.word_buffer,
+        state.speaker_label_state,
+    )
+    if qur is not None:
+        for i in range(VOCAB_SIZE):
+            logits[i] += qur[i]
 
 # Layer 3c-CAPI: mid-word capitalization integrity. After the
     # first letter of a word (letter_run_len >= 1), uppercase letters
