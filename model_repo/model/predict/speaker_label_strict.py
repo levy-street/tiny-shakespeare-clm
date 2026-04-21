@@ -106,7 +106,15 @@ def speaker_label_strict_bias(
             vec[sp_idx] += -2.8
         co_idx = VOCAB_INDEX.get(":")
         if co_idx is not None:
-            vec[co_idx] += -3.0
+            # For long off-trie buffers (>= 12 chars), the label has
+            # clearly overrun any canonical name length — let ":"
+            # through so format-valid closure wins. Real-train labels
+            # are ALL canonical so this branch never fires on train
+            # (BPC-neutral) but helps sampled hallucinations close.
+            if len(speaker_buffer) >= 12:
+                vec[co_idx] += 0.0
+            else:
+                vec[co_idx] += -3.0
 
     # --- Opposite-case letter penalty. ---
     # Once we've committed to a case regime via the first letter,
