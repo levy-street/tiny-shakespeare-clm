@@ -63,6 +63,7 @@ from .letter_repeat_penalty import letter_repeat_penalty_bias
 from .illegal_vowel_double import illegal_vowel_double_bias
 from .illegal_consonant_double import illegal_consonant_double_bias
 from .illegal_triple_letter import illegal_triple_letter_bias
+from .second_apostrophe_block import second_apostrophe_block_bias
 from .sensory_charge import sensory_charge_start_bias
 from .valence import valence_start_bias
 from .martial import martial_word_start_bias
@@ -740,6 +741,17 @@ def predict(state: ModelState) -> list[float]:
     if itl is not None:
         for i in range(VOCAB_SIZE):
             logits[i] += itl[i]
+
+    # Layer 3c-SAB: second-apostrophe block. Shakespearean words
+    # essentially never contain two apostrophes. If we've already
+    # emitted one in the current word, penalize a second.
+    sab = second_apostrophe_block_bias(
+        state.had_apostrophe_this_word,
+        state.speaker_label_state,
+    )
+    if sab is not None:
+        for i in range(VOCAB_SIZE):
+            logits[i] += sab[i]
 
 # Layer 3c-CAPI: mid-word capitalization integrity. After the
     # first letter of a word (letter_run_len >= 1), uppercase letters
