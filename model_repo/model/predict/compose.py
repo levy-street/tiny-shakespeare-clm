@@ -196,6 +196,7 @@ from .word_reality_recover import (
     turn_gibberish_escalation_bias,
 )
 from .phrase_slot import phrase_slot_bias
+from .function_word_chain import function_word_chain_bias
 from .syllable_saturation import syllable_saturation_bias
 from .verb_complement import verb_complement_start_bias
 from .line_break_bias import line_break_newline_bias
@@ -1459,6 +1460,22 @@ def predict(state: ModelState) -> list[float]:
     if psb is not None:
         for i in range(VOCAB_SIZE):
             logits[i] += psb[i]
+
+    # Function-word-chain word-start bias. When 3+ consecutive function
+    # words have completed without any content-word break, strongly push
+    # the first letter toward content-word starts and away from common
+    # function-word-initial letters. Targets "of your to and you"-type
+    # grammatical breakdown.
+    fwc = function_word_chain_bias(
+        state.function_word_chain_len,
+        state.letter_run_len,
+        state.last_char_class,
+        state.speaker_label_state,
+        state.words_in_sentence,
+    )
+    if fwc is not None:
+        for i in range(VOCAB_SIZE):
+            logits[i] += fwc[i]
 
     # Layer 3c3b: meditative mid-word disambiguation. When the buffer is
     # a prefix shared by a meditative word and a non-meditative word,

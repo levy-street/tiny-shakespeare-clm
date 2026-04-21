@@ -1828,6 +1828,21 @@ class ModelState(BaseModel):
     # "had gone", "would have seen" chains).
     verb_chain_len: int = 0
 
+    # Count of consecutive function-class words completed in a row
+    # without a content word intervening. Function classes counted:
+    # ARTICLE, POSSESSIVE, PRONOUN, PREPOSITION, CONJUNCTION, WH,
+    # MODAL, AUX_VERB, NEGATION, INTERJECTION, NUMBER. Content classes
+    # (NOUN, PROPER_NOUN, VERB, VERB_ED, VERB_ING, ADJECTIVE, ADVERB)
+    # reset the counter to 0.
+    #
+    # A value >= 3 means three function words in a row — a red flag
+    # for grammatical breakdown ("of your to and you"). Consumed by
+    # predict/function_word_chain.py to push content-word starts
+    # when the chain grows long.
+    #
+    # Resets on sentence-end punctuation and on speaker-turn boundary.
+    function_word_chain_len: int = 0
+
     # --- Tier 2: list-parallelism structure ---
     # Shakespeare uses "X, Y, and Z" / "nor A nor B" / "by heaven,
     # by earth, by all ..." heavily. Once a comma-separated list is

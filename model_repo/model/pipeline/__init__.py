@@ -49,6 +49,7 @@ from .doubt import update_doubt
 from .drift import update_drift
 from .flow import update_flow
 from .formula import update_formula
+from .function_word_chain import update_function_word_chain
 from .fury import update_fury
 from .lament import update_lament
 from .martial import update_martial
@@ -121,6 +122,7 @@ PIPELINE: list[Stage] = [
     update_speaker_offtrie, # Tier 2: speaker-buffer off-trie run
     update_speaker_vowels,  # Tier 2: speaker-buffer vowel count
     update_pos,             # Tier 2: POS tag of last completed word
+    update_function_word_chain,  # Tier 2: count of consecutive function-class words — resets on content word
     update_coord,           # Tier 2: coordinator-parallelism echo (X and Y) — runs before proper_noun_memory so current_word_started_cap is still live
     update_phrase_slot,     # Tier 2: noun-phrase slot FSM (NEUTRAL/POST_DET/POST_ADJ/POST_NOUN) — runs after update_pos
     update_noun_class,      # Tier 2/3: coarse semantic noun-class (KINSHIP/BODY/ROYALTY/...)
