@@ -4061,13 +4061,17 @@ def predict(state: ModelState) -> list[float]:
                     forbid_mask[i] = True
                     logits[i] -= 7.0
     elif sp == 2:
-        # Orthographic junk forbid inside speaker label. Digits,
-        # currency, ampersand never appear in Shakespeare speaker
-        # labels. Floor-mass cumulative draws account for stray
-        # "PIST3lonesome" patterns where 3 slips in mid-label.
-        # Hard forbid via mask + logit penalty — these are universally
-        # invalid in this state.
-        for ch in "$3&":
+        # Orthographic junk forbid inside speaker label. Speaker labels
+        # contain ONLY [A-Z a-z SPACE COLON] in Shakespeare's corpus.
+        # Anything else breaks the label morphology. Hard forbid via
+        # mask + strong logit penalty prevents floor-mass / noise slips
+        # like "PIST3lonesome;" where a stray char drops the FSM out
+        # of label mode prematurely.
+        #
+        # Note: "'" is included — apostrophe never appears in speaker
+        # labels (contractions occur in dialogue, not name tags).
+        # "-" is included — speaker labels don't use hyphens.
+        for ch in "0123456789$&?!.,;-'\"()[]":
             idx = VOCAB_INDEX.get(ch)
             if idx is not None:
                 forbid_mask[idx] = True
