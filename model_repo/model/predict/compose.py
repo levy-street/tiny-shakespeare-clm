@@ -59,6 +59,7 @@ from .phrase_trigram_continue import phrase_trigram_continue_bias
 from .apostrophe_elision import apostrophe_elision_bias
 from .word_cap_integrity import word_cap_integrity_bias
 from .word_integrity import word_integrity_bias
+from .letter_repeat_penalty import letter_repeat_penalty_bias
 from .sensory_charge import sensory_charge_start_bias
 from .martial import martial_word_start_bias
 from .turn_pronoun_bias import (
@@ -677,6 +678,20 @@ def predict(state: ModelState) -> list[float]:
     if wi is not None:
         for i in range(VOCAB_SIZE):
             logits[i] += wi[i]
+
+    # Layer 3c-LRP: letter-repeat penalty. Off-trie gibberish words
+    # often have high single-letter dominance (r×4 in "rarevrear",
+    # e×5 in "yeereeree"). Penalize emitting a letter already repeated
+    # in the current buffer, escalating with count and dominance ratio.
+    lrp = letter_repeat_penalty_bias(
+        state.word_buffer,
+        state.letter_run_len,
+        state.on_word_trie,
+        state.speaker_label_state,
+    )
+    if lrp is not None:
+        for i in range(VOCAB_SIZE):
+            logits[i] += lrp[i]
 
     # Layer 3c-CAPI: mid-word capitalization integrity. After the
     # first letter of a word (letter_run_len >= 1), uppercase letters
