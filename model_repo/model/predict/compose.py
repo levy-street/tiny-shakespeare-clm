@@ -183,6 +183,7 @@ from .word_reality_recover import (
     mid_word_close_boost,
     turn_gibberish_escalation_bias,
 )
+from .phrase_slot import phrase_slot_bias
 from .syllable_saturation import syllable_saturation_bias
 from .verb_complement import verb_complement_start_bias
 from .line_break_bias import line_break_newline_bias
@@ -1351,6 +1352,26 @@ def predict(state: ModelState) -> list[float]:
     if ws is not None:
         for i in range(VOCAB_SIZE):
             logits[i] += ws[i]
+
+    # Phrase-slot word-start bias. Reads phrase_slot FSM
+    # (pipeline/phrase_slot.py) and pushes first letter of new word
+    # toward the POS class that phrase-grammar demands:
+    #   POST_DET → ADJ/NOUN starts
+    #   POST_ADJ → ADJ/NOUN starts (stronger toward NOUN with slot_len)
+    #   POST_NOUN → PREP/VERB/CONJ starts
+    # Directly targets the sample-quality failure:
+    #   "the man little evilly to and when" — after "the"/"man", next
+    #   word should be constrained to an appropriate slot.
+    psb = phrase_slot_bias(
+        state.phrase_slot,
+        state.phrase_slot_len,
+        state.letter_run_len,
+        state.last_char_class,
+        state.speaker_label_state,
+    )
+    if psb is not None:
+        for i in range(VOCAB_SIZE):
+            logits[i] += psb[i]
 
     # Layer 3c3b: meditative mid-word disambiguation. When the buffer is
     # a prefix shared by a meditative word and a non-meditative word,

@@ -3070,3 +3070,38 @@ class ModelState(BaseModel):
     # sentence starts.
     sentence_gibberish_count: int = 0
     sentence_real_count: int = 0
+
+    # --- Phrase-slot FSM ---
+    #
+    # Targeted fix for the sample-quality failure mode:
+    #   "the man little evilly to and when" — after a determiner, the
+    #   next content word is uncontrolled (noun, adjective, adverb, verb
+    #   equally likely), producing ungrammatical noun-phrases.
+    #
+    # States (tracked across completed words within a sentence):
+    #   0 — NEUTRAL: sentence-start, post-verb, post-punct, or post-
+    #       conjunction. Any category can follow.
+    #   1 — POST_DET: just saw article/possessive/wh-determiner. Next
+    #       open-class word should be ADJECTIVE or NOUN, not verb/
+    #       adverb/modal/another-determiner.
+    #   2 — POST_ADJ: just saw an adjective within an NP. Next should
+    #       continue with ADJ or NOUN, not a verb.
+    #   3 — POST_NOUN: just saw the head noun of an NP. Next should be
+    #       PREPOSITION / VERB / CONJUNCTION / terminator — NOT another
+    #       determiner or adjective (those would start a new NP).
+    #
+    # Lifecycle:
+    #   - Updated by `pipeline/phrase_slot.py` after `pipeline/pos.py`
+    #     on each just_finished_word.
+    #   - Reset to 0 on PUNCT_END and on speaker-turn change.
+    #
+    # Consumed by a predict layer at word-start (letter_run_len == 0,
+    # last_char_class SPACE) that biases the next word's first letter
+    # toward slot-appropriate POS openers.
+    phrase_slot: int = 0
+    # How many consecutive tokens we've remained in the current non-
+    # NEUTRAL slot. Rises when we stay POST_DET / POST_ADJ for more
+    # than one word (e.g. "the fair" = slot 2, len 1; "the fair young"
+    # = slot 2, len 2). When len gets large in POST_DET/POST_ADJ, the
+    # predict layer should VERY strongly demand a noun closer.
+    phrase_slot_len: int = 0
