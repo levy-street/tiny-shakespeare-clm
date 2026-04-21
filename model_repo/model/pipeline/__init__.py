@@ -40,6 +40,7 @@ from .word_commit import update_word_commit
 from .word_form import update_word_form
 from .word_integrity import update_word_integrity
 from .word_matches import update_word_matches
+from .word_reality import update_word_reality
 from .counters import update_basic_counters
 from .dash_aside import update_dash_aside
 from .dialogue_adjacency import update_dialogue_adjacency
@@ -101,6 +102,12 @@ PIPELINE: list[Stage] = [
     update_basic_counters,  # Tier 1: base bookkeeping
     update_dash_aside,      # Tier 2: parenthetical-dash scope tracking
     update_linguistic,      # Tier 2: linguistic structure
+    # NOTE: word_reality runs AFTER linguistic (which sets
+    # just_finished_word / last_completed_word) and BEFORE word_shape /
+    # phonotactic (which reset word_red_flags / bad_bigram_count /
+    # bad_trigram_count on the boundary char). It reads those pre-reset
+    # values to classify the just-finished word.
+    update_word_reality,    # Tier 2/3: classify completed word (real/plausible/gibberish), maintain per-turn/-sentence counts
     update_word_matches,    # Tier 2: graded trie-completion count for word_buffer
     update_word_cap_apos,   # Tier 2: apostrophe-in-word position + had_apos flag
     update_word_integrity,  # Tier 2/3: per-char word-shape plausibility monitor

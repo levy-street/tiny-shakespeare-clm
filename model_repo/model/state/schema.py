@@ -3036,3 +3036,37 @@ class ModelState(BaseModel):
     # No corpus stats — targets are hand-written Shakespeare formulas.
     committed_word: str = ""
     committed_word_pos: int = 0
+
+    # --- Word-reality running memory ---
+    #
+    # Classification of the most recently completed word as one of:
+    #   0 — unset / too short / skipped (inside speaker label, 1-letter
+    #       word, etc.)
+    #   1 — REAL: known word (was on the word-trie with has_seen_complete)
+    #       and no phonotactic flags.
+    #   2 — PLAUSIBLE: off-trie but phonotactically sane — inflected form
+    #       or archaic variant (e.g., "feard'st", "unwaxed").
+    #   3 — GIBBERISH: has phonotactic red flags, illegal bigrams/trigrams,
+    #       or unsupported long off-trie runs ("pytsaninsao").
+    #
+    # Populated at `just_finished_word` by `pipeline/word_reality.py`,
+    # which runs EARLY in the pipeline so it can read the pre-reset
+    # values of `word_red_flags`, `bad_bigram_count`, `bad_trigram_count`,
+    # `letters_off_trie`, `has_seen_complete` (these counters all reset
+    # later in the cycle on the word-boundary char).
+    last_word_reality: int = 0
+    # Rolling window of the last 4 word-reality classifications,
+    # most-recent FIRST. Used by predict layers to read the trend
+    # ("two of the last three were gibberish").
+    recent_word_realities: tuple[int, ...] = ()
+    # Per-turn gibberish and real counts. Reset on speaker-turn change
+    # (consecutive_newlines >= 2). The count is a saturating accumulator
+    # of GIBBERISH classifications; the real count is for contrast.
+    turn_gibberish_count: int = 0
+    turn_real_count: int = 0
+    # Per-sentence gibberish count. Reset on sentence-end punctuation
+    # (PUNCT_END: . ? !). Finer-grained than the turn counter — lets
+    # the predict layer back off once the sentence closes and a fresh
+    # sentence starts.
+    sentence_gibberish_count: int = 0
+    sentence_real_count: int = 0

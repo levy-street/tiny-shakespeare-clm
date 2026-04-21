@@ -178,6 +178,10 @@ from .fury import fury_end_bias, fury_start_bias
 from .gravitas import gravitas_start_bias, gravitas_sentence_start_bias
 from .drift_recovery import drift_recovery_bias, drift_recovery_midword_bias
 from .gibberish_hardcap import gibberish_hardcap_bias
+from .word_reality_recover import (
+    word_start_safe_bias,
+    mid_word_close_boost,
+)
 from .syllable_saturation import syllable_saturation_bias
 from .verb_complement import verb_complement_start_bias
 from .line_break_bias import line_break_newline_bias
@@ -877,6 +881,28 @@ def predict(state: ModelState) -> list[float]:
             for i in range(VOCAB_SIZE):
                 logits[i] += ghc[i]
 
+        # Word-reality mid-word close boost — CONJUNCTION layer.
+        # Fires only when BOTH (a) recent-turn/sentence words have
+        # been gibberish AND (b) the CURRENT word already shows
+        # phonotactic trouble (illegal bigram, red flags). The
+        # novelty vs existing layers is the conjunction: either
+        # signal alone is already handled elsewhere; together they
+        # justify stacking extra termination pressure on top.
+        mwc = mid_word_close_boost(
+            state.letter_run_len,
+            state.on_word_trie,
+            state.letters_off_trie,
+            state.speaker_label_state,
+            state.turn_gibberish_count,
+            state.sentence_gibberish_count,
+            state.recent_word_realities,
+            state.word_red_flags,
+            state.bad_bigram_count,
+        )
+        if mwc is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += mwc[i]
+
         # Layer 3c1a-syl: syllable-saturation termination. When a
         # mid-word buffer has accumulated 3+ syllables AND drifted
         # off the word-trie, push toward word-end proportional to
@@ -1281,6 +1307,13 @@ def predict(state: ModelState) -> list[float]:
         ms = meditative_start_bias(state.meditative_register)
         for i in range(VOCAB_SIZE):
             logits[i] += ms[i]
+
+    # Word-reality word-start safe-letter bias: DISABLED in compose.
+    # Tuning showed a small BPC regression when active. The underlying
+    # state infra (turn/sentence gibberish counts, recent_word_realities)
+    # is still maintained by pipeline/word_reality.py and used by
+    # mid_word_close_boost above. The function is kept in
+    # predict/word_reality_recover.py for re-enabling after re-tuning.
 
     # Layer 3c3b: meditative mid-word disambiguation. When the buffer is
     # a prefix shared by a meditative word and a non-meditative word,
