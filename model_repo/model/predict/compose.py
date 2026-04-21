@@ -4061,6 +4061,18 @@ def predict(state: ModelState) -> list[float]:
                     forbid_mask[i] = True
                     logits[i] -= 7.0
     elif sp == 2:
+        # Orthographic junk forbid inside speaker label. Digits,
+        # currency, ampersand never appear in Shakespeare speaker
+        # labels. Floor-mass cumulative draws account for stray
+        # "PIST3lonesome" patterns where 3 slips in mid-label.
+        # Hard forbid via mask + logit penalty — these are universally
+        # invalid in this state.
+        for ch in "$3&":
+            idx = VOCAB_INDEX.get(ch)
+            if idx is not None:
+                forbid_mask[idx] = True
+                logits[idx] -= 8.0
+
         # All-caps label lock: once a speaker label has committed to
         # ALL-CAPS mode (no lowercase seen yet AND current upper-run
         # length >= 2 without any space yet), lowercase letters are
