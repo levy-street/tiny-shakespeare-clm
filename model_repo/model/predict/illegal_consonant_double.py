@@ -40,12 +40,12 @@ from ..vocab import VOCAB_INDEX, VOCAB_SIZE
 # non-zero penalty here; legal doublings (ll, nn, ss, tt, pp, ...)
 # receive no bias.
 _DOUBLE_PENALTY: dict[str, float] = {
-    "h": -3.0,   # "hh" — never in Shakespeare
-    "j": -3.5,   # "jj" — never
-    "q": -3.5,   # "qq" — never (q is always followed by u)
-    "v": -2.8,   # "vv" — essentially never
-    "w": -3.0,   # "ww" — essentially never
-    "x": -3.5,   # "xx" — essentially never
+    "h": -4.0,   # "hh" — never in Shakespeare
+    "j": -4.5,   # "jj" — never
+    "q": -4.5,   # "qq" — never (q is always followed by u)
+    "v": -3.5,   # "vv" — essentially never
+    "w": -4.0,   # "ww" — essentially never
+    "x": -4.5,   # "xx" — essentially never
 }
 
 
