@@ -51,6 +51,7 @@ from .letter3 import letter3_bias
 from .match_count import match_count_bias
 from .letter4 import letter4_bias
 from .line_coherence import line_coherence_wordend_bias
+from .line_offtrie_streak import line_offtrie_streak_bias
 from .list_bias import list_start_bias, list_wordend_comma_bias
 from .next_word import next_word_bias
 from .word_bigram_continue import word_bigram_continue_bias
@@ -4128,6 +4129,22 @@ def predict(state: ModelState) -> list[float]:
         if lcb is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += lcb[i]
+
+        # Line-offtrie-streak MID-WORD pressure. Cross-dimensional:
+        # conditions word-level termination on a line-level streak of
+        # consecutive off-trie words. Fills the gap between word-end
+        # line_coherence pressure and per-word mid-word defenses.
+        los = line_offtrie_streak_bias(
+            state.line_offtrie_streak,
+            state.letter_run_len,
+            state.letters_off_trie,
+            state.on_word_trie,
+            state.consecutive_newlines,
+            state.speaker_label_state,
+        )
+        if los is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += los[i]
 
         # Clause-depth close pressure: when we're nested inside a
         # subordinator clause and it's been running for several words,

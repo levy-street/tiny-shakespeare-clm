@@ -30,6 +30,7 @@ from .clause_parallel import update_clause_parallel
 from .coord import update_coord
 from .line_break import update_line_break
 from .line_coherence import update_line_coherence
+from .line_offtrie_streak import update_line_offtrie_streak
 from .line_end_memory import update_line_end_memory
 from .verb_agreement import update_verb_agreement
 from .np_head import update_np_head
@@ -130,6 +131,7 @@ PIPELINE: list[Stage] = [
     update_mid_departure,   # Tier 2: mid-departure (pos 3-4) extension length
     update_drift,           # Tier 2/3: consecutive-off-trie word streak
     update_line_coherence,  # Tier 2: per-line on-trie vs off-trie word counts
+    update_line_offtrie_streak,  # Tier 2: consecutive off-trie streak within line (resets on on-trie word)
     update_speaker_offtrie, # Tier 2: speaker-buffer off-trie run
     update_speaker_strict,  # Tier 2: speaker-trie next-char legality flags (on_trie / space_valid / colon_valid)
     update_speaker_vowels,  # Tier 2: speaker-buffer vowel count

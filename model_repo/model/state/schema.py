@@ -2654,6 +2654,17 @@ class ModelState(BaseModel):
     line_ontrie_words: int = 0
     line_offtrie_words: int = 0
 
+    # Consecutive off-trie word streak in the current line. Distinct
+    # from line_offtrie_words in that an intervening on-trie word
+    # RESETS the streak to 0. Captures "we're currently in a bad run"
+    # rather than "we've had some bad words somewhere on this line".
+    # Used by `line_offtrie_streak_bias` to apply MID-WORD termination
+    # pressure when we're deep into yet another off-trie word on top
+    # of a running streak — existing line_coherence pressure fires
+    # only at word-end positions. Cap at 8. Reset at newline / at a
+    # successful on-trie word / in speaker-label territory.
+    line_offtrie_streak: int = 0
+
     # --- Tier 2: sentence-level tense register ---
     # Captures the tense / modality of the FIRST finite verb seen in
     # the current sentence. Once set, it biases later verb-like
