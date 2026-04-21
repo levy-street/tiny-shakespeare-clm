@@ -485,7 +485,7 @@ def predict(state: ModelState) -> list[float]:
         s4 = start4gram_bias(state.word_buffer)
         if s4 is not None:
             for i in range(VOCAB_SIZE):
-                logits[i] += s4[i] * 1.3
+                logits[i] += s4[i] * 1.1
 
     # Layer 3b6: word-start 5-gram bias — at letter_run_len == 4, the
     # fifth letter is conditioned on the first four letters of the
