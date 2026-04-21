@@ -97,17 +97,14 @@ def speaker_label_strict_bias(
     else:
         # Off-trie buffer: no known speaker label reaches here. Push
         # hard toward termination so we exit the bad-label state
-        # quickly (via newline, which resets the FSM). But don't
-        # encourage mid-word space/colon — those would produce
-        # malformed compound labels.
+        # quickly. But don't encourage mid-word space/colon — those
+        # would produce malformed compound labels.
         sp_idx = VOCAB_INDEX.get(" ")
         if sp_idx is not None:
-            vec[sp_idx] += -1.5
+            vec[sp_idx] += -2.8
         co_idx = VOCAB_INDEX.get(":")
         if co_idx is not None:
-            # Off-trie + colon = closing with a bogus label. Strong
-            # penalty.
-            vec[co_idx] += -2.5
+            vec[co_idx] += -3.0
 
     # --- Opposite-case letter penalty. ---
     # Once we've committed to a case regime via the first letter,
@@ -138,9 +135,10 @@ def speaker_label_strict_bias(
         # label would have emitted lowercase at position 2).
         # At buffer length 1 we haven't committed yet, so skip.
         if len(speaker_buffer) >= 2:
+            pen_low = -3.0
             for ch in _LOWER:
                 idx = VOCAB_INDEX.get(ch)
                 if idx is not None:
-                    vec[idx] += -2.0
+                    vec[idx] += pen_low
 
     return vec
