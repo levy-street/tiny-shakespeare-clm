@@ -33,6 +33,7 @@ from .line_coherence import update_line_coherence
 from .line_end_memory import update_line_end_memory
 from .verb_agreement import update_verb_agreement
 from .np_head import update_np_head
+from .prep_governor import update_prep_governor
 from .transitivity import update_transitivity
 from .verb_class import update_verb_class
 from .verb_complement import update_verb_complement
@@ -157,6 +158,7 @@ PIPELINE: list[Stage] = [
     update_verb_agreement,  # Tier 2: subject-verb agreement expectation
     update_tense,           # Tier 2: sentence-level tense register
     update_np_head,         # Tier 2: NP-head expectation (np_open, np_wait_words)
+    update_prep_governor,   # Tier 2: prep→prep / prep→prep-word blocker flag
     update_sentence_pressure,  # Tier 2: signed completion-readiness score (reads subj/verb/np_open/subord/last_word_pos)
     update_syntactic_frame, # Tier 2: forward role projection for next word
     update_transitivity,    # Tier 2: verb transitivity / object-expectation

@@ -1493,6 +1493,32 @@ class ModelState(BaseModel):
     # through adjectives; caps at 5.
     np_wait_words: int = 0
 
+    # --- Tier 2: prep-governor FSM ---
+    # True when the IMMEDIATELY PRECEDING completed word was a
+    # preposition AND no clause/sentence boundary has intervened.
+    # Reset on:
+    #   - completion of a content word (noun / pronoun / proper_noun /
+    #     adjective — the "object" of the preposition)
+    #   - sentence-end punctuation (. ! ?)
+    #   - clause-break punctuation (; : comma in certain positions)
+    #   - newline / speaker-turn boundary
+    #
+    # Consumed by `predict/prep_governor.py` to block the
+    # preposition→preposition pattern: when the current word_buffer
+    # is becoming another preposition (e.g. "w" + "i" + "t" + "h"
+    # after "of") or a grammatically-impossible post-preposition
+    # POS (CONJUNCTION, ANOTHER PREPOSITION, main VERB without
+    # gerund/participle morphology).
+    #
+    # Motivation: samples regularly produce "the noon of with",
+    # "By in me did he", "at the he when" — sequences where the
+    # post-preposition slot is filled with another preposition or
+    # pronoun-subject, which are grammatically impossible in English.
+    # The existing np_open flag signals expectation but doesn't
+    # specifically block preposition-building continuations of the
+    # buffer.
+    prep_block_active: bool = False
+
     # --- Tier 2: enjambment / line-end punctuation class ---
     # Classification of the final non-newline character of the
     # previous line (the char immediately before its closing \n).

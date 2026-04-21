@@ -76,6 +76,7 @@ from .turn_pronoun_bias import (
 from .noun_class_compat import noun_class_compat_bias
 from .oath_mode import oath_mode_start_bias, oath_mode_close_bias
 from .np_head import np_head_start_bias
+from .prep_governor import prep_governor_bias
 from .ornament import ornament_start_bias
 from .parallel import parallel_start_bias
 from .proper_noun import proper_noun_start_bias
@@ -1457,6 +1458,24 @@ def predict(state: ModelState) -> list[float]:
         if am is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += am[i] * 6.0
+
+    # Layer 3c2d-prep: prep-governor mid-word block. When the just-
+    # completed word was a preposition (prep_block_active), the
+    # CURRENT in-progress word must not become another preposition.
+    # Penalize letters that would extend word_buffer down the
+    # preposition trie, and penalize terminators when the buffer IS
+    # already a complete preposition. Fires at letter_run_len >= 1
+    # (mid-word), so it sits OUTSIDE the word-start block.
+    if state.prep_block_active and state.speaker_label_state == 0:
+        pgb = prep_governor_bias(
+            state.prep_block_active,
+            state.word_buffer,
+            state.letter_run_len,
+            state.speaker_label_state,
+        )
+        if pgb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += pgb[i]
 
     # Layer 3c2e: antithesis pivot / closure bias. Reads the state
     # maintained by pipeline/antithesis.py. At word-start, when we're
