@@ -70,6 +70,7 @@ from .qu_rule import qu_rule_bias
 from .cons_x_rule import cons_x_rule_bias
 from .sensory_charge import sensory_charge_start_bias
 from .valence import valence_start_bias
+from .motion_register import motion_register_bias
 from .martial import martial_word_start_bias
 from .turn_pronoun_bias import (
     turn_pronoun_sentence_start_bias,
@@ -2045,6 +2046,20 @@ def predict(state: ModelState) -> list[float]:
         if vsb is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += vsb[i]
+
+        # Layer 4-MRK: motion ↔ stasis kinetic register bias. When
+        # scene has drifted kinetic (march, run, fly) or static
+        # (stand, dwell, stay), tilt next content-word first letter
+        # toward matching kinetic mode.
+        mrk = motion_register_bias(
+            state.motion_register,
+            state.letter_run_len,
+            state.last_char_class,
+            state.speaker_label_state,
+        )
+        if mrk is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += mrk[i]
 
         # Layer 4-MR: martial / peaceful register word-start bias.
         # When the scene's martial_charge is strongly positive, the

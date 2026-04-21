@@ -2810,6 +2810,42 @@ class ModelState(BaseModel):
     # word-start when |valence| >= 0.25.
     emotional_valence: float = 0.0
 
+    # --- Tier 3 FLOW: kinetic register (motion ↔ stasis) ---
+    # Signed scalar in [-1.0, +1.0] capturing whether the recent
+    # diction is driving the scene toward MOTION or STASIS. Shakespeare
+    # alternates these kinetic modes decisively: a battlefield scene
+    # is relentless motion ("charge, strike, fly, march, haste,
+    # horse!"); a soliloquy on a bench or in thought is relentless
+    # stasis ("stand, sit, stay, here, dwell, lie"). The register
+    # self-reinforces — once a scene goes kinetic, verbs and adverbs
+    # continue in that mode.
+    #
+    #   POSITIVE (toward +1.0, MOTION): come, go, run, fly, fall,
+    #       rise, march, ride, haste, rush, storm, speed, chase,
+    #       flee, charge, strike, leap, soar, sail, depart, forth,
+    #       hither, thither, away, back, on, off, forward, hence,
+    #       thence, whither
+    #
+    #   NEGATIVE (toward -1.0, STASIS): stand, stay, sit, lie, dwell,
+    #       bide, rest, wait, abide, remain, pause, linger, keep,
+    #       here, there, still, within, without, yonder, long, ever
+    #
+    # Updated on every completed word: polarized word pulls toward
+    # its sign (step 0.22 of remaining distance to ±1); neutral
+    # words cause slow decay toward 0 (×0.96 per word). Resets on
+    # speaker-turn boundary (\n\n).
+    #
+    # Distinct from `martial_register` (battlefield vocabulary) and
+    # `sensory_charge` (corporeal ↔ abstract) and `emotional_valence`
+    # (moral polarity). Motion-vs-stasis is purely about kinetic
+    # tempo — "march" and "stand" share register valence + sensory
+    # weight but diverge sharply on kinetic mode.
+    #
+    # Consumed by predict layer at word-start positions: when
+    # |motion_register| >= 0.25, tilt first-letter distribution
+    # toward motion-opening or stasis-opening content words.
+    motion_register: float = 0.0
+
     # -----------------------------------------------------------
     # Word integrity monitor — targeting gibberish word-runs.
     # -----------------------------------------------------------
