@@ -2500,6 +2500,49 @@ class ModelState(BaseModel):
     sentence_tense: int = 0
     sentence_tense_age: int = 0
 
+    # --- Tier 3: martial / battlefield register ---
+    # A rolling float in roughly [-2, +3] that tracks whether the
+    # recent content words have been MARTIAL (sword, blood, wound,
+    # arm, steel, strike, war, battle, soldier, captain, kill, slain,
+    # iron, fight, march, pike, shield, lance, horse, trumpet, drum,
+    # conquer, vanquish, foe, enemy, armor, helmet, banner, siege,
+    # breach, assault) or PEACEFUL / PASTORAL (peace, love, sleep,
+    # rest, home, gentle, kind, soft, mild, bed, bread, song, music,
+    # flower, garden, grove, dove, lamb).
+    #
+    #   +3  = heavy martial texture (battle scene, history-play
+    #         crisis, Macbeth/Othello/Antony & Cleopatra war talk)
+    #    0  = neutral
+    #   -2  = peaceful / pastoral (Midsummer wood-talk, lovers'
+    #         chamber scenes, benediction)
+    #
+    # Update rule (pipeline/martial.py, at word-completion):
+    #   - Look up last_completed_word in curated martial / peaceful
+    #     word sets (prior knowledge, not corpus statistics).
+    #     Martial words add +0.70, peaceful words add −0.40. Clamped
+    #     to [-2.0, +3.0].
+    #   - All words decay the value by ×0.93 per word so influence
+    #     fades if the topic drifts.
+    #   - Reset to 0 on speaker-turn boundary (\n\n).
+    #
+    # Consumed by predict/martial.py at word-start positions (outside
+    # speaker labels, post-space/newline): when martial_charge > +1.3,
+    # boosts first letters of martial-starter vocabulary (s/b/w/a/f/
+    # k/m/h/i/c — sword/blood/wound/arms/fight/kill/march/horse/iron/
+    # captain); when < -1.0, boosts first letters of peaceful
+    # vocabulary (p/l/g/s/f/k/m/h — peace/love/gentle/soft/flower/
+    # kind/mild/home).
+    #
+    # Distinct from:
+    #   - fury (emotional rage/curse register, not battlefield lexicon)
+    #   - sensory_charge (broad corporeal-vs-abstract axis, covers
+    #     lyric imagery too — roses, dew, night, breeze)
+    #   - gravitas (moral weight, honor, oath — cognate but different
+    #     lexicon)
+    # Martial is specifically the BATTLEFIELD / ARMS lexicon and the
+    # peaceful counter-pole is its negation, not generic tenderness.
+    martial_charge: float = 0.0
+
     # --- Tier 3: sensory charge (corporeal ↔ abstract axis) ---
     # A rolling float in roughly [-3, +3] that tracks whether recent
     # completed content words have been CORPOREAL / SENSORY (body

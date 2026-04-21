@@ -60,6 +60,7 @@ from .apostrophe_elision import apostrophe_elision_bias
 from .word_cap_integrity import word_cap_integrity_bias
 from .word_integrity import word_integrity_bias
 from .sensory_charge import sensory_charge_start_bias
+from .martial import martial_word_start_bias
 from .oath_mode import oath_mode_start_bias, oath_mode_close_bias
 from .np_head import np_head_start_bias
 from .ornament import ornament_start_bias
@@ -1743,6 +1744,22 @@ def predict(state: ModelState) -> list[float]:
         if scb is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += scb[i]
+
+        # Layer 4-MR: martial / peaceful register word-start bias.
+        # When the scene's martial_charge is strongly positive, the
+        # next content word is more likely to continue the martial
+        # lexicon (s-word, b-lood, w-ound, a-rms, f-ight, ...). When
+        # strongly negative, the peaceful lexicon. Flow-tier texture.
+        mrb = martial_word_start_bias(
+            state.martial_charge,
+            state.letter_run_len,
+            state.speaker_label_state,
+            last_cls,
+            state.word_buffer,
+        )
+        if mrb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += mrb[i]
 
         # Layer 4-OATH-S: oath-mode word-start bias. After "by" /
         # "upon" / "my" / "his" / "thy" / "our" with hot oath_mode,

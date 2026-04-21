@@ -51,6 +51,7 @@ from .flow import update_flow
 from .formula import update_formula
 from .fury import update_fury
 from .lament import update_lament
+from .martial import update_martial
 from .mirth import update_mirth
 from .linguistic import update_linguistic
 from .mid_departure import update_mid_departure
@@ -166,6 +167,7 @@ PIPELINE: list[Stage] = [
     update_apostrophe,      # Tier 3: figurative-address mode (O Fortune!)
     update_confessional,    # Tier 3: confessional vs public register
     update_sensory_charge,  # Tier 3: corporeal ↔ abstract charge (lyric vs argument register)
+    update_martial,         # Tier 3: martial ↔ peaceful register (battlefield lexicon)
     update_dialogue_adjacency,  # Tier 2/3: snapshot prev-turn shape before turn counters reset
     update_turn_shape,      # Tier 2/3: cross-turn rhythm tuple + stichomythia_mode (must run BEFORE turn_progress reset)
     update_turn_progress,   # Tier 2/3: words/sentences/lines in current turn
