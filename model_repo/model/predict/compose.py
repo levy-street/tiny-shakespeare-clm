@@ -3873,17 +3873,17 @@ def predict(state: ModelState) -> list[float]:
         # across many completions and we can trust it.
         tmc = state.trie_match_count
         if tmc == 1:
-            T = 2.40
+            T = 2.15
         elif tmc == 2:
             T = 2.22
         elif tmc <= 4:
-            T = 2.07
+            T = 2.20
         elif tmc <= 8:
-            T = 1.94
+            T = 2.00
         elif tmc <= 16:
-            T = 1.84
+            T = 1.92
         else:
-            T = 1.76
+            T = 1.92
     else:
         # Off-trie mid-word: letter n-grams + drift-recovery stack.
         # Higher T than on-trie because many strong negative biases
