@@ -199,6 +199,48 @@ class ModelState(BaseModel):
     # POS tag of the word before last_completed_word — lets downstream
     # layers look at a two-word POS context.
     prev_word_pos: int = 0
+    # --- Tier 2: coordinator parallelism (X and Y, X or Y, X nor Y) ---
+    # When a coordinating conjunction ("and", "or", "nor") completes, we
+    # record the POS tag of the word that sat immediately BEFORE the
+    # conjunction (the "X" of "X and Y"). This is the POS that is
+    # strongly expected to echo onto the NEXT word ("Y") — Shakespeare
+    # heavily favors parallel POS across coordinators:
+    #   - "fair and foul"     (adj + adj)
+    #   - "night and day"     (noun + noun)
+    #   - "Romeo and Juliet"  (proper + proper)
+    #   - "thou and I"        (pronoun + pronoun)
+    #   - "to live or die"    (verb-infin + verb-infin)
+    # 0 = inactive. Set on the tick the coordinator word completes;
+    # consumed (cleared) when the NEXT word completes, or earlier on
+    # sentence-end / turn-boundary. A separate flag `coord_echo_pending`
+    # is True for the narrow word-start slot where the bias should fire.
+    coord_echo_pos: int = 0
+    # True at word-start positions between the coordinator's trailing
+    # space and the first letter of the following word. The predict
+    # layer reads this + coord_echo_pos and biases the first letter of
+    # the coming word toward typical starters of the echoed POS class,
+    # plus an alliterative first-letter echo and case-echo.
+    coord_echo_pending: bool = False
+    # First letter (lowercased) of the word that sat immediately before
+    # the coordinator. Used to push alliterative echo on the first
+    # letter of the word following the coordinator — Shakespeare's
+    # coordinate pairs are frequently alliterative: "fair and foul",
+    # "kith and kin", "beck and call", "tooth and nail", "day and
+    # dark". "" when no echo is active.
+    coord_echo_first_letter: str = ""
+    # True iff the pre-coord word was capitalized (proper-noun-like,
+    # e.g. "Romeo"). When True, the word following the coordinator is
+    # overwhelmingly likely to also be capitalized ("Romeo and
+    # Juliet", "Cassio and Iago"). The predict layer reads this to
+    # push upper-case A-Z at the next word-start.
+    coord_echo_was_capital: bool = False
+    # Helper flag: snapshot of `current_word_started_cap` captured at
+    # the moment the PRECEDING word completed. Lets us detect the
+    # mid-sentence-cap (proper-noun-like) status of the word BEFORE
+    # the currently-completing word — needed at the tick when a
+    # coordinator ("and") completes so we know whether the pre-coord
+    # word was a proper-noun-like capital.
+    coord_prev_word_started_cap: bool = False
     # Length (in chars) of the previous line. Updated exactly when we
     # emit a \n. Used to distinguish verse lines (typically short,
     # ~30-50 chars) from prose lines (typically 60+ chars). This lets

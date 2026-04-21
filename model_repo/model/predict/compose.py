@@ -65,6 +65,7 @@ from .np_head import np_head_start_bias
 from .ornament import ornament_start_bias
 from .parallel import parallel_start_bias
 from .proper_noun import proper_noun_start_bias
+from .coord import coord_parallel_bias
 from .cap_gate import cap_gate_start_bias
 from .proper_noun_memory import (
     proper_noun_memory_mid_bias,
@@ -1790,6 +1791,23 @@ def predict(state: ModelState) -> list[float]:
         if pnb is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += pnb[i]
+
+        # Layer 4-COORD: coordinator-parallelism POS echo. After
+        # "X and ___", "X or ___", "X nor ___", Shakespeare favors a Y
+        # whose POS matches X. Biases first-letter toward typical
+        # openers of the echoed POS class (see predict/coord.py).
+        cpb = coord_parallel_bias(
+            state.coord_echo_pending,
+            state.coord_echo_pos,
+            state.coord_echo_first_letter,
+            state.coord_echo_was_capital,
+            state.letter_run_len,
+            state.speaker_label_state,
+            state.word_buffer,
+        )
+        if cpb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += cpb[i]
 
         # Layer 4-PNM: proper-noun scene rolodex bias. Recently-seen
         # capitalized content words (Rome, Coriolanus, Volsces, etc.)

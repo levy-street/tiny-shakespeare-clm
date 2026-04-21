@@ -27,6 +27,7 @@ from .clause_slot import update_clause_slot
 from .conditional import update_conditional
 from .confessional import update_confessional
 from .clause_parallel import update_clause_parallel
+from .coord import update_coord
 from .line_break import update_line_break
 from .line_coherence import update_line_coherence
 from .line_end_memory import update_line_end_memory
@@ -118,6 +119,7 @@ PIPELINE: list[Stage] = [
     update_speaker_offtrie, # Tier 2: speaker-buffer off-trie run
     update_speaker_vowels,  # Tier 2: speaker-buffer vowel count
     update_pos,             # Tier 2: POS tag of last completed word
+    update_coord,           # Tier 2: coordinator-parallelism echo (X and Y) — runs before proper_noun_memory so current_word_started_cap is still live
     update_phrase_slot,     # Tier 2: noun-phrase slot FSM (NEUTRAL/POST_DET/POST_ADJ/POST_NOUN) — runs after update_pos
     update_noun_class,      # Tier 2/3: coarse semantic noun-class (KINSHIP/BODY/ROYALTY/...)
     update_proper_noun,     # Tier 2: proper-noun expectation slot
