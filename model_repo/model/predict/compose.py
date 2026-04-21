@@ -132,6 +132,7 @@ from .formula import formula_midword_bias, formula_start_bias
 from .word_commit import word_commit_bias
 from .trie_completion_hint import trie_completion_hint_bias
 from .trie_stay import trie_stay_bias
+from .speaker_shape import speaker_shape_bias
 from .turn_shape import stichomythia_bias
 from .line_word_cadence import line_word_cadence_bias
 from .archaic_density import archaic_density_bias
@@ -3164,6 +3165,21 @@ def predict(state: ModelState) -> list[float]:
     elif state.speaker_label_state == 2 and state.upper_run_len >= 3:
         # Name is long enough to plausibly end; boost ":"
         logits[VOCAB_INDEX[":"]] += 3.0
+
+    # Layer 5b: speaker-label shape enforcement. Reads speaker_buffer
+    # to derive word_count and current_word_len, penalizing
+    # morphologically-invalid transitions (space-then-colon, single-
+    # letter-word-then-space, 4+ words before colon, etc.).
+    if state.speaker_label_state == 2:
+        sss = speaker_shape_bias(
+            state.speaker_buffer,
+            state.speaker_label_state,
+            state.speaker_label_saw_lower,
+            state.speaker_label_offtrie_run,
+        )
+        if sss is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += sss[i]
 
     # After sentence-ending punctuation (. ? !) at a verse-line-length
     # position, newline is a far more likely continuation than space.
