@@ -65,6 +65,7 @@ from .turn_pronoun_bias import (
     turn_pronoun_sentence_start_bias,
     turn_pronoun_content_bias,
 )
+from .noun_class_compat import noun_class_compat_bias
 from .oath_mode import oath_mode_start_bias, oath_mode_close_bias
 from .np_head import np_head_start_bias
 from .ornament import ornament_start_bias
@@ -507,15 +508,15 @@ def predict(state: ModelState) -> list[float]:
             # to the residual context-class/bigram priors.
             rl = state.letter_run_len
             if rl <= 1:
-                wt_scale = 1.75
+                wt_scale = 1.80
             elif rl == 2:
-                wt_scale = 1.85
-            elif rl == 3:
                 wt_scale = 1.90
+            elif rl == 3:
+                wt_scale = 1.95
             elif rl == 4:
-                wt_scale = 1.92
+                wt_scale = 1.97
             else:
-                wt_scale = 1.94
+                wt_scale = 1.99
             for i in range(VOCAB_SIZE):
                 logits[i] += wt[i] * wt_scale
 
@@ -1802,6 +1803,25 @@ def predict(state: ModelState) -> list[float]:
         if tpsb is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += tpsb[i]
+
+        # Layer 4-NCC: noun-class COMPATIBILITY bias. Extends the
+        # existing noun_class_bias (which fires only after
+        # PREP/POSS/ART/CONJ) to apply at EVERY space-word-start
+        # when a noun class is recently active. Positive push on
+        # letters opening words in compatible sibling classes;
+        # small negative push on letters distinctive to incompatible
+        # classes (prevents "throne of treasure" cross-frame drift).
+        nccb = noun_class_compat_bias(
+            state.last_noun_class,
+            state.noun_class_age,
+            state.speaker_label_state,
+            state.letter_run_len,
+            state.word_buffer,
+            last_cls,
+        )
+        if nccb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += nccb[i]
 
         # Layer 4-OATH-S: oath-mode word-start bias. After "by" /
         # "upon" / "my" / "his" / "thy" / "our" with hot oath_mode,
