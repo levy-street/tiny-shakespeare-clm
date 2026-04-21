@@ -108,7 +108,7 @@ def clause_skel_bias(
 
     # Age-based scale escalation. Longer wait = stronger push.
     age = clause_skel_age
-    base = 0.11
+    base = 0.60
     if age >= 4:
         scale = base * 1.8
     elif age >= 2:
