@@ -183,7 +183,7 @@ def phrase_slot_bias(
         return None
 
     # Scale with slot_len — longer NP without closure = more pressure.
-    base = 0.18
+    base = 0.22
     if phrase_slot_len >= 3:
         scale = base * 1.8
     elif phrase_slot_len == 2:
