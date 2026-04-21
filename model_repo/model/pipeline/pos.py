@@ -349,6 +349,132 @@ _VERBS = frozenset({
     "hide", "hides", "hid", "hidden",
 })
 
+# Common nouns not captured by suffix rules. Words ending in consonants
+# other than the noun-indicating suffixes default to POS_UNKNOWN; this
+# list patches the most common Shakespearean content nouns. Many of
+# these are polysemous (mark/mark, love/love) — the verb form is in
+# _VERBS which is checked first, so listing the noun here defines the
+# default disambiguation. The ambiguity is tolerable because our
+# downstream FSMs (clause_skel, phrase_slot) respond to VERB tags
+# separately and the noun fallback keeps the syntax parse moving.
+_NOUNS = frozenset({
+    # People / titles
+    "lord", "lords", "lady", "ladies", "sir", "madam", "master",
+    "mistress", "king", "kings", "queen", "queens", "prince", "princes",
+    "princess", "duke", "dukes", "duchess", "earl", "earls", "count",
+    "knight", "knights", "squire", "page", "pages", "boy", "boys",
+    "girl", "girls", "child", "children", "man", "men", "woman", "women",
+    "father", "fathers", "mother", "mothers", "son", "sons", "daughter",
+    "daughters", "brother", "brothers", "sister", "sisters", "husband",
+    "wife", "wives", "friend", "friends", "enemy", "enemies", "fool",
+    "fools", "knave", "knaves", "villain", "villains", "traitor",
+    "traitors", "rogue", "rogues", "beggar", "beggars", "gentleman",
+    "gentlemen", "servant", "servants", "soldier", "soldiers", "captain",
+    "captains", "lieutenant", "general", "messenger", "messengers",
+    "nurse", "nurses", "priest", "priests", "monk", "friar", "bishop",
+    "ghost", "ghosts", "spirit", "spirits", "witch", "witches", "fairy",
+    "fairies", "devil", "god", "gods", "goddess", "heaven", "heavens",
+    "angel", "angels", "mortal", "mortals",
+    # Body
+    "head", "heads", "heart", "hearts", "soul", "souls", "eye", "eyes",
+    "ear", "ears", "mouth", "lips", "tongue", "tongues", "hand", "hands",
+    "arm", "arms", "foot", "feet", "leg", "legs", "face", "faces",
+    "cheek", "cheeks", "brow", "brows", "breath", "blood", "bone",
+    "bones", "flesh", "skin", "hair", "neck", "back", "breast",
+    "breasts", "tears", "tear", "smile", "smiles", "voice", "voices",
+    # Emotions / abstractions
+    "love", "loves", "hate", "hates", "fear", "fears", "hope", "hopes",
+    "joy", "joys", "sorrow", "sorrows", "grief", "griefs", "pain",
+    "pains", "pleasure", "pleasures", "shame", "honour", "honor",
+    "pride", "virtue", "virtues", "vice", "vices", "faith", "trust",
+    "doubt", "doubts", "truth", "truths", "lie", "lies", "peace",
+    "war", "wars", "death", "deaths", "life", "lives", "birth",
+    "dream", "dreams", "thought", "thoughts", "mind", "minds",
+    "spirit", "reason", "reasons", "cause", "causes", "end", "ends",
+    "fate", "fates", "fortune", "fortunes", "chance", "chances",
+    "pity", "mercy", "justice", "wisdom", "folly", "malice",
+    "rage", "anger", "wrath", "fury", "passion", "passions",
+    # Nature / objects / places
+    "sun", "moon", "stars", "star", "sky", "skies", "heaven", "earth",
+    "world", "worlds", "land", "lands", "country", "countries", "city",
+    "cities", "town", "towns", "court", "courts", "castle", "castles",
+    "palace", "palaces", "tower", "towers", "gate", "gates", "wall",
+    "walls", "door", "doors", "window", "windows", "chamber",
+    "chambers", "house", "houses", "home", "homes", "hall", "halls",
+    "room", "rooms", "bed", "beds", "chair", "chairs", "throne",
+    "thrones", "crown", "crowns", "sword", "swords", "dagger",
+    "daggers", "shield", "shields", "spear", "spears", "horse",
+    "horses", "dog", "dogs", "bird", "birds", "beast", "beasts",
+    "tree", "trees", "flower", "flowers", "garden", "gardens", "wood",
+    "woods", "forest", "forests", "field", "fields", "sea", "seas",
+    "river", "rivers", "mountain", "mountains", "stone", "stones",
+    "rock", "rocks", "fire", "water", "waters", "wind", "winds",
+    "storm", "storms", "rain", "snow", "ice", "light", "darkness",
+    "shadow", "shadows", "day", "days", "night", "nights", "morning",
+    "mornings", "evening", "evenings", "hour", "hours", "minute",
+    "minutes", "moment", "moments", "year", "years", "time", "times",
+    "age", "ages", "season", "seasons", "spring", "summer", "autumn",
+    "winter",
+    # Speech / story
+    "word", "words", "tale", "tales", "story", "stories", "song",
+    "songs", "name", "names", "question", "questions", "answer",
+    "answers", "prayer", "prayers", "oath", "oaths", "vow", "vows",
+    "curse", "curses", "blessing", "blessings", "news",
+    "letter", "letters", "book", "books", "page",
+    # Money / gear
+    "gold", "silver", "jewel", "jewels", "ring", "rings", "purse",
+    "purses", "coin", "coins", "crown",
+    # Food / drink
+    "bread", "meat", "wine", "wines", "cup", "cups", "feast", "feasts",
+    # Generic action-patient nouns
+    "deed", "deeds", "act", "acts", "wound", "wounds", "scar", "scars",
+    "stroke", "strokes", "blow", "blows", "fight", "fights", "battle",
+    "battles", "combat", "quarrel", "quarrels", "plot", "plots",
+    "scheme", "schemes", "plan", "plans", "purpose", "purposes",
+    "matter", "matters", "affair", "affairs", "business",
+    "task", "tasks", "duty", "duties", "care", "cares", "burden",
+    "burdens", "trouble", "troubles",
+})
+_ADJECTIVES = frozenset({
+    # Quality
+    "good", "bad", "great", "small", "large", "high", "low", "long",
+    "short", "old", "young", "new", "fresh", "poor", "rich", "strong",
+    "weak", "fast", "slow", "quick", "rare", "common", "strange",
+    "wild", "tame", "proud", "humble", "bold", "meek", "mild",
+    "gentle", "fierce", "cruel", "kind", "harsh", "soft", "hard",
+    "sweet", "bitter", "sour", "dry", "wet", "cold", "hot", "warm",
+    "cool", "bright", "dark", "light", "deep", "shallow", "plain",
+    "simple", "pure", "foul", "fair", "foul", "dear", "fine", "rude",
+    # Moral / emotional
+    "just", "true", "false", "honest", "noble", "base", "wise",
+    "foolish", "mad", "sane", "brave", "coward", "faithful",
+    "loyal", "jealous", "envious", "angry", "glad", "sad", "merry",
+    "sorry", "happy", "wretched", "miserable", "sick", "sickly",
+    "well", "healthy", "healthful", "barren", "fruitful",
+    # Royalty / valued
+    "royal", "princely", "kingly", "queenly", "worthy", "unworthy",
+    "valiant", "gallant", "heroic", "noble", "gentle",
+    # Colors & appearance
+    "red", "white", "black", "green", "blue", "yellow", "pale",
+    "rosy", "golden", "silver", "crimson", "purple", "grey", "gray",
+    # Quantity / relative
+    "few", "many", "much", "little", "full", "empty", "whole", "half",
+    "same", "different", "other", "another", "such", "every", "any",
+    "all", "some", "each", "either", "neither", "certain", "sure",
+    "possible", "impossible", "necessary", "equal",
+    # Modal-like
+    "likely", "unlikely", "ready",
+    # Sensible / concrete
+    "soft", "sharp", "dull", "blunt", "smooth", "rough", "loud",
+    "quiet", "silent", "still", "swift", "steady", "firm", "loose",
+    "tight", "straight", "crooked", "round", "square", "flat",
+    # Shakespearean / Elizabethan common
+    "sweet", "dear", "gentle", "fair", "brave", "bold", "foul",
+    "loathsome", "lovely", "lonesome", "blessed", "cursed",
+    "holy", "sacred", "profane", "divine", "mortal", "immortal",
+    "vile", "valiant",
+})
+
 
 def _classify_by_suffix(w: str) -> int:
     # Archaic past with "'d" — e.g. disbench'd.
@@ -427,6 +553,10 @@ def classify(word: str) -> int:
         return POS_ADVERB
     if w in _VERBS:
         return POS_VERB
+    if w in _NOUNS:
+        return POS_NOUN
+    if w in _ADJECTIVES:
+        return POS_ADJECTIVE
     # Suffix-based guess.
     return _classify_by_suffix(w)
 
