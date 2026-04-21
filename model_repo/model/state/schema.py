@@ -2490,6 +2490,23 @@ class ModelState(BaseModel):
     # names instead of guessing fresh each time.
     proper_nouns_seen: tuple[str, ...] = ()
 
+    # Turn-scoped proper-noun rolodex. Same add-logic as
+    # `proper_nouns_seen` but resets at every turn boundary (blank
+    # line / speaker-turn transition). Tracks proper nouns introduced
+    # DURING THE CURRENT TURN only — a much tighter consistency scope
+    # than the global rolodex, which accumulates across scenes and can
+    # pollute a HAMLET turn with "Tamora" / "Bertram" / etc. left over
+    # from earlier Titus / All's Well turns.
+    #
+    # Purpose: a predict layer can boost these letters more
+    # aggressively (within-turn consistency), and penalize capital-
+    # letter starts whose lowercase is in `proper_nouns_seen` but NOT
+    # in `turn_rolodex` (stale, cross-scene carryovers).
+    #
+    # Up to 5 entries, most-recent first. Resets to () when
+    # consecutive_newlines >= 2 (turn boundary).
+    turn_rolodex: tuple[str, ...] = ()
+
     # --- Tier 2/3: imperative chain counter ---
     # Tracks the number of CONSECUTIVE imperative sentences that have
     # just closed in the current speaker turn. Shakespeare's dramatic

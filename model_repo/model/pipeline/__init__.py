@@ -68,6 +68,7 @@ from .phrase_slot import update_phrase_slot
 from .pos import update_pos
 from .proper_noun import update_proper_noun
 from .proper_noun_memory import update_proper_noun_memory
+from .turn_rolodex import update_turn_rolodex
 from .question_answer import update_question_answer
 from .caesura import update_caesura
 from .cap_required import update_cap_required
@@ -140,6 +141,7 @@ PIPELINE: list[Stage] = [
     update_noun_class,      # Tier 2/3: coarse semantic noun-class (KINSHIP/BODY/ROYALTY/...)
     update_proper_noun,     # Tier 2: proper-noun expectation slot
     update_proper_noun_memory,  # Tier 2: rolodex of recent capitalized words
+    update_turn_rolodex,    # Tier 2: turn-scoped proper-noun rolodex (resets at blank-line; mirrors proper_nouns_seen head)
     update_list_structure,  # Tier 2: list-parallelism progress
     update_antithesis,      # Tier 2/3: antithesis / rhetorical-contrast state
     update_repetition,      # Tier 2: short-range word-repetition memory

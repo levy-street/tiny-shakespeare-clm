@@ -86,6 +86,7 @@ from .proper_noun_memory import (
     proper_noun_memory_mid_bias,
     proper_noun_memory_start_bias,
 )
+from .turn_rolodex_bias import turn_rolodex_bias
 from .phrase_bigram import phrase_bigram_bias
 from .phrase_trigram import phrase_trigram_bias
 from .pos_next import pos_next_bias
@@ -2184,6 +2185,29 @@ def predict(state: ModelState) -> list[float]:
         if pnm is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += pnm[i]
+
+        # Layer 4-TRB: turn-scoped rolodex bias. Slight positive boost
+        # to capitals whose first letter matches a proper noun already
+        # introduced in THE CURRENT TURN, and a small penalty to
+        # capitals matching stale (cross-turn-carryover) rolodex
+        # entries. Closes the "Tamora in a HAMLET turn" cross-scene
+        # injection failure mode.
+        trb = turn_rolodex_bias(
+            state.turn_rolodex,
+            state.proper_nouns_seen,
+            state.proper_noun_slot,
+            state.speaker_label_state,
+            state.sentence_start_pending,
+            state.consecutive_newlines,
+            state.chars_since_sentence_end,
+            state.words_in_sentence,
+            state.letter_run_len,
+            state.word_buffer,
+            state.last_char,
+        )
+        if trb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += trb[i]
 
         # Layer 4-CG: rolodex-gated capital-letter penalty. Complements
         # the proper-noun rolodex boost: mid-sentence caps NOT in the
