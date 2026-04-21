@@ -50,6 +50,7 @@ from .drift import update_drift
 from .flow import update_flow
 from .formula import update_formula
 from .function_word_chain import update_function_word_chain
+from .clause_skel import update_clause_skel
 from .fury import update_fury
 from .lament import update_lament
 from .martial import update_martial
@@ -125,6 +126,7 @@ PIPELINE: list[Stage] = [
     update_function_word_chain,  # Tier 2: count of consecutive function-class words — resets on content word
     update_coord,           # Tier 2: coordinator-parallelism echo (X and Y) — runs before proper_noun_memory so current_word_started_cap is still live
     update_phrase_slot,     # Tier 2: noun-phrase slot FSM (NEUTRAL/POST_DET/POST_ADJ/POST_NOUN) — runs after update_pos
+    update_clause_skel,     # Tier 2: clause-skeleton FSM (EMPTY/SUBJ_OPEN/SUBJ_DONE/VERB_DONE/COMP_DUE/CLAUSE_DONE) — runs after phrase_slot
     update_noun_class,      # Tier 2/3: coarse semantic noun-class (KINSHIP/BODY/ROYALTY/...)
     update_proper_noun,     # Tier 2: proper-noun expectation slot
     update_proper_noun_memory,  # Tier 2: rolodex of recent capitalized words

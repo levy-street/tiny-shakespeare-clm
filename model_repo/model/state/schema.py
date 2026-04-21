@@ -1843,6 +1843,40 @@ class ModelState(BaseModel):
     # Resets on sentence-end punctuation and on speaker-turn boundary.
     function_word_chain_len: int = 0
 
+    # --- Tier 2: CLAUSE SKELETON FSM ---
+    # Encodes the proposition-building state of the current clause.
+    # A clause is a stretch of text between clause-boundary markers
+    # (period, question mark, exclamation, semicolon, colon, comma,
+    # em-dash, newline-turn-break, and completed coordinator
+    # "and"/"or"/"but"/"nor"/"yet"/"so" that opens a new clause).
+    #
+    # Codes (most-recent-first transitions):
+    #   0 EMPTY        — fresh clause, nothing committed yet
+    #   1 SUBJ_OPEN    — an NP opener (DET/POSS/ADJ) has appeared but
+    #                    the head noun hasn't closed yet
+    #   2 SUBJ_DONE    — a subject head (NOUN/PROPER_NOUN/PRONOUN)
+    #                    has completed; predicate (verb) is now owed
+    #   3 VERB_DONE    — a finite verb (VERB/VERB_ED/VERB_ING +
+    #                    optional preceding AUX/MODAL) has completed;
+    #                    object/complement or adjunct is now expected
+    #   4 COMP_DUE     — verb took an OBJ/PRED complement position;
+    #                    an NP/PP/predicate-adj is owed
+    #   5 CLAUSE_DONE  — predicate filled (object NP head OR predicate
+    #                    adj OR intransitive verb + 1 adjunct); clause
+    #                    is ready to close — boost terminators, allow
+    #                    conjunction to open next clause
+    #
+    # Ages with each just_finished_word. Resets to EMPTY on PUNCT_MID
+    # (", ; :"), PUNCT_END (". ? !"), speaker-turn boundary, entry into
+    # speaker label, and on coordinator completion (POS_CONJUNCTION
+    # and/or/nor/but/yet/so). Clause-age is tracked separately to
+    # allow predict layers to escalate pressure as a clause drags on.
+    #
+    # Consumed by predict/clause_skel.py at word-start: bias next-word
+    # first-letter toward the POS class expected by the current state.
+    clause_skel: int = 0
+    clause_skel_age: int = 0  # completed-word count since last reset
+
     # --- Tier 2: list-parallelism structure ---
     # Shakespeare uses "X, Y, and Z" / "nor A nor B" / "by heaven,
     # by earth, by all ..." heavily. Once a comma-separated list is

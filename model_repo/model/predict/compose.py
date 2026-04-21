@@ -197,6 +197,7 @@ from .word_reality_recover import (
 )
 from .phrase_slot import phrase_slot_bias
 from .function_word_chain import function_word_chain_bias
+from .clause_skel import clause_skel_bias
 from .syllable_saturation import syllable_saturation_bias
 from .verb_complement import verb_complement_start_bias
 from .line_break_bias import line_break_newline_bias
@@ -1476,6 +1477,26 @@ def predict(state: ModelState) -> list[float]:
     if fwc is not None:
         for i in range(VOCAB_SIZE):
             logits[i] += fwc[i]
+
+    # Clause-skeleton word-start bias. Reads clause_skel FSM
+    # (pipeline/clause_skel.py) — tracks what syntactic constituents
+    # have been seen in the current clause (SUBJ_OPEN/SUBJ_DONE/
+    # VERB_DONE/COMP_DUE/CLAUSE_DONE) — and tilts the next word's
+    # first letter toward the POS class that clause grammar is
+    # expecting. Pressure escalates with clause_skel_age (longer
+    # wait = stronger push). Directly targets the "the man evilly
+    # to who" grammar breakdown at the clause level, complementing
+    # the NP-level phrase_slot_bias.
+    ck = clause_skel_bias(
+        state.clause_skel,
+        state.clause_skel_age,
+        state.letter_run_len,
+        state.last_char_class,
+        state.speaker_label_state,
+    )
+    if ck is not None:
+        for i in range(VOCAB_SIZE):
+            logits[i] += ck[i]
 
     # Layer 3c3b: meditative mid-word disambiguation. When the buffer is
     # a prefix shared by a meditative word and a non-meditative word,
