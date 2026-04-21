@@ -65,6 +65,7 @@ from .illegal_consonant_double import illegal_consonant_double_bias
 from .illegal_triple_letter import illegal_triple_letter_bias
 from .second_apostrophe_block import second_apostrophe_block_bias
 from .qu_rule import qu_rule_bias
+from .cons_x_rule import cons_x_rule_bias
 from .sensory_charge import sensory_charge_start_bias
 from .valence import valence_start_bias
 from .martial import martial_word_start_bias
@@ -764,6 +765,17 @@ def predict(state: ModelState) -> list[float]:
     if qur is not None:
         for i in range(VOCAB_SIZE):
             logits[i] += qur[i]
+
+    # Layer 3c-CXR: consonant-X rule. In English, "x" almost always
+    # appears between a vowel and a vowel or terminator. Penalize "x"
+    # emission after a non-vowel (except "n" which allows "nx").
+    cxr = cons_x_rule_bias(
+        state.word_buffer,
+        state.speaker_label_state,
+    )
+    if cxr is not None:
+        for i in range(VOCAB_SIZE):
+            logits[i] += cxr[i]
 
 # Layer 3c-CAPI: mid-word capitalization integrity. After the
     # first letter of a word (letter_run_len >= 1), uppercase letters
