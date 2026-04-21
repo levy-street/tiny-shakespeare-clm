@@ -198,6 +198,7 @@ from .word_reality_recover import (
 from .phrase_slot import phrase_slot_bias
 from .function_word_chain import function_word_chain_bias
 from .clause_skel import clause_skel_bias
+from .verb_chain_block import verb_chain_block_bias
 from .syllable_saturation import syllable_saturation_bias
 from .verb_complement import verb_complement_start_bias
 from .line_break_bias import line_break_newline_bias
@@ -1497,6 +1498,23 @@ def predict(state: ModelState) -> list[float]:
     if ck is not None:
         for i in range(VOCAB_SIZE):
             logits[i] += ck[i]
+
+    # Layer 3c3a-VCB: verb-chain block. When the previous lexical word
+    # was a finite verb AND the clause already has its main verb, the
+    # next word must NOT begin another lexical verb — real English and
+    # Shakespeare require a coordinator ("and"/"or"/"then"), comma, or
+    # non-finite form between stacked verbs. Penalizes verb-specific
+    # onset letters at word-start in VERB_DONE / CLAUSE_DONE states.
+    vcb = verb_chain_block_bias(
+        state.letter_run_len,
+        state.last_char_class,
+        state.clause_skel,
+        state.last_word_pos,
+        state.speaker_label_state,
+    )
+    if vcb is not None:
+        for i in range(VOCAB_SIZE):
+            logits[i] += vcb[i]
 
     # Layer 3c3b: meditative mid-word disambiguation. When the buffer is
     # a prefix shared by a meditative word and a non-meditative word,
