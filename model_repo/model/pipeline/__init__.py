@@ -38,6 +38,7 @@ from .transitivity import update_transitivity
 from .verb_class import update_verb_class
 from .verb_complement import update_verb_complement
 from .word_cap_apos import update_word_cap_apos
+from .contraction_tail import update_contraction_tail
 from .word_commit import update_word_commit
 from .word_ending_shape import update_word_ending_shape
 from .word_form import update_word_form
@@ -123,6 +124,7 @@ PIPELINE: list[Stage] = [
     update_word_reality,    # Tier 2/3: classify completed word (real/plausible/gibberish), maintain per-turn/-sentence counts
     update_word_matches,    # Tier 2: graded trie-completion count for word_buffer
     update_word_cap_apos,   # Tier 2: apostrophe-in-word position + had_apos flag
+    update_contraction_tail,  # Tier 2: is the current post-apostrophe tail a valid elision closer?
     update_word_integrity,  # Tier 2/3: per-char word-shape plausibility monitor
     update_word_ending_shape,  # Tier 2: 0/1/2 score — would the current buffer terminate as a recognizable English word shape?
     update_mid_departure,   # Tier 2: mid-departure (pos 3-4) extension length

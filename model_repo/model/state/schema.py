@@ -3015,6 +3015,17 @@ class ModelState(BaseModel):
     letters_since_apostrophe: int = 0
     had_apostrophe_this_word: bool = False
 
+    # Contraction-tail closure tracker. Within a word that contains a
+    # mid-word apostrophe (i.e. not word-initial like 'tis), `False`
+    # means the letters seen after the apostrophe do NOT yet form a
+    # valid elision tail from the documented repertoire
+    # ('s/'d/'t/'m, 'll/'re/'ve/'er/'en/'em/'st, embedded 'tw- / 'th-).
+    # Flips to True once the emitted tail matches a closer; resets to
+    # True at word boundary (empty word_buffer) or when no apostrophe
+    # has been seen this word. Used by `contraction_close_block_bias`
+    # to discourage non-closing letters while the tail is still open.
+    contraction_tail_ok: bool = True
+
     # --- Tier 2/3: iambic meter tracking ---
     # Shakespeare's dramatic verse is dominantly iambic pentameter:
     # ten-syllable lines with an alternating weak–STRONG foot pattern

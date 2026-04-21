@@ -57,6 +57,7 @@ from .word_bigram_continue import word_bigram_continue_bias
 from .phrase_continue import phrase_continue_bias
 from .phrase_trigram_continue import phrase_trigram_continue_bias
 from .apostrophe_elision import apostrophe_elision_bias
+from .contraction_close_block import contraction_close_block_bias
 from .word_cap_integrity import word_cap_integrity_bias
 from .word_integrity import word_integrity_bias
 from .letter_repeat_penalty import letter_repeat_penalty_bias
@@ -806,6 +807,20 @@ def predict(state: ModelState) -> list[float]:
     if ae is not None:
         for i in range(VOCAB_SIZE):
             logits[i] += ae[i]
+
+    # Layer 3c-CCB: once the post-apostrophe tail has closed with a
+    # valid elision (tracked by state.contraction_tail_ok), gently
+    # prefer terminating the word over continuing.
+    ccb = contraction_close_block_bias(
+        state.had_apostrophe_this_word,
+        state.contraction_tail_ok,
+        state.letters_since_apostrophe,
+        state.word_buffer,
+        state.speaker_label_state,
+    )
+    if ccb is not None:
+        for i in range(VOCAB_SIZE):
+            logits[i] += ccb[i]
 
     # Layer 3c-MC: graded trie-match-count bias. Complements the
     # binary on_word_trie. Three regimes:
