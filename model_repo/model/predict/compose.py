@@ -61,6 +61,7 @@ from .word_cap_integrity import word_cap_integrity_bias
 from .word_integrity import word_integrity_bias
 from .letter_repeat_penalty import letter_repeat_penalty_bias
 from .sensory_charge import sensory_charge_start_bias
+from .valence import valence_start_bias
 from .martial import martial_word_start_bias
 from .turn_pronoun_bias import (
     turn_pronoun_sentence_start_bias,
@@ -1895,6 +1896,24 @@ def predict(state: ModelState) -> list[float]:
         if scb is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += scb[i]
+
+        # Layer 4-VAL: emotional-valence word-start bias. When recent
+        # content-word diction has drifted strongly positive
+        # (love/honour/fair/sweet/grace) or strongly negative
+        # (hate/foul/false/cursed/wretched), nudge the next word's
+        # first letter toward valence-matching openers and away from
+        # opposite-polarity ones. Flow-tier texture — keeps moral
+        # register coherent across a passage rather than flipping
+        # polarity mid-speech.
+        vsb = valence_start_bias(
+            state.emotional_valence,
+            state.letter_run_len,
+            state.last_char_class,
+            state.speaker_label_state,
+        )
+        if vsb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += vsb[i]
 
         # Layer 4-MR: martial / peaceful register word-start bias.
         # When the scene's martial_charge is strongly positive, the

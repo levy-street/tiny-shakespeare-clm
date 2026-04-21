@@ -2703,6 +2703,31 @@ class ModelState(BaseModel):
     # register, rather than drifting between modes mid-passage.
     sensory_charge: float = 0.0
 
+    # --- Tier 3 FLOW: emotional valence (positive ↔ negative diction) ---
+    # Signed scalar in [-1.0, +1.0]. Unlike fury/lament/tenderness/
+    # doubt (which are intensity-only magnitudes of specific moods)
+    # and sensory_charge (corporeal ↔ abstract), this is a pure
+    # polarity axis: how "rose-tinted" vs "dark-tinted" the recent
+    # vocabulary is.
+    #
+    #   POSITIVE (toward +1.0): love, fair, sweet, dear, gentle,
+    #       grace, honour, noble, virtue, true, mercy, bliss, joy,
+    #       sweet, blessed, pure, heaven, kind, praise, saint...
+    #
+    #   NEGATIVE (toward -1.0): hate, foul, false, vile, base, sin,
+    #       shame, cursed, damned, cruel, wretched, woe, grief,
+    #       treacherous, villain, corrupt, rotten, poison, evil,
+    #       dread, rank, filth, weep...
+    #
+    # Updated on every completed word: polarized word pulls toward
+    # its sign (step 0.25 of remaining distance to ±1); neutral
+    # words cause slow decay toward 0 (×0.97 per word).
+    #
+    # Resets on speaker-turn boundary. Consumed by a predict layer
+    # that mildly boosts valence-matching content-word openers at
+    # word-start when |valence| >= 0.25.
+    emotional_valence: float = 0.0
+
     # -----------------------------------------------------------
     # Word integrity monitor — targeting gibberish word-runs.
     # -----------------------------------------------------------

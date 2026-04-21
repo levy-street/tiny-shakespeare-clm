@@ -103,6 +103,7 @@ from .turn_pronoun import update_turn_pronoun
 from .turn_shape import update_turn_shape
 from .line_word_cadence import update_line_word_cadence
 from .archaic_density import update_archaic_density
+from .valence import update_valence
 from .vocative import update_vocative
 
 Stage = Callable[[ModelState, int], ModelState]
@@ -179,6 +180,7 @@ PIPELINE: list[Stage] = [
     update_confessional,    # Tier 3: confessional vs public register
     update_sensory_charge,  # Tier 3: corporeal ↔ abstract charge (lyric vs argument register)
     update_martial,         # Tier 3: martial ↔ peaceful register (battlefield lexicon)
+    update_valence,         # Tier 3 FLOW: emotional valence (positive ↔ negative diction polarity)
     update_dialogue_adjacency,  # Tier 2/3: snapshot prev-turn shape before turn counters reset
     update_turn_shape,      # Tier 2/3: cross-turn rhythm tuple + stichomythia_mode (must run BEFORE turn_progress reset)
     update_turn_pronoun,    # Tier 2/3: per-turn 1st/2nd person pronoun profile (soliloquy/direct-address/mixed)
