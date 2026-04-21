@@ -61,6 +61,10 @@ from .word_cap_integrity import word_cap_integrity_bias
 from .word_integrity import word_integrity_bias
 from .sensory_charge import sensory_charge_start_bias
 from .martial import martial_word_start_bias
+from .turn_pronoun_bias import (
+    turn_pronoun_sentence_start_bias,
+    turn_pronoun_content_bias,
+)
 from .oath_mode import oath_mode_start_bias, oath_mode_close_bias
 from .np_head import np_head_start_bias
 from .ornament import ornament_start_bias
@@ -1760,6 +1764,44 @@ def predict(state: ModelState) -> list[float]:
         if mrb is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += mrb[i]
+
+        # Layer 4-TPC: turn-pronoun content bias. When the current
+        # turn is I-heavy (soliloquy register), push first letters
+        # typical of introspective vocabulary (t/d/l/m/s/h/r/b). When
+        # it is you-heavy (direct-address), push letters typical of
+        # address vocabulary (s/g/h/l/c/m/t). Fires only mid-turn
+        # (last char is SPACE, not newline — sentence-start layers
+        # handle the other case).
+        tpcb = turn_pronoun_content_bias(
+            state.turn_pronoun_mode,
+            state.turn_i_pronouns,
+            state.turn_you_pronouns,
+            state.speaker_label_state,
+            state.letter_run_len,
+            state.word_buffer,
+            last_cls,
+        )
+        if tpcb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += tpcb[i]
+
+        # Layer 4-TPS: turn-pronoun sentence-start bias. After a
+        # sentence-terminator + space, push "I" (I-mode) or "T"/"Y"
+        # (you-mode) as the first letter of the new sentence.
+        at_sent_start = (
+            state.chars_since_sentence_end <= 2
+            or state.words_in_turn == 0
+        )
+        tpsb = turn_pronoun_sentence_start_bias(
+            state.turn_pronoun_mode,
+            state.speaker_label_state,
+            state.letter_run_len,
+            state.word_buffer,
+            at_sent_start,
+        )
+        if tpsb is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += tpsb[i]
 
         # Layer 4-OATH-S: oath-mode word-start bias. After "by" /
         # "upon" / "my" / "his" / "thy" / "our" with hot oath_mode,

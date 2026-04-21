@@ -1084,6 +1084,43 @@ class ModelState(BaseModel):
     turn_exclam_count: int = 0
     turn_question_count: int = 0
 
+    # --- Tier 2/3: turn pronoun profile (soliloquy vs direct-address) ---
+    # Shakespeare's turns have a strong and very distinctive pronoun
+    # signature that the model has not been tracking. A SOLILOQUY (Hamlet
+    # alone on stage, Lear on the heath) is I-HEAVY: "I know not why I am
+    # so sad"; a DIRECT-ADDRESS harangue (Henry's Crispin speech, a
+    # lover's plea) is YOU-HEAVY: "thou canst not speak of what thou
+    # dost not feel". A third category (NARRATIVE / REPORTAGE) has low
+    # first/second-person density — "The king is dead, the prince has
+    # fled".
+    #
+    # These modes shape:
+    #   - Sentence openers ("I do...", "Thou hast...", "There came...")
+    #   - Content vocabulary (soliloquy: abstract / reflective;
+    #     direct-address: imperatives, epithets; narrative: past-tense
+    #     event verbs)
+    #   - Punctuation rhythm (soliloquy pauses; direct-address
+    #     exclaims)
+    #
+    # Fields:
+    #   turn_i_pronouns   — count of "i" / "my" / "me" / "mine" /
+    #                       "myself" completions in current turn.
+    #   turn_you_pronouns — count of "thou"/"thee"/"thy"/"thine"/
+    #                       "you"/"ye"/"your"/"yours"/
+    #                       "thyself"/"yourself" completions in turn.
+    #   turn_pronoun_mode — classified mode after enough evidence:
+    #     0 = insufficient evidence (< 3 total 1st/2nd person pronouns)
+    #     1 = I-dominant (soliloquy-ish):  i >= 3 AND i >= 2*you
+    #     2 = you-dominant (direct-address): you >= 3 AND you >= 2*i
+    #     3 = mixed (both >= 2 and ratio within 2x): dialogue
+    #
+    # Reset all three on turn boundary (consecutive_newlines >= 2).
+    # Maintained by pipeline/turn_pronoun.py which reads just_finished_word
+    # and last_completed_word. Consumed by predict/turn_pronoun_bias.py.
+    turn_i_pronouns: int = 0
+    turn_you_pronouns: int = 0
+    turn_pronoun_mode: int = 0
+
     # --- Tier 2/3: dialogue adjacency memory ---
     # A snapshot of the PREVIOUS (just-closed) turn's shape, preserved
     # across the turn boundary so the current turn's opening can react
