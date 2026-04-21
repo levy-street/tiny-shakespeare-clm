@@ -64,24 +64,26 @@ def trie_stay_bias(
             return None
         # Suppression strength: stronger when more letters to go and
         # match_count is sharper.
-        if tail_remaining >= 2:
-            penalty = -0.7
+        if tail_remaining >= 3:
+            penalty = -1.5
+        elif tail_remaining == 2:
+            penalty = -1.0
         else:
-            penalty = -0.4
+            penalty = -0.6
     else:
         # Non-unique but few candidates — gentler suppression.
         if trie_match_count <= 2:
-            penalty = -0.5
+            penalty = -1.4
         elif trie_match_count <= 4:
-            penalty = -0.25
+            penalty = -0.7
         elif trie_match_count <= 8:
-            penalty = -0.12
+            penalty = -0.35
         elif trie_match_count <= 16:
-            penalty = -0.06
+            penalty = -0.18
         elif trie_match_count <= 32:
-            penalty = -0.03
+            penalty = -0.09
         else:
-            penalty = -0.015
+            penalty = -0.045
 
     vec = [0.0] * VOCAB_SIZE
     for t in _TERMINATORS:
