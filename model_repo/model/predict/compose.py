@@ -1163,8 +1163,8 @@ def predict(state: ModelState) -> list[float]:
     if (
         state.speaker_label_state == 0
         and state.on_word_trie
-        and 2 <= state.letter_run_len <= 6
-        and 1 <= state.trie_match_count <= 4
+        and 2 <= state.letter_run_len <= 10
+        and 1 <= state.trie_match_count
     ):
         ts = trie_stay_bias(
             state.word_buffer,

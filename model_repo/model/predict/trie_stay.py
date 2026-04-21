@@ -50,9 +50,9 @@ def trie_stay_bias(
         return None
     if not word_buffer:
         return None
-    if letter_run_len < 2 or letter_run_len > 6:
+    if letter_run_len < 2 or letter_run_len > 10:
         return None
-    if trie_match_count < 1 or trie_match_count > 4:
+    if trie_match_count < 1:
         return None
 
     # Determine remaining-tail context.
@@ -72,8 +72,16 @@ def trie_stay_bias(
         # Non-unique but few candidates — gentler suppression.
         if trie_match_count <= 2:
             penalty = -0.5
-        else:
+        elif trie_match_count <= 4:
             penalty = -0.25
+        elif trie_match_count <= 8:
+            penalty = -0.12
+        elif trie_match_count <= 16:
+            penalty = -0.06
+        elif trie_match_count <= 32:
+            penalty = -0.03
+        else:
+            penalty = -0.015
 
     vec = [0.0] * VOCAB_SIZE
     for t in _TERMINATORS:
