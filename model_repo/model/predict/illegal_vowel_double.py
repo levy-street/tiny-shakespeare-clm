@@ -47,10 +47,10 @@ from ..vocab import VOCAB_INDEX, VOCAB_SIZE
 _DOUBLE_PENALTY: dict[str, float] = {
     "e": 0.0,    # "ee" — legal (see, keep, bee, tree, ...)
     "o": 0.0,    # "oo" — legal (too, soon, book, moon, ...)
-    "a": -2.2,   # "aa" — essentially never in Shakespeare
-    "i": -3.0,   # "ii" — essentially never
-    "u": -2.8,   # "uu" — essentially never
-    "y": -3.5,   # "yy" — never in English
+    "a": -3.0,   # "aa" — essentially never in Shakespeare
+    "i": -3.5,   # "ii" — essentially never
+    "u": -3.5,   # "uu" — essentially never
+    "y": -4.0,   # "yy" — never in English
 }
 
 
