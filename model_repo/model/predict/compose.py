@@ -62,6 +62,7 @@ from .word_integrity import word_integrity_bias
 from .letter_repeat_penalty import letter_repeat_penalty_bias
 from .illegal_vowel_double import illegal_vowel_double_bias
 from .illegal_consonant_double import illegal_consonant_double_bias
+from .illegal_triple_letter import illegal_triple_letter_bias
 from .sensory_charge import sensory_charge_start_bias
 from .valence import valence_start_bias
 from .martial import martial_word_start_bias
@@ -726,6 +727,19 @@ def predict(state: ModelState) -> list[float]:
     if icd is not None:
         for i in range(VOCAB_SIZE):
             logits[i] += icd[i]
+
+    # Layer 3c-ITL: illegal triple-letter block. No English word has
+    # three of the same letter in a row. Companion to the double-block
+    # layers: when the buffer's last 2 chars are the same letter,
+    # penalize emitting that letter a third time.
+    itl = illegal_triple_letter_bias(
+        state.word_buffer,
+        state.letter_run_len,
+        state.speaker_label_state,
+    )
+    if itl is not None:
+        for i in range(VOCAB_SIZE):
+            logits[i] += itl[i]
 
 # Layer 3c-CAPI: mid-word capitalization integrity. After the
     # first letter of a word (letter_run_len >= 1), uppercase letters
