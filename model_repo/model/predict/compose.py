@@ -127,6 +127,7 @@ from .startword import START_BIAS
 from .formula import formula_midword_bias, formula_start_bias
 from .word_commit import word_commit_bias
 from .trie_completion_hint import trie_completion_hint_bias
+from .trie_stay import trie_stay_bias
 from .turn_shape import stichomythia_bias
 from .line_word_cadence import line_word_cadence_bias
 from .archaic_density import archaic_density_bias
@@ -1154,6 +1155,27 @@ def predict(state: ModelState) -> list[float]:
         if tch is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += tch[i]
+
+    # Layer 3c-TS: trie-stay terminator suppression. When the buffer is
+    # on-trie with a small completion set and short tail remaining,
+    # mildly suppress word-terminators so the model commits to the
+    # in-flight completion instead of bailing into ',' / '?' / '\n'.
+    if (
+        state.speaker_label_state == 0
+        and state.on_word_trie
+        and 2 <= state.letter_run_len <= 6
+        and 1 <= state.trie_match_count <= 4
+    ):
+        ts = trie_stay_bias(
+            state.word_buffer,
+            state.letter_run_len,
+            state.on_word_trie,
+            state.trie_match_count,
+            state.speaker_label_state,
+        )
+        if ts is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += ts[i]
 
 
     # Layer 3c2-tense: sentence-tense suffix-completion tilt. Reads
