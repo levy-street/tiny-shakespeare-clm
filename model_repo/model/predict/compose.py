@@ -117,6 +117,7 @@ from .turn_opener import TURN_OPENER_START_BIAS
 from .turn_opener_trie import turn_opener_trie_bias
 from .sentence_opener_trie import sentence_opener_trie_bias
 from .post_comma_trie import post_comma_trie_bias
+from .line_start_trie import line_start_trie_bias
 from .answer_opener import answer_opener_start_bias
 from .answer_expectation import answer_expectation_start_bias
 from .dialogue_opener import dialogue_adjacency_bias, dialogue_pacing_bias
@@ -568,6 +569,23 @@ def predict(state: ModelState) -> list[float]:
     if pct is not None:
         for i in range(VOCAB_SIZE):
             logits[i] += pct[i]
+
+    # Layer 3c-LST: enjambed-line-start trie bias. Fires for the first
+    # word of a verse line that continues an existing sentence (mid-
+    # sentence line break). Gates: chars_since_newline == letter_run_len
+    # (word started right after \n), words_in_sentence >= 1 (sentence
+    # continues), words_in_turn >= 1 (not turn-start).
+    lst = line_start_trie_bias(
+        state.word_buffer,
+        state.letter_run_len,
+        state.chars_since_newline,
+        state.speaker_label_state,
+        state.words_in_sentence,
+        state.words_in_turn,
+    )
+    if lst is not None:
+        for i in range(VOCAB_SIZE):
+            logits[i] += lst[i]
 
     # Layer 3c-WBC: word-bigram CONTINUATION bias. Given the previous
     # completed word and the current buffer (letters 1-4), bias the
@@ -3924,7 +3942,7 @@ def predict(state: ModelState) -> list[float]:
         if state.sentence_start_pending or state.consecutive_newlines >= 1:
             T = 1.20
         else:
-            T = 1.60
+            T = 1.72
     elif state.on_word_trie:
         # Mid-word on trie: word_trie bias dominates and is sharp.
         # Modulate by trie_match_count — when only 1 known word
