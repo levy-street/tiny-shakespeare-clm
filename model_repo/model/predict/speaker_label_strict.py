@@ -78,11 +78,13 @@ def speaker_label_strict_bias(
         if idx is not None:
             vec[idx] += forbid_strong
 
-    # Newline mid-label is broken; penalize but slightly less harshly
-    # (at least it can cleanly reset state downstream).
+    # Newline mid-label skips the ":" closing marker — the FSM will
+    # drop back to 0 but the label format ("NAME:\n") is broken.
+    # Penalize harder than off-trie space/colon so the model prefers
+    # colon-then-newline closure when off-trie, never a bare newline.
     nl_idx = VOCAB_INDEX.get(_NEWLINE)
     if nl_idx is not None:
-        vec[nl_idx] += -3.0
+        vec[nl_idx] += -4.0
 
     # --- Space / colon legality from trie flags. ---
     if speaker_trie_on_trie:
