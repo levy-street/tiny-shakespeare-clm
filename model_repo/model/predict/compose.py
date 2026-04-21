@@ -115,6 +115,7 @@ from .start4gram import start4gram_bias
 from .tonal import tonal_start_bias
 from .turn_opener import TURN_OPENER_START_BIAS
 from .turn_opener_trie import turn_opener_trie_bias
+from .sentence_opener_trie import sentence_opener_trie_bias
 from .answer_opener import answer_opener_start_bias
 from .answer_expectation import answer_expectation_start_bias
 from .dialogue_opener import dialogue_adjacency_bias, dialogue_pacing_bias
@@ -529,6 +530,25 @@ def predict(state: ModelState) -> list[float]:
     if tot is not None:
         for i in range(VOCAB_SIZE):
             logits[i] += tot[i]
+
+    # Layer 3c-SOT: sentence-opener TRIE multi-letter bias. Fires for
+    # the FIRST word of a mid-turn new sentence (sentences_in_turn >= 1
+    # or words_in_turn >= 1, words_in_sentence == 0, letter_run_len in
+    # [1, 5]). Softer/narrower than turn_opener_trie. Constrains
+    # letter-by-letter completion toward common within-turn sentence
+    # openers (And, But, Yet, I, Thou, My, Come, The, This, If, What,
+    # Now, Then, …).
+    sot = sentence_opener_trie_bias(
+        state.word_buffer,
+        state.letter_run_len,
+        state.speaker_label_state,
+        state.words_in_sentence,
+        state.words_in_turn,
+        state.sentences_in_turn,
+    )
+    if sot is not None:
+        for i in range(VOCAB_SIZE):
+            logits[i] += sot[i]
 
     # Layer 3c-WBC: word-bigram CONTINUATION bias. Given the previous
     # completed word and the current buffer (letters 1-4), bias the
