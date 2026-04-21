@@ -163,29 +163,39 @@ def word_start_safe_bias(
     letter_run_len: int,
     last_char_class: int,
     speaker_label_state: int,
+    last_word_reality: int,
     turn_gibberish_count: int,
     turn_real_count: int,
     sentence_gibberish_count: int,
     recent_word_realities: tuple[int, ...],
 ) -> list[float] | None:
     """Bias the first letter of a new word toward safe word-starts
-    when recent context has been gibberish-heavy."""
+    when the JUST-FINISHED word was gibberish (strong local signal)
+    or when sentence/turn context is gibberish-heavy."""
     if speaker_label_state != 0:
         return None
     if letter_run_len != 0:
         return None
-    # Only at a position where a letter might plausibly follow.
-    # last_char_class SPACE=1 or PUNCT_MID=7 (after ", " etc.).
-    # We allow both; primary target is post-space.
-    if last_char_class not in (1, 7):
+    # Only at post-space / post-terminator positions.
+    # last_char_class SPACE=1, PUNCT_MID=7 (after "," ";"), PUNCT_END=6.
+    if last_char_class not in (1, 6, 7):
         return None
-    signal = _compute_signal(
+
+    # Primary strong signal: the previous word was classified gibberish.
+    # This is a hyper-local "the model just produced garbage — reset
+    # the letter-ngram expectations for the NEXT word" signal.
+    immediate = 1.0 if last_word_reality == 3 else 0.0
+
+    # Also use historical signal (recent window + sentence counts).
+    hist = _compute_signal(
         turn_gibberish_count,
         turn_real_count,
         sentence_gibberish_count,
         recent_word_realities,
     )
-    if signal < 0.2:
+
+    signal = max(immediate, hist)
+    if signal < 0.25:
         return None
     return _build_word_start_vec(signal)
 

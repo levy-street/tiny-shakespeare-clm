@@ -1328,12 +1328,29 @@ def predict(state: ModelState) -> list[float]:
         for i in range(VOCAB_SIZE):
             logits[i] += ms[i]
 
-    # Word-reality word-start safe-letter bias: DISABLED in compose.
-    # Tuning showed a small BPC regression when active. The underlying
-    # state infra (turn/sentence gibberish counts, recent_word_realities)
-    # is still maintained by pipeline/word_reality.py and used by
-    # mid_word_close_boost above. The function is kept in
-    # predict/word_reality_recover.py for re-enabling after re-tuning.
+    # Word-reality word-start safe-letter bias. When the JUST-FINISHED
+    # word was classified gibberish (strong local signal), or when the
+    # turn/sentence has been gibberish-heavy, bias the first letter of
+    # the new word toward Shakespearean function-word / pronoun /
+    # common-verb openers (t/a/o/i/w/h/s/b/m/n) and away from rare
+    # starters (j/q/x/z/k). Breaks letter-ngram momentum that
+    # extrapolates one gibberish tail into the next word's head.
+    # BPC-safe on real train because last_word_reality is 3 only when
+    # the model emitted gibberish, which real text never does; historical
+    # signal is also gated on counts that are 0 on real text.
+    ws = word_start_safe_bias(
+        state.letter_run_len,
+        state.last_char_class,
+        state.speaker_label_state,
+        state.last_word_reality,
+        state.turn_gibberish_count,
+        state.turn_real_count,
+        state.sentence_gibberish_count,
+        state.recent_word_realities,
+    )
+    if ws is not None:
+        for i in range(VOCAB_SIZE):
+            logits[i] += ws[i]
 
     # Layer 3c3b: meditative mid-word disambiguation. When the buffer is
     # a prefix shared by a meditative word and a non-meditative word,
