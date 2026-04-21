@@ -1843,6 +1843,25 @@ class ModelState(BaseModel):
     # Resets on sentence-end punctuation and on speaker-turn boundary.
     function_word_chain_len: int = 0
 
+    # Count of consecutive content-class words completed in a row without
+    # a function word (or clause-boundary punctuation) intervening.
+    # Content classes counted: NOUN, PROPER_NOUN, VERB, VERB_ED,
+    # VERB_ING, ADJECTIVE, ADVERB. Function classes reset the counter
+    # to 0.
+    #
+    # A value >= 3 means three content words in a row — a red flag for
+    # the "noun-pileup" degenerate sampling mode Shakespeare almost
+    # never produces (e.g. "the last noon drymudrted Kinsmen"). Real
+    # English / Shakespeare almost always interleaves a preposition,
+    # conjunction, pronoun, determiner, or clause-boundary punctuation
+    # after 2 content words. Consumed by predict/content_word_chain.py
+    # to push function-word starts / clause-close punctuation when the
+    # streak grows.
+    #
+    # Resets on sentence-end punctuation, on mid-clause punctuation
+    # (comma, semicolon, colon, dash), and on speaker-turn boundary.
+    content_word_streak: int = 0
+
     # --- Tier 2: CLAUSE SKELETON FSM ---
     # Encodes the proposition-building state of the current clause.
     # A clause is a stretch of text between clause-boundary markers

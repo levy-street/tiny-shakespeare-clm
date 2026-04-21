@@ -200,6 +200,7 @@ from .word_reality_recover import (
 from .phrase_slot import phrase_slot_bias
 from .pos_class_continue import pos_class_continue_bias
 from .function_word_chain import function_word_chain_bias
+from .content_word_chain import content_word_chain_bias
 from .clause_skel import clause_skel_bias
 from .verb_chain_block import verb_chain_block_bias
 from .syllable_saturation import syllable_saturation_bias
@@ -1533,6 +1534,24 @@ def predict(state: ModelState) -> list[float]:
     if fwc is not None:
         for i in range(VOCAB_SIZE):
             logits[i] += fwc[i]
+
+    # Mirror layer: content-word streak word-start bias. When 3+
+    # consecutive content words have completed without function-word
+    # or mid-clause-punctuation break, push the first letter toward
+    # function-word starts (of/to/in/with/and/but/my/thy/when) and
+    # away from content-heavy starts. Targets the "noun noun noun"
+    # pileup degenerate mode, complementing function_word_chain.
+    cwc = content_word_chain_bias(
+        state.content_word_streak,
+        state.letter_run_len,
+        state.last_char_class,
+        state.speaker_label_state,
+        state.words_in_sentence,
+        state.just_finished_word,
+    )
+    if cwc is not None:
+        for i in range(VOCAB_SIZE):
+            logits[i] += cwc[i]
 
     # Clause-skeleton word-start bias. Reads clause_skel FSM
     # (pipeline/clause_skel.py) — tracks what syntactic constituents
