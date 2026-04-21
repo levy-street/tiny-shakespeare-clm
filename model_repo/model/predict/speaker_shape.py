@@ -118,14 +118,17 @@ def speaker_shape_bias(
 
     # Rule A: current word length == 1 (just started a new word).
     # Suppress ' ' and ':' so we can't close an effectively empty
-    # word.
+    # word. Also: if this is the first word of the label (word_count==1)
+    # with length 1 or 2, forbid colon even more firmly — the minimum
+    # speaker label length in Shakespeare is 3 (BOY, FOOL, GHOST...)
+    # and 1/2-char labels are always sampler artifacts.
     if current_word_len == 1:
         idx = VOCAB_INDEX.get(" ")
         if idx is not None:
             vec[idx] -= 3.5
         idx = VOCAB_INDEX.get(":")
         if idx is not None:
-            vec[idx] -= 3.5
+            vec[idx] -= 5.5 if word_count == 1 else 3.5
         # Push continuation letters up modestly. In all-caps mode,
         # upper; in mixed-case mode, allow lower (second char of
         # "First" or "Second" is lowercase).
@@ -137,6 +140,17 @@ def speaker_shape_bias(
         # else: mixed-case — leave continuation letters neutral
         # beyond what other layers do.
         return vec
+
+    # Rule A2: current word length == 2 AND this is the single word
+    # (word_count == 1) — still too short for a real speaker label.
+    # Penalize ':' and ' ' to force extension to 3+ letters.
+    if current_word_len == 2 and word_count == 1:
+        idx = VOCAB_INDEX.get(":")
+        if idx is not None:
+            vec[idx] -= 2.8
+        idx = VOCAB_INDEX.get(" ")
+        if idx is not None:
+            vec[idx] -= 1.5
 
     # Rule C: 3+ words already started and current word has letters.
     # Gently push ':' to close (labels > 3 words are very rare in
