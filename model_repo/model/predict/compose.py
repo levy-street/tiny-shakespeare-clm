@@ -3956,7 +3956,7 @@ def predict(state: ModelState) -> list[float]:
         elif tmc == 2:
             T = 2.22
         elif tmc <= 4:
-            T = 2.20
+            T = 2.15
         elif tmc <= 8:
             T = 2.00
         elif tmc <= 16:

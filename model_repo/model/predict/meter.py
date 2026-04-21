@@ -56,25 +56,30 @@ def pentameter_wordend_bias(
     (letter_run_len >= 2, on_word_trie, word_buffer a complete word,
     speaker_label_state == 0).
     """
-    # Only fire deep in verse mode. Require a strong verse signal
-    # (score and an established prev_line_syllables in pentameter
-    # range). Without a calibrated target, any syllable bump risks
-    # shifting prose-paragraph newlines.
+    # Fire in verse mode. Two activation regimes:
+    #   (A) Calibrated: a prior pentameter-length line anchors the
+    #       target exactly; requires verse_line_run >= 2 AND
+    #       9 <= prev_line_syllables <= 11.
+    #   (B) Default-target fallback: when verse_score is very strong
+    #       but we lack a calibrated anchor (e.g., first line after
+    #       a speaker label), use target=10 (iambic pentameter
+    #       default). Gated more conservatively — needs verse_score
+    #       >= 1.0 and verse_line_run >= 1.
     if verse_score < 0.6:
-        return None
-    if verse_line_run < 2:
-        return None
-    # Only fire when prev line was a credible pentameter line —
-    # that's our target. If prev wasn't pentameter, we have no
-    # anchor.
-    if not (9 <= prev_line_syllables <= 11):
         return None
     if syllables_in_line < 5:
         return None
     if chars_since_newline < 18:
         return None
 
-    target = prev_line_syllables
+    if verse_line_run >= 2 and 9 <= prev_line_syllables <= 11:
+        target = prev_line_syllables
+    elif verse_score >= 1.0 and verse_line_run >= 1:
+        # Default pentameter target when uncalibrated.
+        target = 10
+    else:
+        return None
+
     diff = syllables_in_line - target
 
     vec = [0.0] * VOCAB_SIZE
