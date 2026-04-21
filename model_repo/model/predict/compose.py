@@ -693,7 +693,7 @@ def predict(state: ModelState) -> list[float]:
         for i in range(VOCAB_SIZE):
             logits[i] += lrp[i]
 
-    # Layer 3c-CAPI: mid-word capitalization integrity. After the
+# Layer 3c-CAPI: mid-word capitalization integrity. After the
     # first letter of a word (letter_run_len >= 1), uppercase letters
     # are orthographically near-impossible. This hard-blocks sample
     # noise like "thHlo", "heLl", "IAEBOF" that character-ngram
@@ -821,7 +821,7 @@ def predict(state: ModelState) -> list[float]:
     # when the off-trie recovery layers are already firing. Dampens
     # when on_word_trie and !has_seen_complete so legitimate long
     # words ("importunately") can still form.
-    if state.speaker_label_state == 0 and state.letter_run_len >= 12:
+    if state.speaker_label_state == 0 and state.letter_run_len >= 10:
         wlp = word_length_prior_bias(
             state.letter_run_len,
             state.on_word_trie,

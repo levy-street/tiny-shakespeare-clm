@@ -56,15 +56,19 @@ def word_length_prior_bias(
 ) -> list[float] | None:
     if speaker_label_state != 0:
         return None
-    if letter_run_len < 12:
+    if letter_run_len < 10:
         return None
 
     n = letter_run_len
 
     # Base schedule: (space_boost, punct_boost, nl_boost, letter_pen, gib_pen)
-    # Fires only at 12+ to protect BPC — real Shakespeare words of
+    # Fires at 10+ to protect BPC — real Shakespeare words of
     # length 12+ are rare; of length 15+ essentially nonexistent.
-    if n == 12:
+    if n == 10:
+        sp_b, pn_b, nl_b, l_p, g_p = 0.15, 0.08, 0.06, -0.04, -0.15
+    elif n == 11:
+        sp_b, pn_b, nl_b, l_p, g_p = 0.28, 0.15, 0.11, -0.08, -0.22
+    elif n == 12:
         sp_b, pn_b, nl_b, l_p, g_p = 0.45, 0.25, 0.18, -0.12, -0.35
     elif n == 13:
         sp_b, pn_b, nl_b, l_p, g_p = 0.85, 0.48, 0.38, -0.28, -0.70

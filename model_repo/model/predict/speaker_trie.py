@@ -320,6 +320,26 @@ def speaker_trie_bias(
     # ("First Citizen", "Third Servingman") append lowercase chars.
     if saw_lower:
         return _PREFIX_BIAS_LOWER.get(buffer)
+    # When buffer is a single letter AND no lowercase has been seen
+    # yet, the speaker label might still be either ALL-CAPS ("NURSE")
+    # or Title-Case ("Nurse"). We don't know yet. Blend both.
+    # For longer buffers that are still all-upper, we've committed
+    # to ALL-CAPS mode (title-case would have emitted a lowercase by
+    # position 2), so use UPPER only.
+    if len(buffer) == 1:
+        u = _PREFIX_BIAS_UPPER.get(buffer)
+        l = _PREFIX_BIAS_LOWER.get(buffer)
+        if u is None and l is None:
+            return None
+        if u is None:
+            return l
+        if l is None:
+            return u
+        # Average the two — each fires at half the single-case strength.
+        # This keeps total amplitude similar but spreads positive mass
+        # across both cases of the next letter, avoiding the ~10-bit
+        # loss when a Title-Case speaker label appears.
+        return [(a + b) * 0.5 for a, b in zip(u, l)]
     return _PREFIX_BIAS_UPPER.get(buffer)
 
 
