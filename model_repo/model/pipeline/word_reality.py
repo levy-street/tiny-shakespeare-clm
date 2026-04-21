@@ -49,15 +49,19 @@ def _classify(
         return 0  # too short to classify
 
     # GIBBERISH — hard phonotactic signals.
-    # An illegal trigram is a near-certain gibberish marker (three
-    # consonants that form no legal English cluster, or three vowels
-    # outside the small attested set).
-    if bad_trigram_count >= 1:
+    # Two or more illegal trigrams (three consonants that form no legal
+    # English cluster, or three vowels outside the attested set). One
+    # alone fires on common words (e.g., "little" contains "ttl" which
+    # is not in the hardcoded legal CCC set), so require two.
+    if bad_trigram_count >= 2:
         return 3
-    # Two illegal bigrams, or one bigram plus at least one red flag.
+    # Two illegal bigrams, or one bigram plus red flag, or one trigram
+    # plus red flag.
     if bad_bigram_count >= 2:
         return 3
     if bad_bigram_count >= 1 and word_red_flags >= 1:
+        return 3
+    if bad_trigram_count >= 1 and word_red_flags >= 1:
         return 3
     # Three or more red flags — stacked phonotactic warnings.
     if word_red_flags >= 3:
@@ -66,17 +70,25 @@ def _classify(
     # word anywhere along the way, yet the word is long and far off-trie.
     if (not has_seen_complete) and n >= 7 and letters_off_trie >= 5:
         return 3
+    # Mid-length off-trie word with heavy drift and no complete match —
+    # catches 5-6 letter gibberish like "Tanrip" / "dgumer" that the
+    # 7+ branch misses.
+    if (not has_seen_complete) and n >= 5 and letters_off_trie >= n - 1:
+        return 3
     # Drifted far past last complete form in a long word.
     if n >= 8 and letters_off_trie >= 6:
         return 3
 
-    # REAL — strict criteria: known word, no red flags at all.
+    # REAL — strict criteria: known word, essentially no red flags.
+    # Tolerate one lone illegal trigram (phonotactic.py's CCC set is
+    # incomplete — English has many CCC clusters like "ttl" / "ppl" /
+    # "ffl" / "ddl" / "tch" that are legal but not listed).
     if (
         has_seen_complete
         and letters_off_trie <= 1
         and word_red_flags == 0
         and bad_bigram_count == 0
-        and bad_trigram_count == 0
+        and bad_trigram_count <= 1
     ):
         return 1
 

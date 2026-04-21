@@ -190,6 +190,87 @@ def word_start_safe_bias(
     return _build_word_start_vec(signal)
 
 
+def turn_gibberish_escalation_bias(
+    letter_run_len: int,
+    on_word_trie: bool,
+    letters_off_trie: int,
+    speaker_label_state: int,
+    turn_gibberish_count: int,
+    turn_real_count: int,
+) -> list[float] | None:
+    """When the current speaker-turn has accumulated >= 2 gibberish
+    words, aggressively boost word-terminators for every subsequent
+    word. This is a "turn has gone bad — close everything fast" rule.
+
+    Guaranteed BPC-neutral on real train text because
+    turn_gibberish_count is 0 there (real Shakespeare has no gibberish
+    to classify). Active only during sampling / on model-produced
+    garbage.
+
+    Unlike `gibberish_hardcap_bias` which escalates with word length,
+    this fires from as early as letter 5 on any off-trie word. It's
+    specifically for the short 5-8 letter gibberish that slips
+    through the hardcap (which activates at 13+).
+    """
+    if speaker_label_state != 0:
+        return None
+    if on_word_trie:
+        return None
+    if letters_off_trie < 2:
+        return None
+    if letter_run_len < 5:
+        return None
+    if turn_gibberish_count < 2:
+        return None
+
+    # Scale with turn_gibberish_count.
+    if turn_gibberish_count >= 5:
+        scale = 0.70
+    elif turn_gibberish_count >= 4:
+        scale = 0.55
+    elif turn_gibberish_count >= 3:
+        scale = 0.40
+    else:  # == 2
+        scale = 0.25
+
+    # Mild discount by real-word count — healthy ratio reduces but
+    # doesn't zero the scale (we still want SOME pressure when the
+    # turn has had multiple gibberish events).
+    if turn_real_count >= 10:
+        scale *= 0.6
+    elif turn_real_count >= 5:
+        scale *= 0.8
+
+    # Escalate with letter_run_len.
+    if letter_run_len >= 9:
+        scale *= 1.5
+    elif letter_run_len >= 7:
+        scale *= 1.25
+    elif letter_run_len >= 6:
+        scale *= 1.10
+
+    vec = [0.0] * VOCAB_SIZE
+    if " " in VOCAB_INDEX:
+        vec[VOCAB_INDEX[" "]] += scale * 1.0
+    if "," in VOCAB_INDEX:
+        vec[VOCAB_INDEX[","]] += scale * 0.55
+    if "." in VOCAB_INDEX:
+        vec[VOCAB_INDEX["."]] += scale * 0.50
+    if ";" in VOCAB_INDEX:
+        vec[VOCAB_INDEX[";"]] += scale * 0.30
+    if "!" in VOCAB_INDEX:
+        vec[VOCAB_INDEX["!"]] += scale * 0.35
+    if "?" in VOCAB_INDEX:
+        vec[VOCAB_INDEX["?"]] += scale * 0.25
+    if "\n" in VOCAB_INDEX:
+        vec[VOCAB_INDEX["\n"]] += scale * 0.55
+    # Suppress rare letters.
+    for ch in ("j", "q", "x", "z", "v", "k"):
+        if ch in VOCAB_INDEX:
+            vec[VOCAB_INDEX[ch]] -= scale * 0.30
+    return vec
+
+
 def mid_word_close_boost(
     letter_run_len: int,
     on_word_trie: bool,

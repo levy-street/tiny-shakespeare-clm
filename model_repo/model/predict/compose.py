@@ -181,6 +181,7 @@ from .gibberish_hardcap import gibberish_hardcap_bias
 from .word_reality_recover import (
     word_start_safe_bias,
     mid_word_close_boost,
+    turn_gibberish_escalation_bias,
 )
 from .syllable_saturation import syllable_saturation_bias
 from .verb_complement import verb_complement_start_bias
@@ -902,6 +903,25 @@ def predict(state: ModelState) -> list[float]:
         if mwc is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += mwc[i]
+
+        # Turn-level gibberish escalation. When the speaker-turn has
+        # accumulated >= 2 gibberish-classified words AND we're mid-
+        # word off-trie, aggressively boost terminators. Fires from
+        # letter 5+, catching short gibberish (6-8 letters) that
+        # slips through gibberish_hardcap_bias (which activates at
+        # 13+). BPC-neutral on train text because turn_gibberish_count
+        # is 0 for real Shakespeare.
+        tge = turn_gibberish_escalation_bias(
+            state.letter_run_len,
+            state.on_word_trie,
+            state.letters_off_trie,
+            state.speaker_label_state,
+            state.turn_gibberish_count,
+            state.turn_real_count,
+        )
+        if tge is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += tge[i]
 
         # Layer 3c1a-syl: syllable-saturation termination. When a
         # mid-word buffer has accumulated 3+ syllables AND drifted
