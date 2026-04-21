@@ -114,6 +114,7 @@ from .speaker_onset_gate import speaker_onset_gate_bias
 from .start4gram import start4gram_bias
 from .tonal import tonal_start_bias
 from .turn_opener import TURN_OPENER_START_BIAS
+from .turn_opener_trie import turn_opener_trie_bias
 from .answer_opener import answer_opener_start_bias
 from .answer_expectation import answer_expectation_start_bias
 from .dialogue_opener import dialogue_adjacency_bias, dialogue_pacing_bias
@@ -507,6 +508,27 @@ def predict(state: ModelState) -> list[float]:
                 wt_scale = 1.94
             for i in range(VOCAB_SIZE):
                 logits[i] += wt[i] * wt_scale
+
+    # Layer 3c-TOT: turn-opener TRIE multi-letter bias. Fires only in
+    # the FIRST word of a fresh speaker turn (words_in_turn == 0 AND
+    # sentences_in_turn == 0), letter_run_len in [1, 6]. Constrains
+    # letter-by-letter completion of the first word to known
+    # Shakespearean turn-openers — O, Alas, My, Come, Thou, What,
+    # Good, Pray, I, No, Nay, Hark, Fie, etc. Targets sample artefacts
+    # where turn-openers like "Heath", "Clot", "Ale", "Aohshs" emerge
+    # from letter-ngram drift past the existing first-letter-only
+    # TURN_OPENER_START_BIAS.
+    tot = turn_opener_trie_bias(
+        state.word_buffer,
+        state.letter_run_len,
+        state.speaker_label_state,
+        state.words_in_turn,
+        state.sentences_in_turn,
+        state.lines_in_turn,
+    )
+    if tot is not None:
+        for i in range(VOCAB_SIZE):
+            logits[i] += tot[i]
 
     # Layer 3c-WBC: word-bigram CONTINUATION bias. Given the previous
     # completed word and the current buffer (letters 1-4), bias the
