@@ -1778,6 +1778,27 @@ class ModelState(BaseModel):
     # impossibility that applies even to unknown names.
     speaker_buffer_vowels: int = 0
 
+    # --- Tier 2: speaker-trie next-char legality flags ---
+    # Computed by `pipeline/speaker_strict.py` from `speaker_buffer`
+    # using `predict.speaker_trie.SPEAKER_TRIE_NEXTS`. Flags whether
+    # the current speaker_buffer prefix legally permits a space, colon,
+    # or any letter as the next character in a canonical speaker label.
+    # Consumed by `predict/speaker_label_strict.py` to hard-penalize
+    # tokens that would emit space/colon/apostrophe/newline/opposite-case
+    # letters when those aren't legal continuations. Without this, the
+    # existing speaker_trie_bias only penalizes same-case letters outside
+    # the next-set, letting malformed labels like "MOUNT tssayl:" slip
+    # through because " " (space) and ":" get 0 bias at a prefix where
+    # they're not trie-legal.
+    #
+    # All three False when outside a speaker label (state != 1 and != 2),
+    # or when the speaker_buffer has drifted off-trie. When off-trie,
+    # the predict layer pushes hard toward same-case letters (recovery)
+    # and away from terminators.
+    speaker_trie_on_trie: bool = False
+    speaker_trie_space_valid: bool = False
+    speaker_trie_colon_valid: bool = False
+
     # --- Tier 2: recent POS trigram (content-word history) ---
     # Rolling tuple of the last up-to-4 POS tags of completed words,
     # most-recent first. Unlike `last_word_pos` / `prev_word_pos` /

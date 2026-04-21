@@ -94,6 +94,7 @@ from .sentence_syllables import update_sentence_syllables
 from .speaker_memory import update_speaker_memory
 from .speaker_register import update_speaker_register
 from .speaker_offtrie import update_speaker_offtrie
+from .speaker_strict import update_speaker_strict
 from .speaker_vowels import update_speaker_vowels
 from .topic_tracker import update_topic_tracker
 from .turn import update_turn_progress
@@ -124,6 +125,7 @@ PIPELINE: list[Stage] = [
     update_drift,           # Tier 2/3: consecutive-off-trie word streak
     update_line_coherence,  # Tier 2: per-line on-trie vs off-trie word counts
     update_speaker_offtrie, # Tier 2: speaker-buffer off-trie run
+    update_speaker_strict,  # Tier 2: speaker-trie next-char legality flags (on_trie / space_valid / colon_valid)
     update_speaker_vowels,  # Tier 2: speaker-buffer vowel count
     update_pos,             # Tier 2: POS tag of last completed word
     update_function_word_chain,  # Tier 2: count of consecutive function-class words — resets on content word

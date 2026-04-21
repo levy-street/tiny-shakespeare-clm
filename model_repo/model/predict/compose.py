@@ -117,6 +117,7 @@ from .syntactic_frame import syntactic_frame_start_bias
 from .frame_adj_trie import frame_adj_midword_bias
 from .conditional import apodosis_opener_bias
 from .speaker_trie import speaker_trie_bias
+from .speaker_label_strict import speaker_label_strict_bias
 from .speaker_vowel_gate import speaker_vowel_gate_bias
 from .speaker_onset_gate import speaker_onset_gate_bias
 from .start4gram import start4gram_bias
@@ -1807,6 +1808,21 @@ def predict(state: ModelState) -> list[float]:
                 esc = min(run - 3, 6)
                 if "\n" in VOCAB_INDEX:
                     logits[VOCAB_INDEX["\n"]] += 0.4 * esc
+
+    # Layer 3d0: speaker-label strict-legality penalties on non-letter
+    # tokens and opposite-case letters based on trie next-set flags.
+    if state.speaker_label_state in (1, 2):
+        sls = speaker_label_strict_bias(
+            state.speaker_label_state,
+            state.speaker_buffer,
+            state.speaker_label_saw_lower,
+            state.speaker_trie_on_trie,
+            state.speaker_trie_space_valid,
+            state.speaker_trie_colon_valid,
+        )
+        if sls is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += sls[i]
 
     # Layer 3d1: speaker recency bias — tilt the speaker trie toward
     # characters recently in-scene, and penalize immediate self-repeat.

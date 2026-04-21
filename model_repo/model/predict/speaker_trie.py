@@ -307,6 +307,19 @@ def _precompute() -> tuple[dict[str, list[float]], dict[str, list[float]]]:
 _PREFIX_BIAS_UPPER, _PREFIX_BIAS_LOWER = _precompute()
 
 
+# Precomputed next-character sets for every prefix in the speaker trie.
+# Consumed by pipeline/speaker_strict.py to flag whether the current
+# speaker_buffer's next-set legally contains space / colon. Without this,
+# the speaker_trie_bias penalizes only same-case letters outside the
+# next-set — leaving space / colon / apostrophe / newline / opposite-case
+# letters unconstrained. With this lookup the pipeline can broadcast a
+# precise "what's legal next?" signal to a dedicated strict-bias predict
+# layer.
+SPEAKER_TRIE_NEXTS: dict[str, frozenset[str]] = {
+    _pfx: frozenset(_nexts.keys()) for _pfx, _nexts in _TRIE.items()
+}
+
+
 def speaker_trie_bias(
     buffer: str, saw_lower: bool = False
 ) -> list[float] | None:
