@@ -197,6 +197,7 @@ from .word_reality_recover import (
     turn_gibberish_escalation_bias,
 )
 from .phrase_slot import phrase_slot_bias
+from .pos_class_continue import pos_class_continue_bias
 from .function_word_chain import function_word_chain_bias
 from .clause_skel import clause_skel_bias
 from .verb_chain_block import verb_chain_block_bias
@@ -1477,6 +1478,25 @@ def predict(state: ModelState) -> list[float]:
     if psb is not None:
         for i in range(VOCAB_SIZE):
             logits[i] += psb[i]
+
+    # POS-class within-word continuation bias. Structural complement
+    # to phrase_slot_bias: whereas phrase_slot_bias nudges the FIRST
+    # letter of a new word in POST_DET/POST_ADJ slots, this layer runs
+    # at EVERY within-word letter step AND at word-terminators. It
+    # penalizes continuations that lead only to verb/adverb/function-
+    # word completions (e.g. "the l-e-t"), and blocks word-end when
+    # the current prefix is itself a complete wrong-class word but
+    # could still extend to a valid noun/adj. Directly targets the
+    # "the let kiss" failure mode.
+    pccb = pos_class_continue_bias(
+        state.word_buffer,
+        state.letter_run_len,
+        state.phrase_slot,
+        state.speaker_label_state,
+    )
+    if pccb is not None:
+        for i in range(VOCAB_SIZE):
+            logits[i] += pccb[i]
 
     # Function-word-chain word-start bias. When 3+ consecutive function
     # words have completed without any content-word break, strongly push
