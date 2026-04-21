@@ -443,7 +443,7 @@ def predict(state: ModelState) -> list[float]:
         )
         if oc is not None:
             for i in range(VOCAB_SIZE):
-                logits[i] += oc[i] * 3.5
+                logits[i] += oc[i] * 5.5
 
     # Extend double-consonant check to mid-cluster positions. Doubling
     # the last consonant inside a consonant cluster is almost always
