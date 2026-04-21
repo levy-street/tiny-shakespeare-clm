@@ -141,16 +141,18 @@ def speaker_shape_bias(
         # beyond what other layers do.
         return vec
 
-    # Rule A2: current word length == 2 AND this is the single word
-    # (word_count == 1) — still too short for a real speaker label.
-    # Penalize ':' and ' ' to force extension to 3+ letters.
-    if current_word_len == 2 and word_count == 1:
+    # Rule A2: current word length == 2 — still too short for a real
+    # label word. Penalize ':' to force extension to 3+ letters
+    # regardless of word_count. Penalize ' ' too when it's the first
+    # word (we haven't even gotten to a multi-word label yet).
+    if current_word_len == 2:
         idx = VOCAB_INDEX.get(":")
         if idx is not None:
-            vec[idx] -= 2.8
-        idx = VOCAB_INDEX.get(" ")
-        if idx is not None:
-            vec[idx] -= 1.5
+            vec[idx] -= 2.8 if word_count == 1 else 2.0
+        if word_count == 1:
+            idx = VOCAB_INDEX.get(" ")
+            if idx is not None:
+                vec[idx] -= 1.5
 
     # Rule C: 3+ words already started and current word has letters.
     # Gently push ':' to close (labels > 3 words are very rare in
