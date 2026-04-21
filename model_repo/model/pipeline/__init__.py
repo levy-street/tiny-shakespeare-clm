@@ -96,6 +96,7 @@ from .speaker_register import update_speaker_register
 from .speaker_offtrie import update_speaker_offtrie
 from .speaker_strict import update_speaker_strict
 from .speaker_vowels import update_speaker_vowels
+from .speaker_cons_run import update_speaker_cons_run
 from .topic_tracker import update_topic_tracker
 from .turn import update_turn_progress
 from .turn_content import update_turn_content
@@ -128,6 +129,7 @@ PIPELINE: list[Stage] = [
     update_speaker_offtrie, # Tier 2: speaker-buffer off-trie run
     update_speaker_strict,  # Tier 2: speaker-trie next-char legality flags (on_trie / space_valid / colon_valid)
     update_speaker_vowels,  # Tier 2: speaker-buffer vowel count
+    update_speaker_cons_run,  # Tier 2: speaker-buffer trailing consonant-run
     update_pos,             # Tier 2: POS tag of last completed word
     update_function_word_chain,  # Tier 2: count of consecutive function-class words — resets on content word
     update_content_word_streak,   # Tier 2: count of consecutive content-class words — mirror of function_word_chain, resets on function word / mid-punct

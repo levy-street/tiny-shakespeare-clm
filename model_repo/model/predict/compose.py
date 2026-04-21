@@ -126,6 +126,7 @@ from .conditional import apodosis_opener_bias
 from .speaker_trie import speaker_trie_bias
 from .speaker_label_strict import speaker_label_strict_bias
 from .speaker_vowel_gate import speaker_vowel_gate_bias
+from .speaker_cons_run_bias import speaker_cons_run_bias
 from .speaker_onset_gate import speaker_onset_gate_bias
 from .start4gram import start4gram_bias
 from .tonal import tonal_start_bias
@@ -1925,6 +1926,21 @@ def predict(state: ModelState) -> list[float]:
     if svg is not None:
         for i in range(VOCAB_SIZE):
             logits[i] += svg[i]
+
+    # Layer 3d2b: speaker-label trailing consonant-run gate.
+    # Complements speaker_vowel_gate: that gate fires only when the
+    # WHOLE buffer has no vowels; this gate fires when the TRAILING
+    # letters are all consonants even if earlier vowels exist — catching
+    # patterns like "MNNEILRKHI" where vowels are present but the
+    # current cluster is phonotactically impossible.
+    scrb = speaker_cons_run_bias(
+        state.speaker_label_state,
+        state.speaker_buffer_cons_run,
+        state.speaker_label_saw_lower,
+    )
+    if scrb is not None:
+        for i in range(VOCAB_SIZE):
+            logits[i] += scrb[i]
 
     # Layer 3d3: speaker-label onset phonotactic gate. The first two
     # letters of every real Shakespeare speaker name form a legal

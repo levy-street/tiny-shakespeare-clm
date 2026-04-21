@@ -1778,6 +1778,34 @@ class ModelState(BaseModel):
     # impossibility that applies even to unknown names.
     speaker_buffer_vowels: int = 0
 
+    # --- Tier 2: speaker-buffer trailing consonant-run ---
+    # Length of the trailing consonant run inside `speaker_buffer`
+    # (consecutive consonant letters up to current position, ignoring
+    # spaces and non-letter characters — which don't appear inside
+    # speaker_buffer anyway since the FSM only accepts letters and
+    # spaces there). 0 when buffer is empty or last letter was a vowel.
+    # Resets to 0 whenever speaker_label_state leaves {1, 2}.
+    #
+    # Motivation: phantom labels like "MNNEILRKHI", "BRCKTH",
+    # "PHTHNDR" exhibit long consonant-only substrings that are
+    # phonotactically impossible inside a real English name. The
+    # speaker_buffer_vowels gate fires only when the WHOLE buffer has
+    # zero vowels — but "MNNE" passes that gate once an E arrives, yet
+    # "MNN" is already three consonants in a row, a near-impossible
+    # onset for an English word or name. This field lets a predict
+    # layer apply graduated pressure: at cons_run >= 3, penalize further
+    # consonants and boost vowels/terminators; at cons_run >= 4,
+    # overwhelmingly force a vowel or newline.
+    #
+    # Real Shakespeare names rarely have 3+ consonants in sequence; the
+    # strongest counterexample "ROSENCRANTZ" has "NTZ" at the end (a
+    # word-terminal cluster after a vowel), which is structurally
+    # different from a mid-name consonant run. Real mid-name clusters
+    # are 2 at most ("GLOUCESTER", "CAESAR", "HAMLET", "MERCUTIO",
+    # "HORATIO", "MACBETH"). At cons_run 3+ in the middle of a buffer,
+    # we're almost always in a gibberish label.
+    speaker_buffer_cons_run: int = 0
+
     # --- Tier 2: speaker-trie next-char legality flags ---
     # Computed by `pipeline/speaker_strict.py` from `speaker_buffer`
     # using `predict.speaker_trie.SPEAKER_TRIE_NEXTS`. Flags whether
