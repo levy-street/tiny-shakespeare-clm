@@ -180,6 +180,7 @@ from .clause_depth import clause_depth_close_bias
 from .double_cons_start import double_consonant_penalty
 from .red_flags import red_flags_close_bias
 from .phonotactic import phonotactic_close_bias
+from .word_ending_shape import word_ending_shape_bias
 from .illegal_bigram_preempt import illegal_bigram_preempt_bias
 from .negation import negation_start_bias
 from .case_slot import case_slot_start_bias
@@ -958,6 +959,25 @@ def predict(state: ModelState) -> list[float]:
         if pt is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += pt[i]
+
+        # Word-ending shape gate. Complements phonotactic_close_bias
+        # for the common failure mode where gibberish drifts through
+        # with ZERO illegal bigrams and one-or-fewer illegal trigrams
+        # (e.g., "drymudrtee", "cojiunr", "ineddseh"). Fires only on
+        # the three-way conjunction: off-trie, letter_run_len >= 5,
+        # and the buffer's tail doesn't match any canonical English
+        # word-final shape — the discriminator for "real word the
+        # trie doesn't know" vs. "drift-generated nonsense".
+        wes = word_ending_shape_bias(
+            state.word_ending_shape_score,
+            state.on_word_trie,
+            state.letter_run_len,
+            state.letters_off_trie,
+            state.speaker_label_state,
+        )
+        if wes is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += wes[i]
 
         # Scene-drift mid-word terminator push. When drift_streak >= 2
         # AND the current word is also off-trie AND has extended 4+

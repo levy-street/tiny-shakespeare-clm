@@ -3276,3 +3276,35 @@ class ModelState(BaseModel):
     # = slot 2, len 2). When len gets large in POST_DET/POST_ADJ, the
     # predict layer should VERY strongly demand a noun closer.
     phrase_slot_len: int = 0
+
+    # --- Word-ending shape score ---
+    #
+    # Structural detector for the "drymudrtee / cojiunr / ineddseh"
+    # failure mode: long letter-runs that are off-trie and whose tail
+    # doesn't look like any real English word-ending, but whose local
+    # bigrams are legal enough to dodge the existing phonotactic
+    # close-out (which requires ≥2 violations).
+    #
+    # Values:
+    #   2 — the buffer is IN the complete-word trie (terminating here
+    #       yields a real word). Strongest "OK to end" signal.
+    #   1 — the buffer's tail matches a canonical English word-final
+    #       pattern (e.g., -ing, -ed, -ly, -er, -tion, -ness, -ful,
+    #       -ous, -able, -ment, -ity, -ance, -ence, -ish, -ship,
+    #       -dom, -hood, -like, -ward, -wise, -ness-less, common
+    #       CVC / VCe codas). Usable-as-ending.
+    #   0 — neither. Terminating now would yield a word-shaped
+    #       nonsense fragment ("drymudrt", "cojiunr", "ineddseh").
+    #
+    # Lifecycle:
+    #   - Updated by `pipeline/word_ending_shape.py` on every letter.
+    #   - Resets to 0 on word boundary (non-letter, non-apostrophe).
+    #
+    # Consumed by `predict/word_ending_shape.py`: when
+    # letter_run_len >= 5 AND on_word_trie == False AND
+    # word_ending_shape_score == 0, strongly push termination and
+    # suppress additional letters. The conjunction of "off-trie" AND
+    # "no valid ending pattern" is the discriminator that separates
+    # gibberish drift from legitimate long words the trie just
+    # doesn't know about (which tend to preserve English morphology).
+    word_ending_shape_score: int = 0
