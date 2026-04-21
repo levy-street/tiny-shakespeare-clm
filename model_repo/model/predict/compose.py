@@ -60,6 +60,7 @@ from .apostrophe_elision import apostrophe_elision_bias
 from .word_cap_integrity import word_cap_integrity_bias
 from .word_integrity import word_integrity_bias
 from .letter_repeat_penalty import letter_repeat_penalty_bias
+from .illegal_vowel_double import illegal_vowel_double_bias
 from .sensory_charge import sensory_charge_start_bias
 from .valence import valence_start_bias
 from .martial import martial_word_start_bias
@@ -697,6 +698,21 @@ def predict(state: ModelState) -> list[float]:
     if lrp is not None:
         for i in range(VOCAB_SIZE):
             logits[i] += lrp[i]
+
+    # Layer 3c-IVD: illegal same-vowel doubling. English allows "ee"
+    # and "oo" mid-word; "aa", "ii", "uu", "yy" are essentially never
+    # valid in Shakespeare. Letter_repeat_penalty is too gentle at
+    # count=2 (only 0.10). This layer imposes a sharp penalty on the
+    # specific adjacent-same-vowel doubling case, closing a common
+    # mid-word drift vector ("faate", "raeu", "liemafyso", ...).
+    ivd = illegal_vowel_double_bias(
+        state.word_buffer,
+        state.letter_run_len,
+        state.speaker_label_state,
+    )
+    if ivd is not None:
+        for i in range(VOCAB_SIZE):
+            logits[i] += ivd[i]
 
 # Layer 3c-CAPI: mid-word capitalization integrity. After the
     # first letter of a word (letter_run_len >= 1), uppercase letters
