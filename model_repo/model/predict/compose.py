@@ -116,6 +116,7 @@ from .tonal import tonal_start_bias
 from .turn_opener import TURN_OPENER_START_BIAS
 from .turn_opener_trie import turn_opener_trie_bias
 from .sentence_opener_trie import sentence_opener_trie_bias
+from .post_comma_trie import post_comma_trie_bias
 from .answer_opener import answer_opener_start_bias
 from .answer_expectation import answer_expectation_start_bias
 from .dialogue_opener import dialogue_adjacency_bias, dialogue_pacing_bias
@@ -549,6 +550,24 @@ def predict(state: ModelState) -> list[float]:
     if sot is not None:
         for i in range(VOCAB_SIZE):
             logits[i] += sot[i]
+
+    # Layer 3c-PCT: post-comma (", " / "; " / ": ") opener trie bias.
+    # Fires when chars_since_comma == letter_run_len + 1 (word started
+    # immediately after a clause-break + space) and words_in_sentence
+    # >= 1 (mid-clause, not post-sentence-end). Constrains letters
+    # toward common post-comma continuations (and, but, sir, my lord,
+    # indeed, then, which, that, O, tis, …).
+    pct = post_comma_trie_bias(
+        state.word_buffer,
+        state.letter_run_len,
+        state.speaker_label_state,
+        state.words_in_sentence,
+        state.chars_since_comma,
+        state.last_char,
+    )
+    if pct is not None:
+        for i in range(VOCAB_SIZE):
+            logits[i] += pct[i]
 
     # Layer 3c-WBC: word-bigram CONTINUATION bias. Given the previous
     # completed word and the current buffer (letters 1-4), bias the
