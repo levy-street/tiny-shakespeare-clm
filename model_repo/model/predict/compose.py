@@ -358,7 +358,7 @@ def predict(state: ModelState) -> list[float]:
         l3 = letter3_bias(state.word_buffer)
         if l3 is not None:
             for i in range(VOCAB_SIZE):
-                logits[i] += l3[i] * 3.5
+                logits[i] += l3[i] * 3.7
 
     # Layer 3b2-L4: letter-4gram suffix bias (last 4 letters → next).
     # Only fires for hand-specified high-confidence English suffixes
