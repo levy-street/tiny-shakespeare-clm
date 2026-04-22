@@ -234,7 +234,7 @@ _L4: dict[str, dict[str, float]] = {
 }
 
 
-_GLOBAL_SCALE = 0.15
+_GLOBAL_SCALE = 0.0
 # Default penalty for letters not listed
 _NEG_DEFAULT = 0.0
 
