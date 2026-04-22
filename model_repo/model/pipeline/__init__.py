@@ -76,6 +76,7 @@ from .caesura import update_caesura
 from .cap_required import update_cap_required
 from .coda_tracker import update_coda_tracker
 from .vowel_run import update_vowel_run
+from .mid_sentence_word_start import update_mid_sentence_word_start
 from .meter import update_meter
 from .prosody import update_prosody
 from .referent import update_referent
@@ -220,6 +221,7 @@ PIPELINE: list[Stage] = [
     update_flow,            # Tier 3: flow / mood / cadence
     update_coda_tracker,    # Tier 2: post-vowel consonant cluster (literal string of trailing consonants since last vowel in current word)
     update_vowel_run,       # Tier 2: literal vowel-cluster letters since last consonant within current word (mirror of coda_tracker)
+    update_mid_sentence_word_start,  # Tier 2: True at mid-sentence word-start positions — consumed by mid_sentence_cap_penalty
 ]
 
 __all__ = ["PIPELINE", "Stage"]

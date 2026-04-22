@@ -325,6 +325,18 @@ class ModelState(BaseModel):
     # Capped at 4 chars (deeper than any legal English vowel cluster).
     vowel_run_letters: str = ""
 
+    # Tier 2 — mid-sentence word-start gate.
+    # True iff:
+    #   letter_run_len == 0 AND last_char_class == SPACE AND
+    #   cap_required_mode == NONE AND words_in_sentence >= 1 AND
+    #   speaker_label_state == 0.
+    # When true, the NEXT letter is a word-start char mid-sentence
+    # where most words should be LOWERCASE (apart from proper nouns
+    # and "I" / "O" vocative interjection). Consumed by
+    # mid_sentence_cap_penalty to push against incorrect cap-drift
+    # like "Know the Is th" / "Our Is nobs Is aesv".
+    mid_sentence_word_start: bool = False
+
     # --- Tier 2/3: sentence-type FSM ---
     # Classification of the current sentence in progress:
     #   0 = UNKNOWN (not yet classified; before first word of sentence)

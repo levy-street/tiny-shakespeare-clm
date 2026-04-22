@@ -220,6 +220,7 @@ from .verb_chain_block import verb_chain_block_bias
 from .syllable_saturation import syllable_saturation_bias
 from .coda_plausibility import coda_plausibility_bias
 from .vowel_cluster_bias import vowel_cluster_bias
+from .mid_sentence_cap_penalty import mid_sentence_cap_penalty_bias
 from .verb_complement import verb_complement_start_bias
 from .line_break_bias import line_break_newline_bias
 from .trigram import trigram_bias
@@ -1209,6 +1210,19 @@ def predict(state: ModelState) -> list[float]:
         if vc is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += vc[i]
+
+    # Mid-sentence cap-drift penalty. At mid-sentence word-start
+    # positions (not sentence-start, not verse-line-start, not
+    # post-label), penalize uppercase letters (except "I" / "O")
+    # to correct the "Know the Is th" / "Our Is nobs" drift where
+    # function words get capitalized mid-sentence.
+    mscp = mid_sentence_cap_penalty_bias(
+        state.mid_sentence_word_start,
+        state.speaker_label_state,
+    )
+    if mscp is not None:
+        for i in range(VOCAB_SIZE):
+            logits[i] += mscp[i]
 
 
     # Layer 3c1-verb: verb-word-trie mid-word bias. When the clause
