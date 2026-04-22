@@ -312,6 +312,19 @@ class ModelState(BaseModel):
     # Capped at 8 chars to bound storage. Updated by coda_tracker.
     post_vowel_cluster: str = ""
 
+    # Tier 2 — vowel cluster (mirror of post_vowel_cluster, for vowels).
+    # The literal lowercase vowel string emitted since the most recent
+    # consonant or word boundary within the current word. Empty after
+    # any consonant, word boundary, or inside speaker-label territory.
+    # `y` acts as a vowel when a strict vowel has already appeared in
+    # the word (so "play" → cluster "" then "a" then "ay"; "myth" →
+    # cluster "" since y is consonant here).
+    # Used by vowel_cluster_bias to flag phonotactically-implausible
+    # vowel-cluster extensions (e.g., a third vowel stacking onto
+    # "oe", or an illegal "ao"/"iu" pair extending a valid run).
+    # Capped at 4 chars (deeper than any legal English vowel cluster).
+    vowel_run_letters: str = ""
+
     # --- Tier 2/3: sentence-type FSM ---
     # Classification of the current sentence in progress:
     #   0 = UNKNOWN (not yet classified; before first word of sentence)

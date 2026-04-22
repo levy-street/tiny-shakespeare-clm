@@ -219,6 +219,7 @@ from .clause_skel import clause_skel_bias
 from .verb_chain_block import verb_chain_block_bias
 from .syllable_saturation import syllable_saturation_bias
 from .coda_plausibility import coda_plausibility_bias
+from .vowel_cluster_bias import vowel_cluster_bias
 from .verb_complement import verb_complement_start_bias
 from .line_break_bias import line_break_newline_bias
 from .trigram import trigram_bias
@@ -1189,6 +1190,25 @@ def predict(state: ModelState) -> list[float]:
         if cp is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += cp[i]
+
+        # Layer 3c1a-vowels: symmetric vowel-cluster phonotactics.
+        # Reads state.vowel_run_letters (literal vowel letters since
+        # the last consonant in the current word). Penalizes next-
+        # vowel choices that would form a phonotactically illegal
+        # English vowel cluster (e.g. "oa" OK, "oe" OK, "oei" illegal;
+        # "ia" OK, "iu" rare; any 4+ vowel cluster impossible).
+        # Complements cv_alternation (generic push) with LITERAL
+        # cluster checks that penalize specific illegal vowels.
+        vc = vowel_cluster_bias(
+            state.vowel_run_letters,
+            state.speaker_label_state,
+            state.on_word_trie,
+            state.letters_off_trie,
+            state.letter_run_len,
+        )
+        if vc is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += vc[i]
 
 
     # Layer 3c1-verb: verb-word-trie mid-word bias. When the clause
