@@ -303,6 +303,15 @@ class ModelState(BaseModel):
     # current word. Resets on consonant or word break.
     vowels_since_consonant: int = 0
 
+    # Tier 2 — post-vowel consonant cluster.
+    # The literal lowercase consonant string emitted since the most
+    # recent vowel in the current word. Empty before the first vowel
+    # (onset of first syllable) or immediately after a vowel. Used by
+    # the coda-plausibility layer to check whether the current coda-
+    # in-progress matches a legal English word-final coda pattern.
+    # Capped at 8 chars to bound storage. Updated by coda_tracker.
+    post_vowel_cluster: str = ""
+
     # --- Tier 2/3: sentence-type FSM ---
     # Classification of the current sentence in progress:
     #   0 = UNKNOWN (not yet classified; before first word of sentence)

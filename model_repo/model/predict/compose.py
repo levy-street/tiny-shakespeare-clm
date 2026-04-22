@@ -218,6 +218,7 @@ from .content_word_chain import content_word_chain_bias
 from .clause_skel import clause_skel_bias
 from .verb_chain_block import verb_chain_block_bias
 from .syllable_saturation import syllable_saturation_bias
+from .coda_plausibility import coda_plausibility_bias
 from .verb_complement import verb_complement_start_bias
 from .line_break_bias import line_break_newline_bias
 from .trigram import trigram_bias
@@ -1169,6 +1170,25 @@ def predict(state: ModelState) -> list[float]:
         if ss is not None:
             for i in range(VOCAB_SIZE):
                 logits[i] += ss[i]
+
+        # Layer 3c1a-coda: post-vowel consonant-cluster plausibility.
+        # Classify the coda-in-progress as (legal word-ender | legal-
+        # prefix | phonotactic dead-end) and bias accordingly — boost
+        # terminators on legal closes; push vowels / terminators and
+        # penalize further consonants on dead-end clusters. Targets
+        # gibberish codas like "nrs"/"gft"/"mbr" that existing letter-
+        # ngram tables allow through.
+        cp = coda_plausibility_bias(
+            state.post_vowel_cluster,
+            state.letter_run_len,
+            state.letters_off_trie,
+            state.on_word_trie,
+            state.speaker_label_state,
+            state.word_ending_shape_score,
+        )
+        if cp is not None:
+            for i in range(VOCAB_SIZE):
+                logits[i] += cp[i]
 
 
     # Layer 3c1-verb: verb-word-trie mid-word bias. When the clause

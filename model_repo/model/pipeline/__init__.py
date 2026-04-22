@@ -74,6 +74,7 @@ from .turn_rolodex import update_turn_rolodex
 from .question_answer import update_question_answer
 from .caesura import update_caesura
 from .cap_required import update_cap_required
+from .coda_tracker import update_coda_tracker
 from .meter import update_meter
 from .prosody import update_prosody
 from .referent import update_referent
@@ -216,6 +217,7 @@ PIPELINE: list[Stage] = [
     update_line_break,      # Tier 2: syntactic line-break propriety
     update_cap_required,    # Tier 2: capital-required-next-word gate (runs near end so prev_line_length/prev_line_final_class are current)
     update_flow,            # Tier 3: flow / mood / cadence
+    update_coda_tracker,    # Tier 2: post-vowel consonant cluster (literal string of trailing consonants since last vowel in current word)
 ]
 
 __all__ = ["PIPELINE", "Stage"]
