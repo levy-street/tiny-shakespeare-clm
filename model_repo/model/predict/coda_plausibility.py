@@ -188,18 +188,18 @@ def coda_plausibility_bias(
 
     # Scale pressure by cluster length and off-trie drift.
     depth_scale = min(1.0, 0.4 + 0.25 * (clen - 1))
-    drift_scale = 1.0 + 0.25 * min(max(letters_off_trie, 0), 4)
+    drift_scale = 1.0 + 0.30 * min(max(letters_off_trie, 0), 4)
     scale = depth_scale * drift_scale
 
     # Terminator boost.
-    term_mag = 0.35 * scale
+    term_mag = 0.50 * scale
     for t, w in _TERMINATORS:
         idx = VOCAB_INDEX.get(t)
         if idx is not None:
             vec[idx] += term_mag * w
 
     # Vowel boost (breaks the cluster via resegmentation).
-    vowel_mag = 0.55 * scale
+    vowel_mag = 0.75 * scale
     for ch in "aeiou":
         idx = VOCAB_INDEX.get(ch)
         if idx is not None:
@@ -210,13 +210,13 @@ def coda_plausibility_bias(
         vec[idx] += vowel_mag * 0.4
 
     # Consonant penalty (stacking more just extends the dead-end).
-    cons_pen = -0.30 * scale
+    cons_pen = -0.42 * scale
     for ch in "bcdfghjklmnpqrstvwxz":
         idx = VOCAB_INDEX.get(ch)
         if idx is not None:
             vec[idx] += cons_pen
     # Capitals: harder penalty (a cap mid-word is already wrong on top).
-    cap_pen = -0.45 * scale
+    cap_pen = -0.60 * scale
     for ch in _UPPER:
         idx = VOCAB_INDEX.get(ch)
         if idx is not None:
