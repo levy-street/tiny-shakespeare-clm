@@ -199,7 +199,7 @@ def coda_plausibility_bias(
             vec[idx] += term_mag * w
 
     # Vowel boost (breaks the cluster via resegmentation).
-    vowel_mag = 0.75 * scale
+    vowel_mag = 2.70 * scale
     for ch in "aeiou":
         idx = VOCAB_INDEX.get(ch)
         if idx is not None:
