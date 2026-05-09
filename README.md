@@ -2,6 +2,46 @@
 
 A rules-only character-level language model for Shakespeare-style text.
 
+## Generation Samples
+
+These fixed-seed snippets were generated from the current model with
+`--temperature 0.6`.
+
+```text
+$ python3 harness.py sample --prefix $'HAMLET:\nTo be or not to be, ' --length 180 --temperature 0.6 --seed 0
+HAMLET:
+To be or not to be, the man is not inter to of the time
+shall the feature our somerset in her letting.
+
+OILETITC:
+lord listen the earth, and may at hand land hand
+Year. Bethought enter him and her hea
+```
+
+```text
+$ python3 harness.py sample --prefix $'KING HENRY:\nNow is the winter of ' --length 180 --temperature 0.6 --seed 1
+KING HENRY:
+Now is the winter of france, a thousand a outlive man
+in the world verona. Me from the more a sword winter,
+Indeed the side heart so and the heart
+The hand heart need, for a thousand heart best thou
+ha
+```
+
+```text
+$ python3 harness.py sample --prefix $'FIRST CITIZEN:\n' --length 180 --temperature 0.6 --seed 2
+FIRST CITIZEN:
+Will the poor trust a man of an hurled the worthless
+thou shall the throne shall be the share the no man
+until earn ye insist title, enobarbus crest
+Of an inter marry.
+
+IACHIMO:
+An
+```
+
+## Model API
+
 The model lives in `model_repo/model/` and exposes a deliberately small API:
 
 ```python
