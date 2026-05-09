@@ -4,40 +4,59 @@ A rules-only character-level language model for Shakespeare-style text.
 
 ## Generation Samples
 
-These fixed-seed snippets were generated from the current model with
-`--temperature 0.6`.
+These fixed-seed snippets are selected for texture first, with temperatures
+shown in each command. Medium temperatures tend to be the most readable; hotter
+samples show more range but also more drift.
 
 ```text
-$ python3 harness.py sample --prefix $'HAMLET:\nTo be or not to be, ' --length 180 --temperature 0.6 --seed 0
-HAMLET:
-To be or not to be, the man is not inter to of the time
-shall the feature our somerset in her letting.
+$ python3 harness.py sample --prefix $'ROMEO:\nBut soft, ' --length 300 --temperature 0.75 --seed 23
+ROMEO:
+But soft, upon me deep
+Are shank, while he that doth banish her firing thou:
+I think your father and the lord.
 
-OILETITC:
-lord listen the earth, and may at hand land hand
-Year. Bethought enter him and her hea
+OTHELLO:
+Tell think he or is the lies sneered think
+In we lord hard, be one think.
+
+CONSTABLE:
+You quip, to reach lend.
+
+NORTHUMBERLAND:
+Be her in the nognepuve,
+The anyoroe ransom mare soft where h
 ```
 
 ```text
-$ python3 harness.py sample --prefix $'KING HENRY:\nNow is the winter of ' --length 180 --temperature 0.6 --seed 1
+$ python3 harness.py sample --prefix $'KING HENRY:\nNow is the winter of ' --length 300 --temperature 0.65 --seed 26
 KING HENRY:
-Now is the winter of france, a thousand a outlive man
-in the world verona. Me from the more a sword winter,
-Indeed the side heart so and the heart
-The hand heart need, for a thousand heart best thou
-ha
+Now is the winter of the court stretch
+We sit test back to the time and mention, so be dress.
+
+GLOUCESTER:
+Tail imagine lay uneasy heaven on the clean
+Under sand true disciple time,
+Our ant be red that labour tyrnpag.
+
+RATCLIFF:
+The heart hath on the dark,
+And of slumber undertake tremble oberon is here enter
+the other
 ```
 
 ```text
-$ python3 harness.py sample --prefix $'FIRST CITIZEN:\n' --length 180 --temperature 0.6 --seed 2
-FIRST CITIZEN:
-Will the poor trust a man of an hurled the worthless
-thou shall the throne shall be the share the no man
-until earn ye insist title, enobarbus crest
-Of an inter marry.
-
-IACHIMO:
-An
+$ python3 harness.py sample --prefix $'MACBETH:\nIs this a dagger ' --length 360 --temperature 0.90 --seed 6
+MACBETH:
+Is this a dagger to e
+Shout to me open. If the onset hour stubborn
+Where lameness the hazard yetplolrigab bones
+Afraid. It flee grasses heart Fie tender
+Cries, ladies rage the tension throne go
+Trench who as man,
+thou arrest an immediately heart hath?
+The her reach the noble lord beware, relent:
+Of twist oasbu utter O As she eyeonfe craoslur.
+Angered, but hark, As sore crouc
 ```
 
 ## Training Metrics
