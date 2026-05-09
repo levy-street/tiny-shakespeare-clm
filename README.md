@@ -40,6 +40,13 @@ IACHIMO:
 An
 ```
 
+## Training Metrics
+
+![Model development trajectory](docs/model-history.svg)
+
+Full-train replay across all 463 model commits: BPC fell from `4.7744` to
+`2.3100` while the model grew from `278` to `60,878` Python lines.
+
 ## Code Policy Optimization
 
 This project does not train a neural network. The model's policy, the function
@@ -170,3 +177,15 @@ python3 optimizer.py
 The optimizer prompt asks the agent to improve both training BPC and sample
 quality, then commit successful improvements. `nudges.txt` can be edited while
 the optimizer is running; the process re-reads it before each scheduled nudge.
+
+## Citation
+
+```bibtex
+@software{baron_tiny_shakespeare_clm_2026,
+  author = {Baron, Jeremy},
+  title = {Tiny Shakespeare CLM},
+  year = {2026},
+  url = {https://github.com/levy-street/tiny-shakespeare-clm},
+  note = {Rules-only character-level language model optimized through code policy edits}
+}
+```
