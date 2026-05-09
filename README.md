@@ -40,6 +40,21 @@ IACHIMO:
 An
 ```
 
+## Code Policy Optimization
+
+This project does not train a neural network. The model's policy, the function
+that maps a rolling character state to a next-character probability
+distribution, is written directly in Python.
+
+Optimization happens by changing code instead of updating learned weights. New
+state fields, pipeline stages, word-shape rules, syntactic heuristics, semantic
+trackers, and logit-bias layers are added under `model_repo/model/`, then
+evaluated with the harness using bits per character and fixed-seed text samples.
+
+In other words, the codebase itself is the parameter space. Each improvement is
+a policy edit: a change to how the model reads context, updates state, or
+chooses the next character distribution.
+
 ## Model API
 
 The model lives in `model_repo/model/` and exposes a deliberately small API:
