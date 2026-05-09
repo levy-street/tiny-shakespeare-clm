@@ -8,6 +8,8 @@ These fixed-seed snippets are selected for texture first, with temperatures
 shown in each command. Medium temperatures tend to be the most readable; hotter
 samples show more range but also more drift.
 
+**Temperature 0.75**
+
 ```text
 $ python3 harness.py sample --prefix $'ROMEO:\nBut soft, ' --length 300 --temperature 0.75 --seed 23
 ROMEO:
@@ -27,6 +29,8 @@ Be her in the nognepuve,
 The anyoroe ransom mare soft where h
 ```
 
+**Temperature 0.65**
+
 ```text
 $ python3 harness.py sample --prefix $'KING HENRY:\nNow is the winter of ' --length 300 --temperature 0.65 --seed 26
 KING HENRY:
@@ -43,6 +47,8 @@ The heart hath on the dark,
 And of slumber undertake tremble oberon is here enter
 the other
 ```
+
+**Temperature 0.90**
 
 ```text
 $ python3 harness.py sample --prefix $'MACBETH:\nIs this a dagger ' --length 360 --temperature 0.90 --seed 6
